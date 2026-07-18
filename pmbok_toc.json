@@ -1,0 +1,974 @@
+{
+  "sections": [
+    {
+      "label": "The Standard for Project Management - Preface",
+      "page_start": 7,
+      "page_end": 2
+    },
+    {
+      "label": "Preface - Evidence-Based and Globally Represented",
+      "page_start": 7,
+      "page_end": 7
+    },
+    {
+      "label": "Preface - Summary of Changes",
+      "page_start": 7,
+      "page_end": 8
+    },
+    {
+      "label": "Update of Key Terms and Concepts",
+      "page_start": 8,
+      "page_end": 8
+    },
+    {
+      "label": "Refined Principles",
+      "page_start": 8,
+      "page_end": 8
+    },
+    {
+      "label": "Reintroducing Process Groups as Focus Areas",
+      "page_start": 8,
+      "page_end": 8
+    },
+    {
+      "label": "Updated Performance Domains",
+      "page_start": 9,
+      "page_end": 2
+    },
+    {
+      "label": "1 Introduction",
+      "page_start": 3,
+      "page_end": 3
+    },
+    {
+      "label": "1.1 Purpose of The Standard for Project Management",
+      "page_start": 3,
+      "page_end": 3
+    },
+    {
+      "label": "1.2 Key Terms and Concepts",
+      "page_start": 4,
+      "page_end": 5
+    },
+    {
+      "label": "1.3 Foundational Elements of Project Management",
+      "page_start": 6,
+      "page_end": 6
+    },
+    {
+      "label": "1.3.1 Characteristics of a Project",
+      "page_start": 6,
+      "page_end": 6
+    },
+    {
+      "label": "1.3.2 Connecting Organizational Governance and Project Governance",
+      "page_start": 7,
+      "page_end": 8
+    },
+    {
+      "label": "1.3.3 Operations and Project Management",
+      "page_start": 9,
+      "page_end": 9
+    },
+    {
+      "label": "1.3.4 Relationship of Portfolio, Program, Project, and Operations Management",
+      "page_start": 10,
+      "page_end": 12
+    },
+    {
+      "label": "2 A System for Value Delivery",
+      "page_start": 13,
+      "page_end": 13
+    },
+    {
+      "label": "2.1 Creating Value",
+      "page_start": 13,
+      "page_end": 14
+    },
+    {
+      "label": "2.1.1 Value Delivery Components",
+      "page_start": 15,
+      "page_end": 15
+    },
+    {
+      "label": "2.1.2 Assessing Project Success",
+      "page_start": 16,
+      "page_end": 16
+    },
+    {
+      "label": "2.2 Project Environment",
+      "page_start": 17,
+      "page_end": 17
+    },
+    {
+      "label": "2.2.1 Enterprise Environmental Factors",
+      "page_start": 18,
+      "page_end": 18
+    },
+    {
+      "label": "2.2.2 Organizational Process Assets",
+      "page_start": 19,
+      "page_end": 19
+    },
+    {
+      "label": "2.2.3 Policies, Processes, and Procedures",
+      "page_start": 20,
+      "page_end": 20
+    },
+    {
+      "label": "2.2.4 Organizational Knowledge Repositories",
+      "page_start": 21,
+      "page_end": 21
+    },
+    {
+      "label": "2.2.5 Organizational Structures",
+      "page_start": 21,
+      "page_end": 21
+    },
+    {
+      "label": "2.3 Product Management Considerations",
+      "page_start": 21,
+      "page_end": 23
+    },
+    {
+      "label": "2.4 Functions Associated With Projects",
+      "page_start": 24,
+      "page_end": 24
+    },
+    {
+      "label": "2.4.1 Provide Oversight and Coordination",
+      "page_start": 25,
+      "page_end": 25
+    },
+    {
+      "label": "2.4.2 Solicit and Manage Feedback",
+      "page_start": 25,
+      "page_end": 25
+    },
+    {
+      "label": "2.4.3 Facilitate and Support",
+      "page_start": 26,
+      "page_end": 26
+    },
+    {
+      "label": "2.4.4 Perform Work",
+      "page_start": 26,
+      "page_end": 26
+    },
+    {
+      "label": "2.4.5 Apply Expertise",
+      "page_start": 26,
+      "page_end": 26
+    },
+    {
+      "label": "2.4.6 Provide Organizational Direction and Insight",
+      "page_start": 26,
+      "page_end": 26
+    },
+    {
+      "label": "2.4.7 Provide Resources",
+      "page_start": 27,
+      "page_end": 27
+    },
+    {
+      "label": "2.5 Project Management Roles",
+      "page_start": 27,
+      "page_end": 27
+    },
+    {
+      "label": "2.5.1 Project Management Team",
+      "page_start": 27,
+      "page_end": 31
+    },
+    {
+      "label": "2.5.2 Sponsor, Customer, or Product Owner",
+      "page_start": 32,
+      "page_end": 32
+    },
+    {
+      "label": "2.5.3 Project Team",
+      "page_start": 33,
+      "page_end": 33
+    },
+    {
+      "label": "2.5.4 End Users and Other Key Stakeholders",
+      "page_start": 33,
+      "page_end": 34
+    },
+    {
+      "label": "3 Project Management Principles",
+      "page_start": 35,
+      "page_end": 35
+    },
+    {
+      "label": "3.1 The Project Management Mindset",
+      "page_start": 36,
+      "page_end": 36
+    },
+    {
+      "label": "3.2 Principles and Performance Domains",
+      "page_start": 37,
+      "page_end": 37
+    },
+    {
+      "label": "3.3 Adopt a Holistic View",
+      "page_start": 38,
+      "page_end": 38
+    },
+    {
+      "label": "3.3.1 Project Impact",
+      "page_start": 38,
+      "page_end": 38
+    },
+    {
+      "label": "3.3.2 Principle in Action",
+      "page_start": 39,
+      "page_end": 39
+    },
+    {
+      "label": "3.3.3 Connected Performance Domains",
+      "page_start": 39,
+      "page_end": 39
+    },
+    {
+      "label": "3.4 Focus on Value",
+      "page_start": 40,
+      "page_end": 40
+    },
+    {
+      "label": "3.4.1 Project Impact",
+      "page_start": 41,
+      "page_end": 41
+    },
+    {
+      "label": "3.4.2 Principle in Action",
+      "page_start": 42,
+      "page_end": 42
+    },
+    {
+      "label": "3.4.3 Connected Performance Domains",
+      "page_start": 42,
+      "page_end": 42
+    },
+    {
+      "label": "3.5 Embed Quality Into Processes and Deliverables",
+      "page_start": 43,
+      "page_end": 43
+    },
+    {
+      "label": "3.5.1 Project Impact",
+      "page_start": 44,
+      "page_end": 44
+    },
+    {
+      "label": "3.5.2 Principle in Action",
+      "page_start": 45,
+      "page_end": 45
+    },
+    {
+      "label": "3.5.3 Connected Performance Domains",
+      "page_start": 45,
+      "page_end": 45
+    },
+    {
+      "label": "3.6 Be an Accountable Leader",
+      "page_start": 46,
+      "page_end": 46
+    },
+    {
+      "label": "3.6.1 Project Impact",
+      "page_start": 47,
+      "page_end": 47
+    },
+    {
+      "label": "3.6.2 Principle in Action",
+      "page_start": 48,
+      "page_end": 48
+    },
+    {
+      "label": "3.6.3 Connected Performance Domains",
+      "page_start": 48,
+      "page_end": 48
+    },
+    {
+      "label": "3.7 Integrate Sustainability Within All Project Areas",
+      "page_start": 48,
+      "page_end": 49
+    },
+    {
+      "label": "3.7.1 Project Impact",
+      "page_start": 50,
+      "page_end": 51
+    },
+    {
+      "label": "3.7.2 Principle in Action",
+      "page_start": 52,
+      "page_end": 52
+    },
+    {
+      "label": "3.7.3 Connected Performance Domains",
+      "page_start": 52,
+      "page_end": 52
+    },
+    {
+      "label": "3.8 Build an Empowered Culture",
+      "page_start": 53,
+      "page_end": 53
+    },
+    {
+      "label": "3.8.1 Project Impact",
+      "page_start": 54,
+      "page_end": 54
+    },
+    {
+      "label": "3.8.2 Principle in Action",
+      "page_start": 54,
+      "page_end": 54
+    },
+    {
+      "label": "3.8.3 Connected Performance Domains",
+      "page_start": 55,
+      "page_end": 56
+    },
+    {
+      "label": "4 Project Life Cycles",
+      "page_start": 57,
+      "page_end": 57
+    },
+    {
+      "label": "4.1 Project Phases",
+      "page_start": 57,
+      "page_end": 58
+    },
+    {
+      "label": "4.2 Project Development Approaches",
+      "page_start": 59,
+      "page_end": 60
+    },
+    {
+      "label": "4.2.1 Predictive Approaches",
+      "page_start": 61,
+      "page_end": 62
+    },
+    {
+      "label": "4.2.2 Adaptive Approaches",
+      "page_start": 63,
+      "page_end": 64
+    },
+    {
+      "label": "4.2.3 Hybrid Approaches",
+      "page_start": 65,
+      "page_end": 66
+    },
+    {
+      "label": "4.3 Considerations for a Development Approach Selection",
+      "page_start": 67,
+      "page_end": 67
+    },
+    {
+      "label": "4.3.1 Deliverables",
+      "page_start": 67,
+      "page_end": 67
+    },
+    {
+      "label": "4.3.2 Project",
+      "page_start": 68,
+      "page_end": 68
+    },
+    {
+      "label": "4.3.3 Organization",
+      "page_start": 68,
+      "page_end": 68
+    },
+    {
+      "label": "4.4 Delivery Cadence",
+      "page_start": 69,
+      "page_end": 69
+    },
+    {
+      "label": "4.5 Project Management Focus Areas",
+      "page_start": 69,
+      "page_end": 69
+    },
+    {
+      "label": "4.5.1 Initiating Focus Area",
+      "page_start": 70,
+      "page_end": 70
+    },
+    {
+      "label": "4.5.2 Planning Focus Area",
+      "page_start": 70,
+      "page_end": 71
+    },
+    {
+      "label": "4.5.3 Executing Focus Area",
+      "page_start": 72,
+      "page_end": 72
+    },
+    {
+      "label": "4.5.4 Monitoring and Controlling Focus Area",
+      "page_start": 72,
+      "page_end": 72
+    },
+    {
+      "label": "4.5.5 Closing Focus Area",
+      "page_start": 72,
+      "page_end": 72
+    },
+    {
+      "label": "4.5.6 Focus Areas as a Whole",
+      "page_start": 73,
+      "page_end": 74
+    },
+    {
+      "label": "The Standard for Project Management - References",
+      "page_start": 75,
+      "page_end": 76
+    },
+    {
+      "label": "The Standard for Project Management - Index",
+      "page_start": 77,
+      "page_end": 78
+    },
+    {
+      "label": "PMBOK Guide - 1 Introduction",
+      "page_start": 3,
+      "page_end": 3
+    },
+    {
+      "label": "1.1 Structure of the PMBOK Guide",
+      "page_start": 3,
+      "page_end": 3
+    },
+    {
+      "label": "1.2 Relationship of the PMBOK Guide and The Standard for Project Management",
+      "page_start": 4,
+      "page_end": 4
+    },
+    {
+      "label": "1.3 Changes to the PMBOK Guide",
+      "page_start": 5,
+      "page_end": 6
+    },
+    {
+      "label": "2 Project Management Performance Domains",
+      "page_start": 7,
+      "page_end": 9
+    },
+    {
+      "label": "2.1 Governance Performance Domain",
+      "page_start": 10,
+      "page_end": 10
+    },
+    {
+      "label": "2.1.1 Project Value Creation",
+      "page_start": 10,
+      "page_end": 10
+    },
+    {
+      "label": "2.1.2 Project Governance Models",
+      "page_start": 11,
+      "page_end": 12
+    },
+    {
+      "label": "2.1.3 Metrics and Mechanisms for Effective Project Governance",
+      "page_start": 13,
+      "page_end": 13
+    },
+    {
+      "label": "2.1.4 Additional Considerations for Predictive Environments",
+      "page_start": 13,
+      "page_end": 13
+    },
+    {
+      "label": "2.1.5 Key Concepts",
+      "page_start": 14,
+      "page_end": 14
+    },
+    {
+      "label": "2.1.6 Processes",
+      "page_start": 15,
+      "page_end": 32
+    },
+    {
+      "label": "2.1.7 Tailoring Considerations",
+      "page_start": 33,
+      "page_end": 34
+    },
+    {
+      "label": "2.1.8 Interactions With Other Domains",
+      "page_start": 35,
+      "page_end": 35
+    },
+    {
+      "label": "2.1.9 Check Results",
+      "page_start": 35,
+      "page_end": 35
+    },
+    {
+      "label": "2.2 Scope Performance Domain",
+      "page_start": 35,
+      "page_end": 35
+    },
+    {
+      "label": "2.2.1 Key Concepts",
+      "page_start": 35,
+      "page_end": 38
+    },
+    {
+      "label": "2.2.2 Processes",
+      "page_start": 39,
+      "page_end": 43
+    },
+    {
+      "label": "2.2.3 Tailoring Considerations",
+      "page_start": 44,
+      "page_end": 44
+    },
+    {
+      "label": "2.2.4 Interactions With Other Domains",
+      "page_start": 45,
+      "page_end": 45
+    },
+    {
+      "label": "2.2.5 Check Results",
+      "page_start": 46,
+      "page_end": 46
+    },
+    {
+      "label": "2.3 Schedule Performance Domain",
+      "page_start": 47,
+      "page_end": 47
+    },
+    {
+      "label": "2.3.1 Key Concepts",
+      "page_start": 47,
+      "page_end": 47
+    },
+    {
+      "label": "2.3.2 Processes",
+      "page_start": 48,
+      "page_end": 54
+    },
+    {
+      "label": "2.3.3 Tailoring Considerations",
+      "page_start": 55,
+      "page_end": 56
+    },
+    {
+      "label": "2.3.4 Interactions With Other Domains",
+      "page_start": 57,
+      "page_end": 57
+    },
+    {
+      "label": "2.3.5 Check Results",
+      "page_start": 57,
+      "page_end": 57
+    },
+    {
+      "label": "2.4 Finance Performance Domain",
+      "page_start": 58,
+      "page_end": 58
+    },
+    {
+      "label": "2.4.1 Key Concepts",
+      "page_start": 59,
+      "page_end": 60
+    },
+    {
+      "label": "2.4.2 Processes",
+      "page_start": 61,
+      "page_end": 64
+    },
+    {
+      "label": "2.4.3 Tailoring Considerations",
+      "page_start": 65,
+      "page_end": 65
+    },
+    {
+      "label": "2.4.4 Interactions With Other Domains",
+      "page_start": 66,
+      "page_end": 66
+    },
+    {
+      "label": "2.4.5 Check Results",
+      "page_start": 66,
+      "page_end": 66
+    },
+    {
+      "label": "2.5 Stakeholders Performance Domain",
+      "page_start": 67,
+      "page_end": 67
+    },
+    {
+      "label": "2.5.1 Key Concepts",
+      "page_start": 68,
+      "page_end": 69
+    },
+    {
+      "label": "2.5.2 Processes",
+      "page_start": 70,
+      "page_end": 73
+    },
+    {
+      "label": "2.5.3 Tailoring Considerations",
+      "page_start": 74,
+      "page_end": 76
+    },
+    {
+      "label": "2.5.4 Interactions With Other Domains",
+      "page_start": 77,
+      "page_end": 77
+    },
+    {
+      "label": "2.5.5 Check Results",
+      "page_start": 78,
+      "page_end": 78
+    },
+    {
+      "label": "2.6 Resources Performance Domain",
+      "page_start": 79,
+      "page_end": 79
+    },
+    {
+      "label": "2.6.1 Key Concepts",
+      "page_start": 79,
+      "page_end": 79
+    },
+    {
+      "label": "2.6.2 Processes",
+      "page_start": 80,
+      "page_end": 87
+    },
+    {
+      "label": "2.6.3 Tailoring Considerations",
+      "page_start": 88,
+      "page_end": 90
+    },
+    {
+      "label": "2.6.4 Interactions With Other Domains",
+      "page_start": 91,
+      "page_end": 91
+    },
+    {
+      "label": "2.6.5 Check Results",
+      "page_start": 92,
+      "page_end": 92
+    },
+    {
+      "label": "2.7 Risk Performance Domain",
+      "page_start": 92,
+      "page_end": 92
+    },
+    {
+      "label": "2.7.1 Key Concepts",
+      "page_start": 92,
+      "page_end": 93
+    },
+    {
+      "label": "2.7.2 Processes",
+      "page_start": 94,
+      "page_end": 97
+    },
+    {
+      "label": "2.7.3 Tailoring Considerations",
+      "page_start": 98,
+      "page_end": 100
+    },
+    {
+      "label": "2.7.4 Interactions With Other Domains",
+      "page_start": 101,
+      "page_end": 101
+    },
+    {
+      "label": "2.7.5 Check Results",
+      "page_start": 102,
+      "page_end": 102
+    },
+    {
+      "label": "3 Tailoring",
+      "page_start": 103,
+      "page_end": 103
+    },
+    {
+      "label": "3.1 Overview",
+      "page_start": 103,
+      "page_end": 103
+    },
+    {
+      "label": "3.2 Why Tailor?",
+      "page_start": 104,
+      "page_end": 104
+    },
+    {
+      "label": "3.3 What to Tailor",
+      "page_start": 104,
+      "page_end": 104
+    },
+    {
+      "label": "3.3.1 Life Cycle and Development Approach Selection",
+      "page_start": 104,
+      "page_end": 104
+    },
+    {
+      "label": "3.3.2 Processes",
+      "page_start": 105,
+      "page_end": 105
+    },
+    {
+      "label": "3.3.3 Engagement",
+      "page_start": 105,
+      "page_end": 105
+    },
+    {
+      "label": "3.4 The Tailoring Process",
+      "page_start": 105,
+      "page_end": 105
+    },
+    {
+      "label": "3.4.1 Select Initial Development Approach",
+      "page_start": 105,
+      "page_end": 105
+    },
+    {
+      "label": "3.4.2 Tailor for the Organization",
+      "page_start": 106,
+      "page_end": 107
+    },
+    {
+      "label": "3.4.3 Tailor for the Project",
+      "page_start": 108,
+      "page_end": 108
+    },
+    {
+      "label": "3.4.4 Implement Ongoing Improvement",
+      "page_start": 109,
+      "page_end": 109
+    },
+    {
+      "label": "3.5 Tailoring the Performance Domains",
+      "page_start": 110,
+      "page_end": 110
+    },
+    {
+      "label": "3.6 Diagnostics",
+      "page_start": 110,
+      "page_end": 111
+    },
+    {
+      "label": "3.7 Summary",
+      "page_start": 112,
+      "page_end": 112
+    },
+    {
+      "label": "4 Inputs and Outputs",
+      "page_start": 113,
+      "page_end": 144
+    },
+    {
+      "label": "5 Tools and Techniques",
+      "page_start": 145,
+      "page_end": 216
+    },
+    {
+      "label": "Appendix X1: Contributors and Reviewers",
+      "page_start": 217,
+      "page_end": 217
+    },
+    {
+      "label": "X1.1 Contributors and Reviewers",
+      "page_start": 217,
+      "page_end": 230
+    },
+    {
+      "label": "X1.2 PMI Team Members",
+      "page_start": 231,
+      "page_end": 232
+    },
+    {
+      "label": "Appendix X2: Project Management Offices",
+      "page_start": 233,
+      "page_end": 233
+    },
+    {
+      "label": "X2.1 Introduction",
+      "page_start": 233,
+      "page_end": 233
+    },
+    {
+      "label": "X2.2 The PMO Value Proposition",
+      "page_start": 233,
+      "page_end": 233
+    },
+    {
+      "label": "X2.3 Importance of Customer Centricity for a PMO",
+      "page_start": 234,
+      "page_end": 234
+    },
+    {
+      "label": "X2.4 PMO Type, Model, and Structure",
+      "page_start": 234,
+      "page_end": 234
+    },
+    {
+      "label": "X2.5 PMO Maturity Models",
+      "page_start": 235,
+      "page_end": 235
+    },
+    {
+      "label": "X2.6 Learn More About PMOs",
+      "page_start": 236,
+      "page_end": 236
+    },
+    {
+      "label": "Appendix X3: Artificial Intelligence",
+      "page_start": 237,
+      "page_end": 237
+    },
+    {
+      "label": "X3.1 Artificial Intelligence in the Project Context",
+      "page_start": 237,
+      "page_end": 237
+    },
+    {
+      "label": "X3.1.1 Strategies for AI Adoption",
+      "page_start": 238,
+      "page_end": 238
+    },
+    {
+      "label": "X3.1.2 State of the Market",
+      "page_start": 239,
+      "page_end": 239
+    },
+    {
+      "label": "X3.2 Common Use Cases",
+      "page_start": 239,
+      "page_end": 239
+    },
+    {
+      "label": "X3.3 Responsible Use and Ethical Concerns",
+      "page_start": 239,
+      "page_end": 243
+    },
+    {
+      "label": "X3.4 Suggested Resources",
+      "page_start": 244,
+      "page_end": 244
+    },
+    {
+      "label": "Appendix X4: Procurement",
+      "page_start": 245,
+      "page_end": 245
+    },
+    {
+      "label": "X4.1 Procurement Introduction",
+      "page_start": 245,
+      "page_end": 245
+    },
+    {
+      "label": "X4.2 Procurement Overview",
+      "page_start": 246,
+      "page_end": 246
+    },
+    {
+      "label": "X4.3 Make-or-Buy Analysis",
+      "page_start": 246,
+      "page_end": 246
+    },
+    {
+      "label": "X4.4 Procurement Strategy",
+      "page_start": 247,
+      "page_end": 247
+    },
+    {
+      "label": "X4.5 Bid Process and Documents",
+      "page_start": 248,
+      "page_end": 248
+    },
+    {
+      "label": "X4.6 Source Selection Analysis",
+      "page_start": 249,
+      "page_end": 249
+    },
+    {
+      "label": "X4.7 Source Selection Criteria",
+      "page_start": 249,
+      "page_end": 249
+    },
+    {
+      "label": "X4.8 Contract Type",
+      "page_start": 250,
+      "page_end": 250
+    },
+    {
+      "label": "X4.8.1 Fundamental Contract Models",
+      "page_start": 251,
+      "page_end": 251
+    },
+    {
+      "label": "X4.8.2 Emerging Trends in Contract Management",
+      "page_start": 252,
+      "page_end": 252
+    },
+    {
+      "label": "X4.9 Claims Administration",
+      "page_start": 252,
+      "page_end": 252
+    },
+    {
+      "label": "X4.9.1 Relevance to Project Managers",
+      "page_start": 253,
+      "page_end": 253
+    },
+    {
+      "label": "X4.9.2 Sensitivity of Legal Actions and Upholding Ethics Codes",
+      "page_start": 254,
+      "page_end": 254
+    },
+    {
+      "label": "Appendix X5: Evolution of the PMBOK Guide",
+      "page_start": 255,
+      "page_end": 255
+    },
+    {
+      "label": "X5.1 Evidence-Based",
+      "page_start": 255,
+      "page_end": 256
+    },
+    {
+      "label": "X5.2 Changes in the Eighth Edition",
+      "page_start": 257,
+      "page_end": 257
+    },
+    {
+      "label": "X5.3 Sources for the Eighth Edition",
+      "page_start": 257,
+      "page_end": 257
+    },
+    {
+      "label": "X5.4 Refinement of Project Management Principles",
+      "page_start": 257,
+      "page_end": 260
+    },
+    {
+      "label": "References",
+      "page_start": 261,
+      "page_end": 262
+    },
+    {
+      "label": "Bibliography",
+      "page_start": 263,
+      "page_end": 264
+    },
+    {
+      "label": "Glossary",
+      "page_start": 265,
+      "page_end": 276
+    },
+    {
+      "label": "Index",
+      "page_start": 277,
+      "page_end": 386
+    }
+  ]
+}
