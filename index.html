@@ -575,7 +575,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <div class="dash-header-actions">
       <button class="btn btn-secondary" style="font-size:13px;padding:9px 16px;" onclick="openUploadUpdate()">📎 Update from Document</button>
       <button class="btn btn-ai" style="font-size:13px;padding:9px 16px;" onclick="generateJira()">🔗 Generate Jira Tasks</button>
-      <button class="btn" style="font-size:13px;padding:9px 16px;background:#059669;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;" onclick="saveCurrentProject()">💾 Save</button>
+      <div id="autosave-indicator" style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap;display:none;"></div>
     </div>
   </div>
 
@@ -1026,6 +1026,7 @@ function createProject() {
 
   buildDashboard();
   showPage('dashboard');
+  saveCurrentProject(true);
 
   // Auto-fill EVM and PERT if demo data exists
   if (project._demoEVM) {
@@ -2300,6 +2301,11 @@ function getDemoSteps() {
 }
 
 
+// Зберігаємо при закритті вкладки
+window.addEventListener('beforeunload', () => {
+  if (currentUser && project.name) saveCurrentProject(true);
+});
+
 var tourStep = 0;
 
 function startTour() {
@@ -2566,9 +2572,43 @@ function renderProjectsList(projects) {
   `).join('');
 }
 
-async function saveCurrentProject() {
-  console.log('[PM] Save clicked, user:', currentUser?.id || 'NOT LOGGED IN');
-  if (!currentUser) { openAuth(); return; }
+function formatAutosaveTime() {
+  const now = new Date();
+  const d = now.getDate().toString().padStart(2,'0');
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()];
+  const y = now.getFullYear();
+  const h = now.getHours().toString().padStart(2,'0');
+  const min = now.getMinutes().toString().padStart(2,'0');
+  return `${d} ${m} ${y}, ${h}:${min}`;
+}
+
+function updateAutosaveIndicator(status) {
+  const el = document.getElementById('autosave-indicator');
+  if (!el) return;
+  if (status === 'saving') {
+    el.innerHTML = '⏳ Saving...';
+    el.style.color = '#94a3b8';
+    el.style.display = 'block';
+  } else if (status === 'saved') {
+    el.innerHTML = `✅ Autosaved · ${formatAutosaveTime()}`;
+    el.style.color = '#059669';
+    el.style.display = 'block';
+  } else if (status === 'error') {
+    el.innerHTML = '⚠️ Save failed';
+    el.style.color = '#dc2626';
+    el.style.display = 'block';
+  }
+}
+
+var _autosaveTimer = null;
+function scheduleAutosave() {
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(() => saveCurrentProject(true), 30000);
+}
+
+async function saveCurrentProject(silent) {
+  if (!currentUser) { if (!silent) openAuth(); return; }
+  updateAutosaveIndicator('saving');
   const payload = {
     user_id: currentUser.id,
     name: project.name || 'Untitled Project',
@@ -2589,8 +2629,7 @@ async function saveCurrentProject() {
     result = await sb.from('projects').insert(payload).select().single();
   }
 
-  console.log('[PM] Save result:', result.error || 'OK', result.data?.id);
-  if (result.error) { alert('Save error: ' + result.error.message); return; }
+  if (result.error) { updateAutosaveIndicator('error'); return; }
   project.supabaseId = result.data.id;
 
   // Save documents
@@ -2605,7 +2644,8 @@ async function saveCurrentProject() {
     }, { onConflict: 'project_id,doc_type,version' });
   }
 
-  showSaveToast();
+  updateAutosaveIndicator('saved');
+  scheduleAutosave();
 }
 
 async function openProject(id) {
