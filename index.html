@@ -1,0 +1,2964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Master — Project Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#2563eb;--blue-dark:#1d4ed8;--blue-deep:#1e3a8a;
+  --blue-50:#eff6ff;--blue-100:#dbeafe;--blue-200:#bfdbfe;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-400:#94a3b8;--gray-500:#64748b;--gray-700:#334155;--gray-900:#0f172a;
+  --green:#059669;--green-50:#f0fdf4;--green-100:#dcfce7;
+  --amber:#d97706;--amber-50:#fffbeb;
+  --red:#dc2626;--red-50:#fef2f2;
+  --purple:#7c3aed;--purple-50:#f5f3ff;
+}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--gray-100);min-height:100vh;color:var(--gray-900);}
+
+/* HEADER */
+header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8,#2563eb);color:white;padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.2);}
+header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;height:350px;background:radial-gradient(circle,rgba(255,255,255,0.07),transparent 70%);border-radius:50%;pointer-events:none;}
+.header-logo{font-size:28px;position:relative;z-index:1;flex-shrink:0;}
+.header-title{flex:1;position:relative;z-index:1;min-width:0;}
+.header-title h1{font-size:20px;font-weight:900;white-space:nowrap;}
+.header-title p{font-size:12px;opacity:.75;white-space:nowrap;}
+.sec-banner{position:sticky;top:75px;z-index:99;background:linear-gradient(90deg,#0f4c35,#065f46,#0f4c35);border-bottom:2px solid #059669;padding:10px 20px;font-size:13px;color:#d1fae5;text-align:center;line-height:1.6;box-shadow:0 2px 12px rgba(5,150,105,.25);letter-spacing:.1px;}
+.sec-banner strong{color:#6ee7b7;font-weight:900;}
+.sec-banner .sec-lock{font-size:16px;vertical-align:-2px;margin-right:4px;}
+.sec-banner-detail{color:#a7f3d0;font-size:12px;}
+.header-actions{display:flex;align-items:center;gap:10px;position:relative;z-index:1;flex-shrink:0;}
+.lang-select{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;width:auto;max-width:170px;}
+.lang-select option{color:#0f172a;background:white;}
+.btn-new-project{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;}
+.btn-new-project:hover{background:rgba(255,255,255,.3);}
+.btn-demo{background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:white;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(249,115,22,.4);letter-spacing:.3px;}
+.btn-demo:hover{filter:brightness(1.1);}
+.btn-login{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.btn-login:hover{background:rgba(255,255,255,.25);}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#34d399,#059669);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:white;flex-shrink:0;}
+
+/* AUTH MODAL */
+#auth-overlay{position:fixed;inset:0;background:rgba(10,20,50,.6);z-index:1000;display:none;align-items:center;justify-content:center;}
+#auth-overlay.active{display:flex;}
+#auth-modal{background:white;border-radius:20px;padding:36px;width:min(420px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;}
+.auth-logo{text-align:center;font-size:36px;margin-bottom:4px;}
+.auth-title{text-align:center;font-size:22px;font-weight:900;color:#0f172a;margin-bottom:4px;}
+.auth-sub{text-align:center;font-size:13px;color:#64748b;margin-bottom:24px;}
+.auth-tabs{display:flex;background:#f1f5f9;border-radius:10px;padding:3px;margin-bottom:24px;}
+.auth-tab{flex:1;text-align:center;padding:8px;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer;color:#64748b;transition:.2s;}
+.auth-tab.active{background:white;color:#2563eb;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.auth-field{margin-bottom:14px;}
+.auth-field label{display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+.auth-field input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:14px;font-family:'Nunito',sans-serif;outline:none;transition:.2s;}
+.auth-field input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.btn-auth-submit{width:100%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;padding:12px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:6px;}
+.btn-auth-submit:hover{filter:brightness(1.1);}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#94a3b8;font-size:12px;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+.btn-google{width:100%;background:white;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;color:#334155;}
+.btn-google:hover{background:#f8fafc;border-color:#cbd5e1;}
+.auth-msg{font-size:13px;text-align:center;margin-top:12px;min-height:20px;font-weight:600;}
+.auth-msg.error{color:#dc2626;}.auth-msg.success{color:#059669;}
+.auth-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;}
+
+/* PROJECTS LIST PAGE */
+.proj-list-wrap{max-width:820px;margin:0 auto;padding:40px 16px 80px;}
+.proj-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.proj-list-header h2{font-size:24px;font-weight:900;}
+.proj-card{background:white;border-radius:14px;padding:20px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);margin-bottom:12px;display:flex;align-items:center;gap:16px;cursor:pointer;border:2px solid transparent;transition:.2s;}
+.proj-card:hover{border-color:#2563eb;box-shadow:0 4px 20px rgba(37,99,235,.12);}
+.proj-card-icon{font-size:28px;flex-shrink:0;}
+.proj-card-info{flex:1;min-width:0;}
+.proj-card-name{font-size:16px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.proj-card-meta{font-size:12px;color:#64748b;margin-top:3px;}
+.proj-card-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#eff6ff;color:#2563eb;flex-shrink:0;}
+.proj-empty{text-align:center;padding:60px 20px;color:#94a3b8;}
+.proj-empty .icon{font-size:48px;margin-bottom:12px;}
+.proj-empty p{font-size:15px;}
+
+/* ── DEMO TOUR ───────────────────────────────────── */
+#demo-overlay{position:fixed;inset:0;background:rgba(10,20,50,.55);z-index:900;display:none;}
+#demo-overlay.active{display:block;}
+#demo-modal{position:fixed;z-index:901;top:50%;left:50%;transform:translate(-50%,-50%);width:min(680px,96vw);max-height:88vh;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);display:none;flex-direction:column;overflow:hidden;}
+#demo-modal.active{display:flex;}
+.dm-topbar{background:var(--gray-100);border-bottom:1px solid var(--gray-200);padding:12px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.dm-dots{display:flex;gap:6px;}
+.dm-dot{width:12px;height:12px;border-radius:50%;}
+.dm-dot.r{background:#ff5f57;}.dm-dot.y{background:#febc2e;}.dm-dot.g{background:#28c840;}
+.dm-app-name{font-size:13px;font-weight:700;color:var(--gray-500);flex:1;text-align:center;}
+.dm-close{background:none;border:none;font-size:16px;cursor:pointer;color:var(--gray-400);padding:2px 6px;border-radius:6px;}
+.dm-close:hover{background:var(--gray-200);}
+.dm-email-header{padding:18px 24px 14px;border-bottom:1px solid var(--gray-200);flex-shrink:0;}
+.dm-email-row{display:flex;gap:8px;font-size:13px;margin-bottom:4px;}
+.dm-email-label{font-weight:800;color:var(--gray-500);min-width:50px;}
+.dm-email-val{color:var(--gray-900);}
+.dm-subject{font-size:18px;font-weight:900;color:var(--gray-900);margin-top:10px;}
+.dm-body{padding:20px 24px;overflow-y:auto;flex:1;font-size:14px;line-height:1.8;color:var(--gray-700);white-space:pre-wrap;}
+.dm-doc-header{padding:20px 24px 14px;border-bottom:1px solid var(--gray-200);flex-shrink:0;display:flex;align-items:center;gap:12px;}
+.dm-doc-icon{font-size:28px;}
+.dm-doc-title{font-size:18px;font-weight:900;color:var(--gray-900);}
+.dm-doc-sub{font-size:12px;color:var(--gray-400);margin-top:2px;}
+.dm-footer{padding:14px 24px;border-top:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--gray-50);}
+.dm-step-info{font-size:12px;color:var(--gray-400);font-weight:700;}
+.dm-progress{display:flex;gap:4px;}
+.dm-pdot{width:8px;height:8px;border-radius:50%;background:var(--gray-200);}
+.dm-pdot.done{background:#86efac;}.dm-pdot.active{background:var(--blue);}
+.dm-actions{display:flex;gap:8px;}
+.btn-dm-exit{background:none;border:1px solid var(--gray-200);color:var(--gray-500);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-dm-next{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;padding:8px 20px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-dm-next:hover{filter:brightness(1.1);}
+.dm-narr{background:linear-gradient(135deg,#fff7ed,#fef3c7);border-bottom:1px solid #fde68a;padding:10px 20px;font-size:13px;color:#92400e;line-height:1.5;flex-shrink:0;display:none;}
+.dm-narr strong{color:#78350f;}
+.dm-narr-step{display:inline-block;background:#f59e0b;color:white;font-size:10px;font-weight:900;padding:1px 7px;border-radius:20px;margin-right:6px;letter-spacing:.5px;vertical-align:middle;}
+.dm-ai-bar{background:#f5f3ff;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#7c3aed;flex-shrink:0;}
+.dm-ai-dots{display:flex;gap:4px;}
+.dm-ai-dot{width:7px;height:7px;border-radius:50%;background:#7c3aed;animation:pdot 1s infinite;}
+.dm-ai-dot:nth-child(2){animation-delay:.2s;}.dm-ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes pdot{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+.dm-sent-banner{background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:14px 18px;margin:16px 24px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#166534;}
+.charter-section{margin-bottom:18px;}
+.charter-section h3{font-size:13px;font-weight:900;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--blue-100);}
+.charter-section p,.charter-section li{font-size:13px;color:var(--gray-700);line-height:1.7;}
+.charter-section ul{padding-left:18px;}
+.tour-typing{border-right:2px solid var(--blue);animation:blink .7s infinite;}
+@keyframes blink{0%,100%{border-color:transparent;}50%{border-color:var(--blue);}}
+
+/* PAGES */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ══════════════════════════════════════════
+   SETUP PAGE
+══════════════════════════════════════════ */
+.setup-wrap{max-width:760px;margin:0 auto;padding:40px 16px 80px;}
+.setup-hero{text-align:center;margin-bottom:36px;}
+.setup-hero .icon{font-size:56px;margin-bottom:12px;}
+.setup-hero h2{font-size:28px;font-weight:900;margin-bottom:6px;}
+.setup-hero p{font-size:15px;color:var(--gray-500);}
+.card{background:white;border-radius:16px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 24px rgba(0,0,0,.07);margin-bottom:20px;}
+.card-title{font-size:16px;font-weight:800;margin-bottom:18px;color:var(--gray-900);}
+.field{margin-bottom:16px;}
+label{display:block;font-size:12px;font-weight:800;color:var(--gray-700);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+input[type=text],input[type=date],input[type=number],textarea,select{width:100%;padding:11px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:15px;color:var(--gray-900);background:var(--gray-50);font-family:'Nunito',sans-serif;transition:border-color .2s;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);background:white;}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* Project type grid */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px;}
+.type-card{border:2px solid var(--gray-200);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:white;}
+.type-card:hover{border-color:var(--blue-200);background:var(--blue-50);}
+.type-card.active{border-color:var(--blue);background:var(--blue-50);}
+.type-card .ti{font-size:26px;margin-bottom:5px;}
+.type-card .tl{font-size:12px;font-weight:800;color:var(--gray-700);}
+.type-card.active .tl{color:var(--blue);}
+
+/* Approach chips */
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{padding:8px 18px;border:2px solid var(--gray-200);border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;background:white;color:var(--gray-700);font-family:'Nunito',sans-serif;transition:all .15s;}
+.chip:hover{border-color:var(--blue);color:var(--blue);}
+.chip.active{background:var(--blue);border-color:var(--blue);color:white;}
+
+/* Document selector */
+.doc-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.doc-check{border:2px solid var(--gray-200);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;background:white;}
+.doc-check:hover{border-color:var(--blue-200);background:var(--blue-50);}
+.doc-check.selected{border-color:var(--blue);background:var(--blue-50);}
+.doc-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);flex-shrink:0;cursor:pointer;}
+.doc-check-icon{font-size:18px;flex-shrink:0;}
+.doc-check-info{flex:1;}
+.doc-check-name{font-size:13px;font-weight:800;color:var(--gray-900);}
+.doc-check-phase{font-size:11px;color:var(--gray-500);margin-top:1px;}
+.doc-check.selected .doc-check-name{color:var(--blue);}
+.badge-new{background:var(--purple-50);color:var(--purple);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:4px;}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--gray-300,#d1d5db);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--gray-50);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-50);}
+.upload-zone .uz-icon{font-size:36px;margin-bottom:8px;}
+.upload-zone .uz-title{font-size:14px;font-weight:800;color:var(--gray-700);margin-bottom:4px;}
+.upload-zone .uz-sub{font-size:12px;color:var(--gray-500);}
+.upload-zone input[type=file]{display:none;}
+.upload-files{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.upload-file-item{background:var(--blue-50);border:1px solid var(--blue-200);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+.upload-file-item .ufi-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;}
+.paste-area{margin-top:12px;}
+.paste-area textarea{min-height:70px;font-size:13px;}
+
+/* AI analyze result */
+.ai-extract-result{background:var(--green-50);border:1px solid var(--green-100);border-radius:12px;padding:16px;margin-top:12px;display:none;}
+.ai-extract-result.active{display:block;}
+.aer-title{font-size:13px;font-weight:800;color:var(--green);margin-bottom:10px;}
+.aer-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:6px;}
+.aer-item .aer-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.aer-dot.found{background:var(--green);}
+.aer-dot.missing{background:var(--amber);}
+
+/* Buttons */
+.btn{border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s,transform .12s;}
+.btn:hover{opacity:.9;transform:translateY(-1px);}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;padding:14px 28px;font-size:16px;width:100%;margin-top:8px;}
+.btn-ai{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;padding:10px 18px;font-size:13px;}
+.btn-secondary{background:white;border:2px solid var(--blue-200);color:var(--blue);padding:10px 18px;font-size:13px;}
+.spinner-inline{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════════════════════
+   DASHBOARD PAGE
+══════════════════════════════════════════ */
+.dashboard-wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px;}
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.dash-project-name{font-size:26px;font-weight:900;color:var(--gray-900);}
+.dash-project-meta{font-size:13px;color:var(--gray-500);margin-top:4px;}
+.dash-header-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.stat-value{font-size:28px;font-weight:900;color:var(--blue);}
+.stat-label{font-size:12px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+
+/* Collapsible calc sections */
+.calc-section{background:white;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:24px;overflow:hidden;}
+.calc-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;cursor:pointer;user-select:none;gap:12px;}
+.calc-header:hover{background:var(--gray-50);}
+.calc-header-left{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--gray-700);}
+.calc-toggle{font-size:13px;color:var(--gray-400);transition:transform .25s;flex-shrink:0;}
+.calc-toggle.open{transform:rotate(180deg);}
+.calc-body{padding:0 24px 22px;display:none;}
+.calc-body.open{display:block;}
+/* EVM row */
+.evm-row{background:white;border-radius:16px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:24px;}
+.evm-title{font-size:14px;font-weight:800;color:var(--gray-700);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.evm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.evm-metric{background:var(--gray-50);border-radius:10px;padding:12px 14px;}
+.evm-metric-name{font-size:11px;font-weight:800;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.evm-metric-val{font-size:22px;font-weight:900;}
+.evm-metric-formula{font-size:10px;color:var(--gray-400);margin-top:2px;}
+.evm-green{color:var(--green);}
+.evm-red{color:var(--red);}
+.evm-blue{color:var(--blue);}
+.evm-inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);}
+.evm-input-wrap label{font-size:11px;}
+.evm-input-wrap input{padding:8px 10px;font-size:13px;}
+
+/* Documents grid */
+.docs-section-title{font-size:13px;font-weight:800;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;margin-top:24px;}
+.docs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.doc-card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:2px solid transparent;cursor:pointer;transition:all .15s;position:relative;}
+.doc-card:hover{border-color:var(--blue-200);box-shadow:0 4px 20px rgba(37,99,235,.1);}
+.doc-card.status-done{border-color:var(--green-100);}
+.doc-card.status-active{border-color:var(--blue-200);}
+.doc-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.doc-card-icon{font-size:26px;}
+.doc-status-badge{font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;}
+.badge-done{background:var(--green-50);color:var(--green);}
+.badge-draft{background:var(--amber-50);color:var(--amber);}
+.badge-empty{background:var(--gray-100);color:var(--gray-500);}
+.badge-pmbok8{background:var(--purple-50);color:var(--purple);}
+.doc-card-name{font-size:14px;font-weight:800;color:var(--gray-900);margin-bottom:3px;}
+.doc-card-phase{font-size:11px;color:var(--gray-500);}
+.doc-card-actions{display:flex;gap:6px;margin-top:12px;}
+.doc-btn{font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .12s;}
+.doc-btn-gen{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;}
+.doc-btn-edit{background:var(--gray-100);color:var(--gray-700);}
+.doc-btn-pdf{background:var(--green-50);color:var(--green);border:1px solid var(--green-100);}
+.doc-btn:hover{opacity:.85;}
+
+/* Risk Matrix */
+.risk-matrix-wrap{background:white;border-radius:16px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:24px;}
+.risk-matrix{display:grid;grid-template-columns:40px repeat(5,1fr);grid-template-rows:repeat(5,40px) 40px;gap:3px;margin-top:12px;}
+.rm-cell{border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+.rm-label{background:none;color:var(--gray-500);font-size:10px;}
+.rm-low{background:#dcfce7;color:#166534;}
+.rm-med{background:#fef9c3;color:#854d0e;}
+.rm-high{background:#fee2e2;color:#991b1b;}
+.rm-critical{background:#dc2626;color:white;}
+
+/* PERT calculator */
+.pert-wrap{background:white;border-radius:16px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:24px;}
+.pert-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;align-items:end;}
+.pert-result{background:var(--blue-50);border:2px solid var(--blue-200);border-radius:10px;padding:12px 16px;text-align:center;}
+.pert-result-label{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;}
+.pert-result-val{font-size:28px;font-weight:900;color:var(--blue);}
+.pert-result-formula{font-size:11px;color:var(--gray-500);margin-top:2px;}
+
+/* Updates feed */
+.updates-wrap{background:white;border-radius:16px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.update-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100);}
+.update-item:last-child{border-bottom:none;}
+.update-dot{width:10px;height:10px;border-radius:50%;background:var(--blue);margin-top:5px;flex-shrink:0;}
+.update-text{font-size:13px;color:var(--gray-700);line-height:1.5;}
+.update-time{font-size:11px;color:var(--gray-400);margin-top:2px;}
+
+/* ══════════════════════════════════════════
+   DOCUMENT EDITOR MODAL
+══════════════════════════════════════════ */
+#docModal{position:fixed;inset:0;z-index:500;display:none;}
+#docModal.active{display:flex;}
+.modal-overlay{position:absolute;inset:0;background:rgba(15,23,42,.5);}
+.modal-panel{position:relative;background:white;width:100%;max-width:820px;height:100vh;margin-left:auto;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.15);}
+.modal-header{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;padding:18px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.modal-header-icon{font-size:24px;}
+.modal-header-info{flex:1;}
+.modal-header-info h3{font-size:17px;font-weight:900;}
+.modal-header-info p{font-size:12px;opacity:.75;margin-top:2px;}
+.modal-header-actions{display:flex;gap:8px;}
+.modal-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;border:none;transition:all .12s;}
+.modal-btn-pmbok{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3);}
+.modal-btn-gen{background:rgba(255,255,255,.9);color:var(--blue);}
+.modal-btn-close{background:rgba(255,255,255,.15);color:white;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.modal-body{flex:1;overflow-y:auto;padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--gray-200);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:white;}
+.modal-btn-save{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;padding:10px 22px;font-size:14px;}
+.modal-btn-pdf{background:var(--green-50);color:var(--green);border:1px solid var(--green-100);padding:10px 22px;font-size:14px;}
+
+/* PMBOK drawer */
+#pmbokDrawer{position:fixed;top:0;right:-460px;width:440px;height:100vh;background:white;box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:600;display:flex;flex-direction:column;transition:right .3s ease;}
+#pmbokDrawer.open{right:0;}
+.pd-header{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;}
+.pd-header h3{font-size:15px;font-weight:900;margin-bottom:3px;}
+.pd-header p{font-size:11px;opacity:.75;}
+.pd-close{background:rgba(255,255,255,.2);border:none;color:white;width:30px;height:30px;border-radius:7px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pd-body{flex:1;overflow-y:auto;padding:20px;}
+.pd-ref{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.pd-text{font-size:13px;line-height:1.8;color:var(--gray-700);}
+.pd-text h4{font-size:14px;font-weight:800;color:var(--gray-900);margin:14px 0 5px;}
+.pd-text ul{padding-left:16px;margin:5px 0;}
+.pd-text ul li{margin-bottom:3px;}
+#drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:599;display:none;}
+#drawerOverlay.active{display:block;}
+
+/* Stakeholder matrix */
+.stakeholder-matrix{overflow-x:auto;margin-top:8px;}
+.sm-table{width:100%;border-collapse:collapse;font-size:13px;}
+.sm-table th{background:var(--blue-50);color:var(--blue-dark);font-weight:800;padding:8px 12px;text-align:left;border-bottom:2px solid var(--blue-200);white-space:nowrap;}
+.sm-table td{padding:7px 10px;border-bottom:1px solid var(--gray-200);}
+.sm-table td input,sm-table td select{border:1px solid var(--gray-200);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'Nunito',sans-serif;width:100%;}
+.sm-table td input:focus{outline:none;border-color:var(--blue);}
+.btn-add-row{background:var(--blue-50);border:2px dashed var(--blue-200);color:var(--blue);padding:7px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:8px;width:100%;}
+.btn-add-row:hover{background:var(--blue-100);}
+
+@media(max-width:768px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .docs-grid{grid-template-columns:1fr 1fr;}
+  .evm-grid{grid-template-columns:1fr 1fr;}
+  .type-grid{grid-template-columns:1fr 1fr;}
+  .doc-selector{grid-template-columns:1fr;}
+  .pert-grid{grid-template-columns:1fr 1fr;}
+  .evm-inputs{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){
+  .docs-grid{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">📋</div>
+  <div class="header-title">
+    <h1>PM Master</h1>
+    <p>AI-powered Project Management · PMBOK® 8th Edition</p>
+  </div>
+  <div class="header-actions">
+    <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+      <option value="en">🌐 English</option>
+      <option value="uk">🇺🇦 Українська</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="pl">🇵🇱 Polski</option>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="zh">🇨🇳 中文</option>
+      <option value="ja">🇯🇵 日本語</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="hi">🇮🇳 हिन्दी</option>
+    </select>
+    <button class="btn-demo" onclick="startTour()">▶ Demo</button>
+    <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;">My Projects</button>
+    <button class="btn-new-project" onclick="showPage('setup')">+ New Project</button>
+    <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
+  </div>
+</header>
+
+<!-- AUTH MODAL -->
+<div id="auth-overlay">
+  <div id="auth-modal">
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+    <div class="auth-logo">📋</div>
+    <div class="auth-title">PM Master</div>
+    <div class="auth-sub">Save your projects. Access them anywhere.</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Create Account</div>
+    </div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@company.com">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')authSubmit()">
+    </div>
+    <button class="btn-auth-submit" onclick="authSubmit()" id="auth-submit-btn">Sign In</button>
+    <div class="auth-divider">or</div>
+    <button class="btn-google" onclick="authGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+<div class="sec-banner" id="sec-banner">
+  🔒 <strong>Your data is private — only you can access your projects.</strong> Documents are stored securely in your account. Only you see your data — we never share it with anyone. <span class="sec-banner-detail">Protected by Supabase Row Level Security — each user sees only their own records.</span>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PROJECTS LIST PAGE
+══════════════════════════════════════════ -->
+<div id="page-projects" class="page">
+<div class="proj-list-wrap">
+  <div class="proj-list-header">
+    <h2>📋 My Projects</h2>
+    <button class="btn-new-project" style="background:#2563eb;color:white;border:none;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;" onclick="showPage('setup')">+ New Project</button>
+  </div>
+  <div id="projects-list-body">
+    <div class="proj-empty"><div class="icon">📂</div><p>No projects yet. Create your first one!</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SETUP PAGE
+══════════════════════════════════════════ -->
+<div id="page-setup" class="page active">
+<div class="setup-wrap">
+  <div class="setup-hero">
+    <div class="icon">🚀</div>
+    <h2>New Project</h2>
+    <p>Fill in project details or upload documents — AI will auto-fill what it can</p>
+  </div>
+
+  <!-- Basic info -->
+  <div class="card">
+    <div class="card-title">📋 Project Information</div>
+    <div class="field">
+      <label>Project Name *</label>
+      <input type="text" id="s-name" placeholder="e.g. Corporate Portal Redesign 2025">
+    </div>
+    <div class="form-row-2">
+      <div class="field">
+        <label>Organization / Company</label>
+        <input type="text" id="s-org" placeholder="Acme Corp">
+      </div>
+      <div class="field">
+        <label>Project Manager</label>
+        <input type="text" id="s-pm" placeholder="Your name">
+      </div>
+    </div>
+    <div class="form-row-3">
+      <div class="field">
+        <label>Start Date</label>
+        <input type="date" id="s-start">
+      </div>
+      <div class="field">
+        <label>Planned End Date</label>
+        <input type="date" id="s-end">
+      </div>
+      <div class="field">
+        <label>Budget</label>
+        <input type="text" id="s-budget" placeholder="e.g. $150,000">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Project Type</label>
+      <div class="type-grid">
+        <div class="type-card active" onclick="selType(this,'IT / Software')"><div class="ti">💻</div><div class="tl">IT / Software</div></div>
+        <div class="type-card" onclick="selType(this,'Construction')"><div class="ti">🏗️</div><div class="tl">Construction</div></div>
+        <div class="type-card" onclick="selType(this,'Marketing')"><div class="ti">📣</div><div class="tl">Marketing</div></div>
+        <div class="type-card" onclick="selType(this,'Finance')"><div class="ti">💰</div><div class="tl">Finance</div></div>
+        <div class="type-card" onclick="selType(this,'Healthcare')"><div class="ti">🏥</div><div class="tl">Healthcare</div></div>
+        <div class="type-card" onclick="selType(this,'Other')"><div class="ti">📁</div><div class="tl">Other</div></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Development Approach <span class="badge-new">PMBOK 8</span></label>
+      <div class="chip-row">
+        <div class="chip active" onclick="selChip(this,'approach')">Predictive (Waterfall)</div>
+        <div class="chip" onclick="selChip(this,'approach')">Agile / Scrum</div>
+        <div class="chip" onclick="selChip(this,'approach')">Hybrid</div>
+        <div class="chip" onclick="selChip(this,'approach')">Kanban</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload documents -->
+  <div class="card">
+    <div class="card-title">📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span></div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents</p>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.mp3,.m4a,.wav" onchange="handleFiles(this.files)">
+      <div class="uz-icon">📂</div>
+      <div class="uz-title">Drop files here or click to upload</div>
+      <div class="uz-sub">PDF · DOCX · TXT · MP3 · M4A · WAV</div>
+    </div>
+    <div class="upload-files" id="uploadedFiles"></div>
+
+    <div class="paste-area" style="margin-top:14px;">
+      <label>Or paste text (email, MoM, brief)</label>
+      <textarea id="pasteText" placeholder="Paste email from client, meeting notes, project brief..."></textarea>
+    </div>
+
+    <button class="btn btn-ai" style="margin-top:12px;width:100%;" onclick="analyzeContext()">
+      <span>🔍</span> Analyze & Auto-fill Documents
+    </button>
+
+    <div class="ai-extract-result" id="extractResult">
+      <div class="aer-title">✅ AI found the following information:</div>
+      <div id="extractItems"></div>
+    </div>
+  </div>
+
+  <!-- Document selection -->
+  <div class="card">
+    <div class="card-title">📑 Select Documents to Generate</div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">You can add or remove documents at any time from the dashboard</p>
+    <div class="doc-selector" id="docSelector">
+      <!-- Filled by JS -->
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;color:var(--gray-500);" id="selCount">12 of 12 selected</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(true)">Select All</button>
+        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(false)">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-primary" style="flex:1;" onclick="createProject()">🚀 Create Project & Open Dashboard</button>
+    <button class="btn btn-secondary" style="background:#f0fdf4;border-color:#86efac;color:#166534;font-weight:800;" onclick="loadDemoProject()">🧪 Load Demo Project</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DASHBOARD PAGE
+══════════════════════════════════════════ -->
+<div id="page-dashboard" class="page">
+<div class="dashboard-wrap">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div>
+      <div class="dash-project-name" id="dash-name">Project Name</div>
+      <div class="dash-project-meta" id="dash-meta"></div>
+    </div>
+    <div class="dash-header-actions">
+      <button class="btn btn-secondary" style="font-size:13px;padding:9px 16px;" onclick="openUploadUpdate()">📎 Update from Document</button>
+      <button class="btn btn-ai" style="font-size:13px;padding:9px 16px;" onclick="generateJira()">🔗 Generate Jira Tasks</button>
+      <button class="btn" style="font-size:13px;padding:9px 16px;background:#059669;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;" onclick="saveCurrentProject()">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-docs">0/12</div>
+      <div class="stat-label">Documents Ready</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-risks" style="color:var(--amber);">0</div>
+      <div class="stat-label">Open Risks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-days" style="color:var(--green);">—</div>
+      <div class="stat-label">Days Remaining</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-cpi" style="color:var(--blue);">—</div>
+      <div class="stat-label">CPI (Cost)</div>
+    </div>
+  </div>
+
+  <!-- EVM Calculator -->
+  <!-- EVM Calculator (collapsible) -->
+  <div class="calc-section">
+    <div class="calc-header" onclick="toggleCalc('evm')">
+      <div class="calc-header-left">
+        📊 Earned Value Management (EVM)
+        <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Section 7</span>
+      </div>
+      <span class="calc-toggle" id="evm-toggle">▼</span>
+    </div>
+    <div class="calc-body" id="evm-body">
+
+      <!-- INPUTS -->
+      <div class="evm-inputs" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid var(--gray-200);">
+        <div class="evm-input-wrap field"><label>PV — Planned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work scheduled</span></label><input type="text" inputmode="numeric" id="inp-pv" placeholder="e.g. 80000" oninput="calcEVM()"></div>
+        <div class="evm-input-wrap field"><label>EV — Earned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ev" placeholder="e.g. 65000" oninput="calcEVM()"></div>
+        <div class="evm-input-wrap field"><label>AC — Actual Cost ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Actual cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ac" placeholder="e.g. 75000" oninput="calcEVM()"></div>
+        <div class="evm-input-wrap field"><label>BAC — Budget at Completion ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Total approved project budget</span></label><input type="text" inputmode="numeric" id="inp-bac" placeholder="e.g. 220000" oninput="calcEVM()"></div>
+      </div>
+
+      <!-- STATUS -->
+      <div id="evm-status" style="display:none;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:14px;font-weight:700;line-height:1.6;"></div>
+
+      <!-- METRICS -->
+      <div class="evm-grid">
+        <div class="evm-metric"><div class="evm-metric-name">CV — Cost Variance</div><div class="evm-metric-val evm-green" id="evm-cv">—</div><div class="evm-metric-formula">EV − AC</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">SV — Schedule Variance</div><div class="evm-metric-val evm-blue" id="evm-sv">—</div><div class="evm-metric-formula">EV − PV</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">CPI — Cost Performance</div><div class="evm-metric-val evm-green" id="evm-cpi">—</div><div class="evm-metric-formula">EV ÷ AC</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">SPI — Schedule Performance</div><div class="evm-metric-val evm-blue" id="evm-spi">—</div><div class="evm-metric-formula">EV ÷ PV</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">EAC — Estimate at Completion</div><div class="evm-metric-val" id="evm-eac" style="color:var(--purple);">—</div><div class="evm-metric-formula">BAC ÷ CPI</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">ETC — Estimate to Complete</div><div class="evm-metric-val" id="evm-etc" style="color:var(--purple);">—</div><div class="evm-metric-formula">EAC − AC</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">VAC — Variance at Completion</div><div class="evm-metric-val" id="evm-vac">—</div><div class="evm-metric-formula">BAC − EAC</div></div>
+        <div class="evm-metric"><div class="evm-metric-name">TCPI — To-Complete Performance</div><div class="evm-metric-val evm-blue" id="evm-tcpi">—</div><div class="evm-metric-formula">(BAC−EV) ÷ (BAC−AC)</div></div>
+      </div>
+
+      <!-- COMMUNICATION CHANNELS -->
+      <div style="background:var(--gray-50);border-radius:10px;padding:14px 16px;margin-top:20px;border-top:2px solid var(--gray-200);padding-top:16px;">
+        <div style="font-size:13px;font-weight:800;color:var(--gray-700);margin-bottom:4px;">👥 Team Communication Channels</div>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">With every new stakeholder, the number of communication paths grows significantly. Use this to justify your Communication Plan complexity. Formula: <b>n × (n−1) / 2</b></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;" class="field"><label>Number of Stakeholders</label><input type="text" inputmode="numeric" id="inp-stakeholders" placeholder="e.g. 10" oninput="calcChannels()"></div>
+          <div style="font-size:22px;color:var(--gray-400);padding-top:8px;">→</div>
+          <div style="flex:1;min-width:160px;" class="field"><label>Total Communication Channels</label><input type="text" id="out-channels" readonly style="background:var(--blue-50);color:var(--blue);font-weight:800;font-size:16px;text-align:center;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PERT Calculator (collapsible) -->
+  <div class="calc-section">
+    <div class="calc-header" onclick="toggleCalc('pert')">
+      <div class="calc-header-left">
+        ⏱ PERT Estimator — Three-Point Estimate
+        <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Schedule Management</span>
+      </div>
+      <span class="calc-toggle" id="pert-toggle">▼</span>
+    </div>
+    <div class="calc-body" id="pert-body">
+      <div class="pert-grid">
+        <div class="field"><label>a — Optimistic</label><input type="text" inputmode="numeric" id="pert-o" placeholder="days" oninput="calcPERT()"></div>
+        <div class="field"><label>m — Most Likely</label><input type="text" inputmode="numeric" id="pert-m" placeholder="days" oninput="calcPERT()"></div>
+        <div class="field"><label>b — Pessimistic</label><input type="text" inputmode="numeric" id="pert-p" placeholder="days" oninput="calcPERT()"></div>
+        <div class="pert-result">
+          <div class="pert-result-label">E_PERT</div>
+          <div class="pert-result-val" id="pert-result">—</div>
+          <div class="pert-result-formula">(a + 4m + b) / 6</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--gray-500);">
+        Simple Average: E = (a+m+b)/3 = <strong id="pert-sa">—</strong> &nbsp;|&nbsp;
+        Std Deviation: σ = (b−a)/6 = <strong id="pert-sd">—</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Matrix -->
+  <div class="risk-matrix-wrap">
+    <div class="evm-title">⚠️ Risk Probability × Impact Matrix <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Uncertainty Domain</span></div>
+    <div class="risk-matrix" id="riskMatrix">
+      <!-- Built by JS -->
+    </div>
+    <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;font-weight:700;">
+      <span style="color:#166534;">■ Low (1-4)</span>
+      <span style="color:#854d0e;">■ Medium (5-9)</span>
+      <span style="color:#991b1b;">■ High (10-16)</span>
+      <span style="color:#dc2626;">■ Critical (20-25)</span>
+    </div>
+  </div>
+
+  <!-- Documents -->
+  <div class="docs-section-title">📁 Project Documents</div>
+  <div class="docs-grid" id="docsGrid"></div>
+
+  <!-- Updates -->
+  <div class="docs-section-title" style="margin-top:24px;">🔄 Recent Updates</div>
+  <div class="updates-wrap">
+    <div class="update-item">
+      <div class="update-dot" style="background:var(--green);"></div>
+      <div>
+        <div class="update-text">Project created. AI is ready to generate documents.</div>
+        <div class="update-time" id="update-time-create">just now</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- PMBOK DRAWER -->
+<div id="drawerOverlay" onclick="closePmbok()"></div>
+<div id="pmbokDrawer">
+  <div class="pd-header">
+    <div><h3>📖 PMBOK® 8 Reference</h3><p id="pd-section">Loading...</p></div>
+    <button class="pd-close" onclick="closePmbok()">✕</button>
+  </div>
+  <div class="pd-body">
+    <div class="pd-ref" id="pd-ref">PMBOK® Guide 8th Edition</div>
+    <div class="pd-text" id="pd-text">Loading PMBOK content...</div>
+  </div>
+</div>
+
+<!-- DOCUMENT MODAL -->
+<div id="docModal">
+  <div class="modal-overlay" onclick="closeModal()"></div>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-header-icon" id="modal-icon">📄</div>
+      <div class="modal-header-info">
+        <h3 id="modal-title">Document</h3>
+        <p id="modal-subtitle">PMBOK® 8th Edition</p>
+      </div>
+      <div class="modal-header-actions">
+        <button class="modal-btn modal-btn-pmbok" onclick="openPmbok(currentDocKey)">📖 PMBOK Ref</button>
+        <button class="modal-btn modal-btn-gen" onclick="generateDoc(currentDocKey)">✨ Generate with AI</button>
+        <button class="modal-btn modal-btn-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Document content rendered here -->
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn btn modal-btn-pdf" onclick="exportPDF()">📥 Export PDF</button>
+      <button class="modal-btn btn modal-btn-save" onclick="saveDoc()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const DOCS = [
+  // INITIATION
+  { key:'charter',      icon:'📄', name:'Project Charter',              phase:'Initiation · Integration',   pmbok8:false },
+  { key:'assumptions',  icon:'📝', name:'Assumption Log',               phase:'Initiation · PMBOK 8 New',   pmbok8:true  },
+  { key:'stakeholders', icon:'👥', name:'Stakeholder Register',         phase:'Initiation · Stakeholder',   pmbok8:false },
+  // PLANNING
+  { key:'approach',     icon:'🔀', name:'Development Approach',         phase:'Planning · PMBOK 8 New',     pmbok8:true  },
+  { key:'scope',        icon:'🎯', name:'Scope Statement + WBS',        phase:'Planning · Scope',           pmbok8:false },
+  { key:'schedule',     icon:'📅', name:'Schedule + Milestones',        phase:'Planning · Schedule',        pmbok8:false },
+  { key:'budget',       icon:'💰', name:'Cost / Budget Plan',           phase:'Planning · Cost',            pmbok8:false },
+  { key:'risk',         icon:'⚠️', name:'Risk Register',               phase:'Planning · Uncertainty',     pmbok8:false },
+  { key:'team',         icon:'👤', name:'Team Management Plan',         phase:'Planning · Team · PMBOK 8',  pmbok8:true  },
+  { key:'comms',        icon:'📡', name:'Communication Plan',           phase:'Planning · Communication',   pmbok8:false },
+  { key:'quality',      icon:'✅', name:'Quality Management Plan',      phase:'Planning · Delivery',        pmbok8:false },
+  // CLOSING
+  { key:'lessons',      icon:'📚', name:'Lessons Learned',              phase:'Closing · Integration',      pmbok8:false },
+];
+
+const PMBOK_CONTENT = {
+  charter:      { section:'Section 4.1 — Develop Project Charter', ref:'PMBOK® 8 · Integration Management', text:`<h4>Project Charter</h4><p>Formally authorizes the existence of a project and provides the PM with authority to apply organizational resources. In PMBOK 8, the charter also includes initial assumptions and strategic alignment.</p><h4>Key Components</h4><ul><li>Project purpose and justification</li><li>Measurable objectives and success criteria</li><li>High-level requirements and risks</li><li>Summary milestone schedule and budget</li><li>Sponsor name and authority level</li><li>Strategic alignment (new in PMBOK 8)</li></ul>` },
+  assumptions:  { section:'Section — Assumption Log (PMBOK 8 New)', ref:'PMBOK® 8 · New Document', text:`<h4>Assumption Log</h4><p>A new explicit document in PMBOK 8. Previously assumptions were buried in the Project Charter. Now tracked separately throughout the project lifecycle.</p><h4>Purpose</h4><ul><li>Track all assumptions made during planning</li><li>Monitor assumptions as project progresses</li><li>Convert validated assumptions to facts</li><li>Escalate false assumptions as risks</li></ul>` },
+  stakeholders: { section:'Stakeholder Performance Domain', ref:'PMBOK® 8 · Stakeholder Domain', text:`<h4>Stakeholder Management</h4><p>In PMBOK 8, Stakeholder Management is elevated to a full Performance Domain — reflecting its critical importance. Goes beyond just identifying stakeholders to actively engaging them throughout the project.</p><h4>Stakeholder Engagement Assessment Matrix</h4><ul><li>Unaware → Resistant → Neutral → Supportive → Leading</li><li>Current vs Desired engagement level</li><li>Gap = engagement strategy needed</li></ul><h4>Power/Interest Grid</h4><ul><li>High Power + High Interest: Manage closely</li><li>High Power + Low Interest: Keep satisfied</li><li>Low Power + High Interest: Keep informed</li><li>Low Power + Low Interest: Monitor</li></ul>` },
+  approach:     { section:'Development Approach Domain (PMBOK 8 New)', ref:'PMBOK® 8 · Development Approach', text:`<h4>Development Approach</h4><p>A new Performance Domain in PMBOK 8. Teams must explicitly choose and document their delivery approach based on project characteristics.</p><h4>Options</h4><ul><li><b>Predictive:</b> Scope, schedule, cost defined upfront. Best for stable, well-understood projects.</li><li><b>Adaptive (Agile):</b> Iterative, incremental delivery. Best for uncertain, evolving requirements.</li><li><b>Hybrid:</b> Mix of predictive and adaptive. Most common in practice.</li></ul><h4>Factors Influencing Choice</h4><ul><li>Degree of uncertainty and risk</li><li>Stakeholder engagement level</li><li>Regulatory constraints</li><li>Team capabilities</li></ul>` },
+  scope:        { section:'Sections 5.3–5.4 — Scope + WBS', ref:'PMBOK® 8 · Delivery Domain', text:`<h4>Scope Statement</h4><p>Describes what the project will and will not deliver. In PMBOK 8, closely linked to the Delivery Performance Domain.</p><h4>WBS — Work Breakdown Structure</h4><p>Hierarchical decomposition of total project scope. The 100% Rule: WBS must include 100% of the work.</p><h4>Key Principle (PMBOK 8)</h4><p>Focus on <b>outcomes and value</b>, not just deliverables. Ask: what value does each WBS element deliver to the customer?</p>` },
+  schedule:     { section:'Schedule Management · Planning Domain', ref:'PMBOK® 8 · Planning Domain', text:`<h4>Schedule Management</h4><p>In PMBOK 8, schedule is part of the Planning Performance Domain. Key formulas remain from PMBOK 6.</p><h4>PERT Formula</h4><p>E = (O + 4M + P) / 6</p><h4>Critical Path Method (CPM)</h4><p>Identifies the longest path through the network — determines project duration. Float = 0 on critical path.</p><h4>Schedule Compression</h4><ul><li><b>Crashing:</b> Add resources to critical path</li><li><b>Fast-tracking:</b> Overlap sequential activities</li></ul>` },
+  budget:       { section:'Cost Management · Planning Domain', ref:'PMBOK® 8 · Planning Domain + EVM', text:`<h4>Cost Management + EVM</h4><p>PMBOK 8 strengthens EVM as the primary tool for tracking project performance.</p><h4>Key EVM Formulas</h4><ul><li>CV = EV − AC (positive = under budget)</li><li>SV = EV − PV (positive = ahead of schedule)</li><li>CPI = EV ÷ AC (>1 = efficient)</li><li>SPI = EV ÷ PV (>1 = ahead)</li><li>EAC = BAC ÷ CPI</li><li>TCPI = (BAC−EV) ÷ (BAC−AC)</li></ul>` },
+  risk:         { section:'Uncertainty Performance Domain (PMBOK 8)', ref:'PMBOK® 8 · Uncertainty Domain', text:`<h4>Uncertainty Domain</h4><p>In PMBOK 8, Risk Management is part of the broader Uncertainty Performance Domain — acknowledging that not all uncertainty can be identified as discrete risks.</p><h4>Risk Response Strategies — Threats</h4><ul><li>Avoid · Transfer · Mitigate · Accept · Escalate</li></ul><h4>Risk Response Strategies — Opportunities</h4><ul><li>Exploit · Share · Enhance · Accept · Escalate</li></ul><h4>Probability × Impact Matrix</h4><p>Score = P × I. Critical ≥20, High 10-16, Medium 5-9, Low 1-4.</p>` },
+  team:         { section:'Team Performance Domain (PMBOK 8)', ref:'PMBOK® 8 · Team Domain', text:`<h4>Team Management Plan</h4><p>Replaces the HR Plan from PMBOK 6. In PMBOK 8, the Team Domain emphasizes <b>servant leadership</b> and psychological safety.</p><h4>Key Components</h4><ul><li>Team Charter (working agreements)</li><li>Roles and responsibilities (RACI)</li><li>Staffing management plan</li><li>Skill development and training</li><li>Recognition and rewards</li></ul><h4>PMBOK 8 Emphasis</h4><p>Leaders serve the team. Create an environment where the team can do their best work.</p>` },
+  comms:        { section:'Communication Management', ref:'PMBOK® 8 · Stakeholder Domain', text:`<h4>Communication Plan</h4><p>In PMBOK 8, communication is part of the Stakeholder Performance Domain.</p><h4>Communication Channels Formula</h4><p>N = n(n−1) / 2</p><p>10 stakeholders = 45 channels. This is why structured communication planning matters.</p><h4>Communication Methods</h4><ul><li>Interactive: meetings, calls (best for complex)</li><li>Push: email, reports (information distribution)</li><li>Pull: portals, wikis (reference information)</li></ul>` },
+  quality:      { section:'Quality Management · Delivery Domain', ref:'PMBOK® 8 · Delivery Domain', text:`<h4>Quality Management Plan</h4><p>In PMBOK 8, quality is part of the Delivery Performance Domain. Core principle unchanged: prevention over inspection.</p><h4>Cost of Quality (COQ)</h4><ul><li>Cost of Conformance: Prevention + Appraisal</li><li>Cost of Non-Conformance: Internal failures + External failures</li></ul><h4>PMBOK 8 Addition</h4><p>Continuous improvement (Kaizen) is now explicitly required, not just recommended.</p>` },
+  lessons:      { section:'Section 4.6 — Close Project', ref:'PMBOK® 8 · Integration · Closing', text:`<h4>Lessons Learned</h4><p>In PMBOK 8, lessons learned is captured <b>throughout</b> the project, not just at closure. Part of continuous improvement.</p><h4>Key Categories</h4><ul><li>What went well (replicate)</li><li>What didn't go well (avoid)</li><li>What would we do differently</li><li>Recommendations for future projects</li></ul><h4>PMBOK 8 Emphasis</h4><p>Lessons learned must be added to the organizational process assets for future projects. Knowledge transfer is a PM responsibility.</p>` },
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let project = {
+  name:'', org:'', pm:'', start:'', end:'', budget:'',
+  type:'IT / Software', approach:'Predictive (Waterfall)',
+  selectedDocs: DOCS.map(d => d.key),
+  docStatus: {}, // key → 'empty'|'draft'|'done'
+  docData: {},   // key → content object
+  context: {},   // extracted from uploaded files
+};
+let currentDocKey = null;
+let uploadedFilesList = [];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  buildDocSelector();
+  buildRiskMatrix();
+});
+
+// ══════════════════════════════════════════
+// SETUP PAGE
+// ══════════════════════════════════════════
+function selType(el, type) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  project.type = type;
+}
+
+function selChip(el, group) {
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (group === 'approach') project.approach = el.textContent.trim();
+}
+
+function buildDocSelector() {
+  const el = document.getElementById('docSelector');
+  el.innerHTML = DOCS.map(d => `
+    <div class="doc-check selected" id="dc-${d.key}" onclick="toggleDoc('${d.key}',this)">
+      <input type="checkbox" checked onclick="event.stopPropagation();toggleDoc('${d.key}',this.closest('.doc-check'))">
+      <span class="doc-check-icon">${d.icon}</span>
+      <div class="doc-check-info">
+        <div class="doc-check-name">${d.name}${d.pmbok8 ? '<span class="badge-new">NEW</span>':''}</div>
+        <div class="doc-check-phase">${d.phase}</div>
+      </div>
+    </div>`).join('');
+  updateSelCount();
+}
+
+function toggleDoc(key, el) {
+  el.classList.toggle('selected');
+  const cb = el.querySelector('input');
+  cb.checked = el.classList.contains('selected');
+  if (cb.checked) {
+    if (!project.selectedDocs.includes(key)) project.selectedDocs.push(key);
+  } else {
+    project.selectedDocs = project.selectedDocs.filter(k => k !== key);
+  }
+  updateSelCount();
+}
+
+function loadDemoProject() {
+  const DEMO = {
+    name:     'HR Portal Redesign 2025',
+    org:      'TechCorp Solutions Ltd.',
+    pm:       'Alex Kovalenko, PMP',
+    start:    '2025-02-01',
+    end:      '2025-07-31',
+    budget:   '$220,000',
+    type:     'IT / Software',
+    approach: 'Predictive (Waterfall)',
+    description: 'Full redesign of the internal HR self-service portal. Goals: improve UX, reduce HR team workload by 40%, migrate from legacy system to React + Node.js stack, integrate with SAP SuccessFactors.',
+    sponsor:  'Maria Chen, VP of People',
+    stakeholders: 14,
+    team: [
+      { name:'Alex Kovalenko', role:'Project Manager' },
+      { name:'Olena Petrenko', role:'Business Analyst' },
+      { name:'Ivan Shevchenko', role:'Lead Developer' },
+      { name:'Sofia Melnyk', role:'Frontend Developer' },
+      { name:'Dmytro Kravchenko', role:'Backend Developer' },
+      { name:'Anna Bondarenko', role:'QA Engineer' },
+      { name:'Taras Hrytsenko', role:'UX Designer' },
+      { name:'Viktor Moroz', role:'DevOps Engineer' }
+    ],
+    evm: { pv: 80000, ev: 65000, ac: 75000, bac: 220000 },
+    pert: { a: 5, m: 10, b: 21 },
+    risks: [
+      { id:'R-001', desc:'Key developer resignation during critical phase', prob:2, impact:5, response:'Mitigate', owner:'PM' },
+      { id:'R-002', desc:'SAP SuccessFactors API integration delays', prob:3, impact:4, response:'Mitigate', owner:'Lead Dev' },
+      { id:'R-003', desc:'Scope creep from HR department change requests', prob:4, impact:3, response:'Avoid', owner:'BA' },
+      { id:'R-004', desc:'Legacy data migration quality issues', prob:3, impact:4, response:'Mitigate', owner:'DevOps' },
+      { id:'R-005', desc:'Low user adoption post-launch', prob:2, impact:3, response:'Mitigate', owner:'PM' }
+    ]
+  };
+
+  // Fill form fields
+  document.getElementById('s-name').value   = DEMO.name;
+  document.getElementById('s-org').value    = DEMO.org;
+  document.getElementById('s-pm').value     = DEMO.pm;
+  document.getElementById('s-start').value  = DEMO.start;
+  document.getElementById('s-end').value    = DEMO.end;
+  document.getElementById('s-budget').value = DEMO.budget;
+
+  // Select IT/Software type card
+  document.querySelectorAll('.type-card').forEach(el => {
+    const isIT = el.querySelector('.tl')?.textContent === 'IT / Software';
+    el.classList.toggle('active', isIT);
+  });
+  project.type     = DEMO.type;
+  project.approach = DEMO.approach;
+
+  // Store demo extras for document generation
+  project.demoData = DEMO;
+
+  // Select all documents
+  selAllDocs(true);
+
+  // Pre-fill EVM inputs (will be visible after createProject)
+  project._demoEVM  = DEMO.evm;
+  project._demoPERT = DEMO.pert;
+
+  // Visual feedback
+  const btn = event.target;
+  btn.textContent = '✅ Demo Loaded!';
+  btn.style.background = '#dcfce7';
+  setTimeout(() => {
+    btn.textContent = '🧪 Load Demo Project';
+    btn.style.background = '#f0fdf4';
+  }, 2000);
+}
+
+function selAllDocs(val) {
+  document.querySelectorAll('.doc-check').forEach(el => {
+    el.classList.toggle('selected', val);
+    el.querySelector('input').checked = val;
+  });
+  project.selectedDocs = val ? DOCS.map(d => d.key) : [];
+  updateSelCount();
+}
+
+function updateSelCount() {
+  document.getElementById('selCount').textContent = `${project.selectedDocs.length} of ${DOCS.length} selected`;
+}
+
+function handleFiles(files) {
+  for (const f of files) {
+    if (!uploadedFilesList.find(x => x.name === f.name)) {
+      uploadedFilesList.push(f);
+    }
+  }
+  renderUploadedFiles();
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+
+function renderUploadedFiles() {
+  document.getElementById('uploadedFiles').innerHTML = uploadedFilesList.map((f, i) => `
+    <div class="upload-file-item">
+      ${f.name.endsWith('.mp3')||f.name.endsWith('.m4a')||f.name.endsWith('.wav') ? '🎙' : '📄'} ${f.name}
+      <span style="font-size:11px;color:var(--gray-400);margin-left:4px;">${(f.size/1024).toFixed(0)}KB</span>
+      <button class="ufi-remove" onclick="removeFile(${i})">×</button>
+    </div>`).join('');
+}
+
+function removeFile(i) {
+  uploadedFilesList.splice(i, 1);
+  renderUploadedFiles();
+}
+
+function analyzeContext() {
+  const btn = event.target.closest('button');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-inline"></span> Analyzing...';
+  btn.disabled = true;
+
+  // Stub — will call n8n webhook
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+
+    const paste = document.getElementById('pasteText').value;
+    const hasFiles = uploadedFilesList.length > 0;
+
+    if (!paste && !hasFiles) {
+      alert('Please upload files or paste text first.');
+      return;
+    }
+
+    // Simulate extraction
+    const items = [
+      { found: true,  label: 'Project name', value: 'Website Redesign 2025' },
+      { found: true,  label: 'Sponsor', value: 'John Smith, CEO' },
+      { found: true,  label: 'Budget', value: '$150,000' },
+      { found: true,  label: 'Timeline', value: 'Q3 2025 deadline' },
+      { found: false, label: 'Risk information', value: '' },
+      { found: false, label: 'Team members', value: '' },
+    ];
+
+    // Auto-fill form
+    if (!document.getElementById('s-name').value) document.getElementById('s-name').value = 'Website Redesign 2025';
+    if (!document.getElementById('s-budget').value) document.getElementById('s-budget').value = '$150,000';
+
+    // Store context
+    project.context = { sponsor: 'John Smith, CEO', budget: '$150,000', timeline: 'Q3 2025' };
+
+    document.getElementById('extractItems').innerHTML = items.map(it => `
+      <div class="aer-item">
+        <div class="aer-dot ${it.found?'found':'missing'}"></div>
+        <div>
+          <strong>${it.label}:</strong>
+          ${it.found ? it.value : '<span style="color:var(--amber);">Not found — will need manual input</span>'}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('extractResult').classList.add('active');
+  }, 2000);
+}
+
+function createProject() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { document.getElementById('s-name').focus(); return; }
+
+  project.name    = name;
+  project.org     = document.getElementById('s-org').value.trim();
+  project.pm      = document.getElementById('s-pm').value.trim();
+  project.start   = document.getElementById('s-start').value;
+  project.end     = document.getElementById('s-end').value;
+  project.budget  = document.getElementById('s-budget').value.trim();
+
+  // Init doc status
+  DOCS.forEach(d => {
+    project.docStatus[d.key] = project.selectedDocs.includes(d.key) ? 'empty' : 'excluded';
+  });
+
+  buildDashboard();
+  showPage('dashboard');
+
+  // Auto-fill EVM and PERT if demo data exists
+  if (project._demoEVM) {
+    const e = project._demoEVM;
+    setTimeout(() => {
+      document.getElementById('inp-pv').value  = e.pv;
+      document.getElementById('inp-ev').value  = e.ev;
+      document.getElementById('inp-ac').value  = e.ac;
+      document.getElementById('inp-bac').value = e.bac;
+      calcEVM();
+      // Open EVM section so it's visible
+      const evmBody = document.getElementById('evm-body');
+      if (!evmBody.classList.contains('open')) toggleCalc('evm');
+    }, 100);
+  }
+  if (project._demoPERT) {
+    const p = project._demoPERT;
+    setTimeout(() => {
+      document.getElementById('pert-o').value = p.a;
+      document.getElementById('pert-m').value = p.m;
+      document.getElementById('pert-p').value = p.b;
+      calcPERT();
+      const pertBody = document.getElementById('pert-body');
+      if (!pertBody.classList.contains('open')) toggleCalc('pert');
+    }, 100);
+  }
+  if (project.demoData) {
+    document.getElementById('inp-stakeholders').value = project.demoData.stakeholders;
+    calcChannels();
+  }
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function buildDashboard() {
+  document.getElementById('dash-name').textContent = project.name;
+  const meta = [
+    project.org, project.pm ? 'PM: '+project.pm : '',
+    project.type, project.approach,
+    project.start ? 'Start: '+project.start : '',
+    project.end   ? 'End: '+project.end : '',
+    project.budget ? 'Budget: '+project.budget : ''
+  ].filter(Boolean).join(' · ');
+  document.getElementById('dash-meta').textContent = meta;
+
+  updateStats();
+  buildDocsGrid();
+
+  if (project.end) {
+    const days = Math.ceil((new Date(project.end) - new Date()) / 86400000);
+    document.getElementById('stat-days').textContent = days > 0 ? days : '0';
+    document.getElementById('stat-days').style.color = days < 30 ? 'var(--red)' : 'var(--green)';
+  }
+}
+
+function updateStats() {
+  const selected = project.selectedDocs;
+  const done = selected.filter(k => project.docStatus[k] === 'done').length;
+  document.getElementById('stat-docs').textContent = `${done}/${selected.length}`;
+}
+
+function buildDocsGrid() {
+  const grid = document.getElementById('docsGrid');
+  grid.innerHTML = '';
+
+  // Group by phase
+  const phases = [
+    { label:'🚀 Initiation', keys:['charter','assumptions','stakeholders'] },
+    { label:'📋 Planning', keys:['approach','scope','schedule','budget','risk','team','comms','quality'] },
+    { label:'🏁 Closing', keys:['lessons'] },
+  ];
+
+  phases.forEach(ph => {
+    const phDocs = DOCS.filter(d => ph.keys.includes(d.key) && project.selectedDocs.includes(d.key));
+    if (!phDocs.length) return;
+
+    // Phase label
+    const lbl = document.createElement('div');
+    lbl.className = 'docs-section-title';
+    lbl.style.gridColumn = '1/-1';
+    lbl.style.marginTop = '0';
+    lbl.textContent = ph.label;
+    grid.appendChild(lbl);
+
+    phDocs.forEach(d => {
+      const status = project.docStatus[d.key] || 'empty';
+      const badgeClass = status === 'done' ? 'badge-done' : status === 'draft' ? 'badge-draft' : 'badge-empty';
+      const badgeText = status === 'done' ? '✅ Done' : status === 'draft' ? '📝 Draft' : '○ Empty';
+
+      const card = document.createElement('div');
+      card.className = `doc-card status-${status}`;
+      card.id = `doc-card-${d.key}`;
+      card.innerHTML = `
+        <div class="doc-card-top">
+          <div class="doc-card-icon">${d.icon}</div>
+          <span class="doc-status-badge ${badgeClass}">${badgeText}${d.pmbok8 ? ' <span class="badge-new">NEW</span>':''}</span>
+        </div>
+        <div class="doc-card-name">${d.name}</div>
+        <div class="doc-card-phase">${d.phase}</div>
+        <div class="doc-card-actions">
+          <button class="doc-btn doc-btn-gen" onclick="openDoc('${d.key}')">✨ Generate</button>
+          <button class="doc-btn doc-btn-edit" onclick="openDoc('${d.key}')">✏️ Edit</button>
+          ${status==='done' ? `<button class="doc-btn doc-btn-pdf" onclick="exportDocPDF('${d.key}')">📥 PDF</button>` : ''}
+        </div>`;
+      grid.appendChild(card);
+    });
+  });
+}
+
+// ══════════════════════════════════════════
+// DOCUMENT MODAL
+// ══════════════════════════════════════════
+function openDoc(key) {
+  currentDocKey = key;
+  const doc = DOCS.find(d => d.key === key);
+  document.getElementById('modal-icon').textContent = doc.icon;
+  document.getElementById('modal-title').textContent = doc.name;
+  document.getElementById('modal-subtitle').textContent = doc.phase + ' · PMBOK® 8th Edition';
+  document.getElementById('modal-body').innerHTML = buildDocForm(key);
+  document.getElementById('docModal').classList.add('active');
+}
+
+function buildDocForm(key) {
+  const data = project.docData[key] || {};
+  const p = project;
+  const forms = {
+    charter: `
+      <div class="field"><label>Project Purpose / Business Need</label><textarea id="f-purpose" rows="3" placeholder="Why this project? What problem does it solve?">${data.purpose||''}</textarea></div>
+      <div class="form-row-2">
+        <div class="field"><label>Project Sponsor</label><input type="text" id="f-sponsor" value="${data.sponsor||p.context.sponsor||''}"></div>
+        <div class="field"><label>Budget</label><input type="text" id="f-budget" value="${data.budget||p.budget||''}"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="field"><label>Start Date</label><input type="date" id="f-start" value="${data.start||p.start||''}"></div>
+        <div class="field"><label>End Date</label><input type="date" id="f-end" value="${data.end||p.end||''}"></div>
+      </div>
+      <div class="field"><label>Measurable Objectives</label><textarea id="f-objectives" rows="4" placeholder="1. Launch MVP by Q3&#10;2. Achieve 99.9% uptime&#10;3. Train 50 users">${data.objectives||''}</textarea></div>
+      <div class="field"><label>High-Level Requirements</label><textarea id="f-requirements" rows="3" placeholder="Key requirements from the sponsor...">${data.requirements||''}</textarea></div>
+      <div class="field"><label>Constraints & Assumptions</label><textarea id="f-constraints" rows="3" placeholder="Budget fixed. Remote team. Regulatory approval required...">${data.constraints||''}</textarea></div>
+      <div class="field"><label>Strategic Alignment (PMBOK 8)</label><textarea id="f-strategy" rows="2" placeholder="How does this project align with organizational strategy?">${data.strategy||''}</textarea></div>`,
+
+    stakeholders: `
+      <div class="stakeholder-matrix">
+      <table class="sm-table" id="sh-table">
+        <thead><tr><th>Name / Role</th><th>Organization</th><th>Interest</th><th>Influence</th><th>Current Engagement</th><th>Desired Engagement</th></tr></thead>
+        <tbody id="sh-body">${buildStakeholderRows(data.rows)}</tbody>
+      </table></div>
+      <button class="btn-add-row" onclick="addShRow()">+ Add Stakeholder</button>
+      <div style="margin-top:16px;background:var(--blue-50);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--blue-dark);">
+        <b>Engagement levels (PMBOK 8):</b> Unaware → Resistant → Neutral → Supportive → Leading
+      </div>`,
+
+    scope: `
+      <div class="field"><label>In Scope — What we WILL deliver</label><textarea id="f-inscope" rows="5" placeholder="1. Redesigned website (10 pages)&#10;2. CMS integration&#10;3. Mobile-responsive version">${data.inscope||''}</textarea></div>
+      <div class="field"><label>Out of Scope — What we will NOT do</label><textarea id="f-outscope" rows="4" placeholder="1. Mobile app&#10;2. SEO optimization&#10;3. Content migration">${data.outscope||''}</textarea></div>
+      <div class="field"><label>Acceptance Criteria</label><textarea id="f-criteria" rows="3" placeholder="Project complete when: all pages QA-passed, client signed off, page load < 2s...">${data.criteria||''}</textarea></div>
+      <div class="field"><label>WBS (outline format)</label><textarea id="f-wbs" style="min-height:180px;font-family:monospace;font-size:13px;" placeholder="1.0 Project Management&#10;  1.1 Planning&#10;  1.2 Status Reporting&#10;2.0 Requirements&#10;3.0 Design&#10;4.0 Development&#10;5.0 Testing&#10;6.0 Deployment">${data.wbs||''}</textarea></div>`,
+
+    risk: `
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">Risk Score = Probability × Impact. Use the matrix on the dashboard to assess.</p>
+      <div class="stakeholder-matrix">
+      <table class="sm-table"><thead><tr><th>Risk Description</th><th>Category</th><th>P (1-5)</th><th>I (1-5)</th><th>Score</th><th>Response</th><th>Owner</th></tr></thead>
+      <tbody id="risk-body">${buildRiskRows(data.rows)}</tbody></table></div>
+      <button class="btn-add-row" onclick="addRiskRow()">+ Add Risk</button>`,
+
+    budget: `
+      <div class="field"><label>BAC — Budget at Completion</label><input type="text" id="f-bac" value="${data.bac||p.budget||''}" placeholder="Total approved budget"></div>
+      <div class="stakeholder-matrix">
+      <table class="sm-table"><thead><tr><th>Category</th><th>Estimated Cost</th><th>Actual Cost</th><th>Notes</th></tr></thead>
+      <tbody id="budget-body">${buildBudgetRows(data.rows)}</tbody></table></div>
+      <button class="btn-add-row" onclick="addBudgetRow()">+ Add Category</button>
+      <div style="margin-top:16px;font-size:13px;color:var(--gray-500);">💡 Enter PV, EV, AC values in the EVM calculator on the dashboard to track performance.</div>`,
+
+    lessons: `
+      <div class="field"><label>What Went Well (replicate in future projects)</label><textarea id="f-well" rows="4" placeholder="1. Daily standups kept team aligned&#10;2. Risk register updated weekly...">${data.well||''}</textarea></div>
+      <div class="field"><label>What Didn't Go Well (avoid next time)</label><textarea id="f-notwell" rows="4" placeholder="1. Requirements not fully defined at start&#10;2. Scope changes not formally tracked...">${data.notwell||''}</textarea></div>
+      <div class="field"><label>What We Would Do Differently</label><textarea id="f-differently" rows="3" placeholder="1. Involve end users earlier in the process&#10;2. Conduct risk review bi-weekly...">${data.differently||''}</textarea></div>
+      <div class="field"><label>Recommendations for Future Projects</label><textarea id="f-recommendations" rows="3" placeholder="1. Use this template as baseline&#10;2. Plan contingency reserve of 15%...">${data.recommendations||''}</textarea></div>`,
+  };
+
+  return forms[key] || `
+    <div class="field"><label>Content</label>
+    <textarea id="f-generic" rows="12" placeholder="Enter ${DOCS.find(d=>d.key===key)?.name} content here...">${data.content||''}</textarea></div>`;
+}
+
+function buildStakeholderRows(rows) {
+  const defaults = [
+    ['Sponsor','Executive','High','High','Supportive','Leading'],
+    ['End Users','Operations','High','Low','Neutral','Supportive'],
+    ['IT Team','Technology','Med','Med','Neutral','Supportive'],
+  ];
+  const data = rows || defaults;
+  return data.map(r => `<tr>${r.map(v=>`<td><input type="text" value="${v}"></td>`).join('')}</tr>`).join('');
+}
+
+function buildRiskRows(rows) {
+  const byType = {
+    'IT / Software': [
+      ['Key team member leaves',            'HR',           '3','4','','Cross-train, document knowledge',       'PM'],
+      ['Scope creep from stakeholders',      'Scope',        '4','4','','Formal change control process',         'PM'],
+      ['Technical debt / legacy integration','Technical',    '3','4','','Proof-of-concept before development',   'Tech Lead'],
+      ['Third-party API / vendor dependency','External',     '3','3','','Identify alternatives, SLA contracts',  'PM'],
+      ['Security vulnerabilities',           'Quality',      '2','5','','Security audit, penetration testing',   'Tech Lead'],
+      ['Unrealistic deadlines',              'Schedule',     '4','3','','Buffer in schedule, re-estimate early', 'PM'],
+      ['Unclear requirements',               'Scope',        '4','4','','Detailed discovery phase, sign-off',    'BA'],
+      ['Budget overrun',                     'Cost',         '3','4','','EVM tracking, contingency reserve',     'PM'],
+    ],
+    'Construction': [
+      ['Weather delays',                     'Schedule',     '4','3','','Schedule buffer, weather contingency',  'PM'],
+      ['Material price increase',            'Cost',         '4','4','','Fixed-price contracts, early purchase', 'PM'],
+      ['Permit / regulatory delays',         'External',     '3','5','','Early permit applications, legal team', 'PM'],
+      ['Subcontractor underperformance',     'HR',           '3','4','','Vetting process, penalty clauses',      'PM'],
+      ['Site safety incidents',              'Safety',       '2','5','','Safety plan, training, inspections',    'Safety Officer'],
+      ['Design changes mid-project',         'Scope',        '4','4','','Freeze design before build phase',      'Architect'],
+      ['Supply chain disruption',            'External',     '3','4','','Multiple suppliers, buffer stock',      'Procurement'],
+      ['Ground conditions worse than expected','Technical',  '2','5','','Geotechnical survey upfront',           'Engineer'],
+    ],
+    'Marketing': [
+      ['Target audience does not respond',   'Market',       '3','4','','A/B testing, pilot campaigns',          'Marketing Lead'],
+      ['Budget cuts mid-campaign',           'Cost',         '3','4','','Prioritize high-ROI channels',          'PM'],
+      ['Key agency / vendor delays',         'External',     '3','3','','Backup vendors, buffer timelines',      'PM'],
+      ['Brand message inconsistency',        'Quality',      '3','3','','Brand guidelines, approval process',    'Brand Manager'],
+      ['Platform algorithm changes',         'External',     '4','3','','Diversify channels, monitor trends',    'Digital Lead'],
+      ['Regulatory / compliance issues',     'Legal',        '2','5','','Legal review of all content',           'Legal'],
+      ['Low team capacity / burnout',        'HR',           '3','3','','Realistic planning, resource buffer',   'PM'],
+    ],
+    'Finance': [
+      ['Regulatory / compliance changes',    'Legal',        '3','5','','Legal monitoring, compliance officer',  'Compliance'],
+      ['Data security breach',               'Security',     '2','5','','Encryption, access controls, audit',    'CISO'],
+      ['Budget overrun',                     'Cost',         '3','4','','EVM tracking, monthly reviews',         'PM'],
+      ['Stakeholder resistance to change',   'Stakeholder',  '4','4','','Change management plan, comms',         'PM'],
+      ['System integration failures',        'Technical',    '3','4','','Integration testing, rollback plan',    'Tech Lead'],
+      ['Key personnel turnover',             'HR',           '3','4','','Knowledge transfer, documentation',     'PM'],
+      ['Market / economic volatility',       'External',     '3','4','','Scenario planning, contingency fund',   'Sponsor'],
+    ],
+    'Healthcare': [
+      ['Regulatory / FDA approval delays',   'Legal',        '3','5','','Early regulatory engagement, legal',    'Compliance'],
+      ['Patient data privacy breach',        'Security',     '2','5','','HIPAA compliance, access controls',     'CISO'],
+      ['Clinical trial recruitment issues',  'Scope',        '3','4','','Multiple recruitment sites, buffer',    'Clinical Lead'],
+      ['Staff resistance to new system',     'HR',           '4','3','','Training plan, change management',      'PM'],
+      ['Equipment / supply delays',          'External',     '3','3','','Early procurement, backup suppliers',   'Procurement'],
+      ['Budget overrun',                     'Cost',         '3','4','','EVM tracking, contingency reserve',     'PM'],
+      ['Scope changes from medical standards','Scope',       '3','4','','Change control, standards monitoring',  'PM'],
+    ],
+    'Other': [
+      ['Key team member leaves',             'HR',           '3','4','','Cross-train, document knowledge',       'PM'],
+      ['Scope creep',                        'Scope',        '4','3','','Formal change control process',         'PM'],
+      ['Budget overrun',                     'Cost',         '3','4','','EVM tracking, contingency reserve',     'PM'],
+      ['Stakeholder misalignment',           'Stakeholder',  '3','4','','Regular steering committee meetings',   'PM'],
+      ['External dependency delays',         'External',     '3','3','','Identify early, buffer schedule',       'PM'],
+    ],
+  };
+
+  const defaults = byType[project.type] || byType['Other'];
+  const data = rows || defaults;
+  return data.map(r => {
+    const score = (parseInt(r[2])||0) * (parseInt(r[3])||0);
+    return `<tr>
+      <td><input type="text" value="${r[0]}" style="min-width:140px;"></td>
+      <td><input type="text" value="${r[1]}" style="width:80px;"></td>
+      <td><input type="number" value="${r[2]}" min="1" max="5" style="width:50px;" oninput="updateRiskScore(this)"></td>
+      <td><input type="number" value="${r[3]}" min="1" max="5" style="width:50px;" oninput="updateRiskScore(this)"></td>
+      <td><span class="risk-score" style="font-weight:800;color:${score>=20?'#dc2626':score>=10?'#d97706':'#059669'}">${score||''}</span></td>
+      <td><input type="text" value="${r[5]}" style="min-width:140px;"></td>
+      <td><input type="text" value="${r[6]}" style="width:80px;"></td>
+    </tr>`;
+  }).join('');
+}
+
+function buildBudgetRows(rows) {
+  const defaults = [
+    ['Human Resources','$80,000','','4 FTE x 3 months'],
+    ['Software / Licenses','$5,000','','Annual subscriptions'],
+    ['Infrastructure / Cloud','$8,000','','AWS, hosting'],
+    ['Contingency Reserve','$15,000','','10% of budget'],
+  ];
+  const data = rows || defaults;
+  return data.map(r => `<tr>${r.map(v=>`<td><input type="text" value="${v}"></td>`).join('')}</tr>`).join('');
+}
+
+function updateRiskScore(inp) {
+  const row = inp.closest('tr');
+  const inputs = row.querySelectorAll('input[type=number]');
+  const p = parseInt(inputs[0].value)||0;
+  const i = parseInt(inputs[1].value)||0;
+  const score = p * i;
+  const span = row.querySelector('.risk-score');
+  if (span) {
+    span.textContent = score || '';
+    span.style.color = score>=20?'#dc2626':score>=10?'#d97706':'#059669';
+  }
+}
+
+function addShRow() {
+  const r = document.createElement('tr');
+  r.innerHTML = ['','','Med','Low','Neutral','Neutral'].map(v=>`<td><input type="text" value="${v}"></td>`).join('');
+  document.getElementById('sh-body').appendChild(r);
+}
+
+function addRiskRow() {
+  const r = document.createElement('tr');
+  r.innerHTML = `<td><input type="text" placeholder="Risk description" style="min-width:140px;"></td><td><input type="text" value="Other" style="width:80px;"></td><td><input type="number" value="1" min="1" max="5" style="width:50px;" oninput="updateRiskScore(this)"></td><td><input type="number" value="1" min="1" max="5" style="width:50px;" oninput="updateRiskScore(this)"></td><td><span class="risk-score" style="font-weight:800;color:#059669">1</span></td><td><input type="text" placeholder="Response strategy" style="min-width:140px;"></td><td><input type="text" placeholder="Owner" style="width:80px;"></td>`;
+  document.getElementById('risk-body').appendChild(r);
+}
+
+function addBudgetRow() {
+  const r = document.createElement('tr');
+  r.innerHTML = `<td><input type="text" placeholder="Category"></td><td><input type="text" placeholder="$0"></td><td><input type="text" placeholder="$0"></td><td><input type="text" placeholder="Notes"></td>`;
+  document.getElementById('budget-body').appendChild(r);
+}
+
+function saveDoc() {
+  if (!currentDocKey) return;
+  project.docStatus[currentDocKey] = 'draft';
+  const card = document.getElementById(`doc-card-${currentDocKey}`);
+  if (card) {
+    card.querySelector('.doc-status-badge').className = 'doc-status-badge badge-draft';
+    card.querySelector('.doc-status-badge').textContent = '📝 Draft';
+  }
+  updateStats();
+  closeModal();
+}
+
+function generateDoc(key) {
+  const btn = event.target;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
+  btn.disabled = true;
+
+  // Stub — will call n8n webhook with project context
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    project.docStatus[key] = 'done';
+    updateStats();
+    buildDocsGrid();
+    alert(`✨ "${DOCS.find(d=>d.key===key)?.name}" generated!\n\nIn production: AI will use project context + PMBOK RAG to generate a complete document.`);
+  }, 2000);
+}
+
+function closeModal() {
+  document.getElementById('docModal').classList.remove('active');
+  currentDocKey = null;
+}
+
+function exportDocPDF(key) {
+  alert(`📥 PDF export for "${DOCS.find(d=>d.key===key)?.name}" — coming soon!\nWill generate a professionally formatted PDF.`);
+}
+
+function exportPDF() { exportDocPDF(currentDocKey); }
+
+// ══════════════════════════════════════════
+// PMBOK DRAWER
+// ══════════════════════════════════════════
+function openPmbok(key) {
+  const ref = PMBOK_CONTENT[key];
+  if (!ref) return;
+  document.getElementById('pd-section').textContent = ref.section;
+  document.getElementById('pd-ref').textContent = ref.ref;
+  document.getElementById('pd-text').innerHTML = ref.text;
+  document.getElementById('pmbokDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('active');
+}
+function closePmbok() {
+  document.getElementById('pmbokDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('active');
+}
+
+// ══════════════════════════════════════════
+// EVM CALCULATOR
+// ══════════════════════════════════════════
+function toggleCalc(id) {
+  const body = document.getElementById(id + '-body');
+  const toggle = document.getElementById(id + '-toggle');
+  const isOpen = body.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+}
+
+function calcEVM() {
+  const pv  = parseFloat(document.getElementById('inp-pv').value)||0;
+  const ev  = parseFloat(document.getElementById('inp-ev').value)||0;
+  const ac  = parseFloat(document.getElementById('inp-ac').value)||0;
+  const bac = parseFloat(document.getElementById('inp-bac').value)||0;
+
+  const fmt = (n, dec=2) => isFinite(n) && n!==0 ? (n>0?'+':'')+n.toFixed(dec) : '—';
+  const fmtM = n => isFinite(n) ? '$'+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:0}) : '—';
+
+  const cv   = ev - ac;
+  const sv   = ev - pv;
+  const cpi  = ac ? ev/ac : 0;
+  const spi  = pv ? ev/pv : 0;
+  const eac  = cpi ? bac/cpi : 0;
+  const etc  = eac - ac;
+  const vac  = bac - eac;
+  const tcpi = (bac-ac) ? (bac-ev)/(bac-ac) : 0;
+
+  const set = (id, val, good) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'evm-metric-val ' + (good===true?'evm-green':good===false?'evm-red':'evm-blue');
+  };
+
+  set('evm-cv',  cv?fmtM(cv):'—',   cv>0?true:cv<0?false:null);
+  set('evm-sv',  sv?fmtM(sv):'—',   sv>0?true:sv<0?false:null);
+  set('evm-cpi', cpi?cpi.toFixed(2):'—', cpi>=1?true:cpi<1&&cpi>0?false:null);
+  set('evm-spi', spi?spi.toFixed(2):'—', spi>=1?true:spi<1&&spi>0?false:null);
+  set('evm-eac', eac?'$'+eac.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null);
+  set('evm-etc', etc?'$'+etc.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null);
+  set('evm-vac', vac?fmtM(vac):'—', vac>0?true:vac<0?false:null);
+  set('evm-tcpi',tcpi?tcpi.toFixed(2):'—', null);
+
+  // Update dashboard CPI
+  if (cpi) document.getElementById('stat-cpi').textContent = cpi.toFixed(2);
+
+  // EVM Status Summary
+  if (!pv && !ev && !ac && !bac) return;
+  const statusEl = document.getElementById('evm-status');
+  statusEl.style.display = 'block';
+
+  const issues = [];
+  const warnings = [];
+  const goods = [];
+
+  // Cost analysis
+  if (cpi >= 1.1)       goods.push('💰 Cost: <b>Under budget</b> (CPI=' + cpi.toFixed(2) + '). You are spending efficiently.');
+  else if (cpi >= 0.95) goods.push('💰 Cost: <b>On budget</b> (CPI=' + cpi.toFixed(2) + '). Cost performance is acceptable.');
+  else if (cpi >= 0.85) warnings.push('⚠️ Cost: <b>Slightly over budget</b> (CPI=' + cpi.toFixed(2) + '). Monitor costs closely.');
+  else                  issues.push('🔴 Cost: <b>Over budget — action required</b> (CPI=' + cpi.toFixed(2) + '). EAC exceeds BAC by ' + (eac && bac ? '$'+Math.abs(Math.round(eac-bac)).toLocaleString() : '?') + '.');
+
+  // Schedule analysis
+  if (spi >= 1.1)       goods.push('📅 Schedule: <b>Ahead of plan</b> (SPI=' + spi.toFixed(2) + '). Project is delivering faster than planned.');
+  else if (spi >= 0.95) goods.push('📅 Schedule: <b>On schedule</b> (SPI=' + spi.toFixed(2) + '). Schedule performance is acceptable.');
+  else if (spi >= 0.85) warnings.push('⚠️ Schedule: <b>Slightly behind plan</b> (SPI=' + spi.toFixed(2) + '). Review critical path activities.');
+  else                  issues.push('🔴 Schedule: <b>Behind schedule — action required</b> (SPI=' + spi.toFixed(2) + '). Consider crashing or fast-tracking critical path.');
+
+  // TCPI analysis
+  if (tcpi && bac && ac) {
+    if (tcpi > 1.2)     issues.push('🔴 TCPI=' + tcpi.toFixed(2) + ': Remaining work must be <b>20%+ more efficient</b> than to date — very challenging to meet BAC.');
+    else if (tcpi > 1.1)warnings.push('⚠️ TCPI=' + tcpi.toFixed(2) + ': Remaining work must be more efficient than to date to meet BAC.');
+    else if (tcpi <= 1) goods.push('✅ TCPI=' + tcpi.toFixed(2) + ': Completing within BAC is <b>achievable</b> at current performance.');
+  }
+
+  // Overall verdict
+  let overall, bg, border;
+  if (issues.length > 0) {
+    overall = '🔴 <b>Project Health: AT RISK</b> — Immediate corrective actions required.';
+    bg = 'var(--red-50)'; border = '#fca5a5';
+  } else if (warnings.length > 0) {
+    overall = '🟡 <b>Project Health: NEEDS ATTENTION</b> — Some indicators require monitoring.';
+    bg = 'var(--amber-50)'; border = '#fcd34d';
+  } else {
+    overall = '🟢 <b>Project Health: ON TRACK</b> — Project is performing within acceptable thresholds.';
+    bg = 'var(--green-50)'; border = '#86efac';
+  }
+
+  statusEl.style.background = bg;
+  statusEl.style.border = '2px solid ' + border;
+  statusEl.innerHTML = `
+    <div style="font-size:16px;margin-bottom:10px;">${overall}</div>
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      ${[...issues, ...warnings, ...goods].map(t => `<div style="font-size:13px;">${t}</div>`).join('')}
+    </div>`;
+}
+
+function calcChannels() {
+  const n = parseInt(document.getElementById('inp-stakeholders').value)||0;
+  const result = n > 1 ? n*(n-1)/2 : '';
+  document.getElementById('out-channels').value = result ? result + ' channels' : '';
+}
+
+// ══════════════════════════════════════════
+// PERT CALCULATOR
+// ══════════════════════════════════════════
+function calcPERT() {
+  const o = parseFloat(document.getElementById('pert-o').value)||0;
+  const m = parseFloat(document.getElementById('pert-m').value)||0;
+  const p = parseFloat(document.getElementById('pert-p').value)||0;
+  if (!o && !m && !p) return;
+  const pert = (o + 4*m + p) / 6;
+  const sa   = (o + m + p) / 3;
+  const sd   = (p - o) / 6;
+  document.getElementById('pert-result').textContent = pert.toFixed(1) + ' days';
+  document.getElementById('pert-sa').textContent     = sa.toFixed(1) + ' days';
+  document.getElementById('pert-sd').textContent     = sd.toFixed(1) + ' days';
+}
+
+// ══════════════════════════════════════════
+// RISK MATRIX
+// ══════════════════════════════════════════
+function buildRiskMatrix() {
+  const el = document.getElementById('riskMatrix');
+  if (!el) return;
+  const labels = ['Very High (5)','High (4)','Medium (3)','Low (2)','Very Low (1)'];
+  const colLabels = ['','Very Low (1)','Low (2)','Medium (3)','High (4)','Very High (5)'];
+
+  let html = '';
+  // Column headers
+  html += colLabels.map(l => `<div class="rm-cell rm-label" style="font-size:9px;text-align:center;">${l}</div>`).join('');
+
+  for (let r=5; r>=1; r--) {
+    html += `<div class="rm-cell rm-label" style="font-size:9px;">${labels[5-r]}</div>`;
+    for (let c=1; c<=5; c++) {
+      const score = r * c;
+      const cls = score>=20?'rm-critical':score>=10?'rm-high':score>=5?'rm-med':'rm-low';
+      html += `<div class="rm-cell ${cls}" title="P=${r} × I=${c} = ${score}">${score}</div>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+// JIRA + UPDATES
+// ══════════════════════════════════════════
+function generateJira() {
+  alert('🔗 Jira Task Generation\n\nWill connect to your Jira instance via API and create:\n• Epics from WBS Level 2\n• Stories from WBS Level 3\n• Subtasks from activity list\n\nRequires: Jira URL + API token (setup in Settings)');
+}
+
+function openUploadUpdate() {
+  alert('📎 Upload Project Update\n\nUpload MoM, email or audio → AI will:\n• Identify what changed\n• Update Risk Register, Scope, Schedule automatically\n• Log changes for Lessons Learned\n\nComing soon — will connect to n8n workflow.');
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function setLang(lang) {
+  const banner = document.getElementById('sec-banner');
+  if (banner) banner.innerHTML = (DL[lang] || DL.en).secBanner;
+}
+</script>
+
+<!-- ══════════════════════════════════════════
+     DEMO TOUR — Document Viewer
+══════════════════════════════════════════ -->
+<div id="demo-overlay"></div>
+<div id="demo-modal">
+  <!-- Top bar (macOS style) -->
+  <div class="dm-topbar">
+    <div class="dm-dots"><div class="dm-dot r"></div><div class="dm-dot y"></div><div class="dm-dot g"></div></div>
+    <div class="dm-app-name" id="dm-app-name">Mail</div>
+    <button class="dm-close" onclick="endTour()">✕</button>
+  </div>
+  <!-- Email header (shown for email steps) -->
+  <div class="dm-email-header" id="dm-email-header" style="display:none;">
+    <div class="dm-email-row"><span class="dm-email-label">From:</span><span class="dm-email-val" id="dm-from"></span></div>
+    <div class="dm-email-row"><span class="dm-email-label">To:</span><span class="dm-email-val" id="dm-to"></span></div>
+    <div class="dm-email-row"><span class="dm-email-label">Date:</span><span class="dm-email-val" id="dm-date"></span></div>
+    <div class="dm-subject" id="dm-subject"></div>
+  </div>
+  <!-- Narrator bar -->
+  <div class="dm-narr" id="dm-narr"></div>
+  <!-- Doc header (shown for document steps) -->
+  <div class="dm-doc-header" id="dm-doc-header" style="display:none;">
+    <div class="dm-doc-icon" id="dm-doc-icon"></div>
+    <div><div class="dm-doc-title" id="dm-doc-title"></div><div class="dm-doc-sub" id="dm-doc-sub"></div></div>
+  </div>
+  <!-- AI bar -->
+  <div class="dm-ai-bar" id="dm-ai-bar" style="display:none;">
+    <div class="dm-ai-dots"><div class="dm-ai-dot"></div><div class="dm-ai-dot"></div><div class="dm-ai-dot"></div></div>
+    <span id="dm-ai-text">AI is analyzing...</span>
+  </div>
+  <!-- Body -->
+  <div class="dm-body" id="dm-body"></div>
+  <!-- Sent banner -->
+  <div class="dm-sent-banner" id="dm-sent-banner" style="display:none;">
+    ✅ Sent to <strong id="dm-sent-to"></strong> — delivered
+  </div>
+  <!-- Footer -->
+  <div class="dm-footer">
+    <div>
+      <div class="dm-step-info" id="dm-step-info">Step 1 of 7</div>
+      <div class="dm-progress" id="dm-progress"></div>
+    </div>
+    <div class="dm-actions">
+      <button class="btn-dm-exit" onclick="endTour()">✕ Exit Demo</button>
+      <button class="btn-dm-next" id="dm-next-btn" onclick="tourNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DEMO TOUR
+// ══════════════════════════════════════════
+// ── Language helpers ──────────────────────────────────────────
+function curLang() { return document.getElementById('langSelect')?.value || 'en'; }
+function dl() { const l = curLang(); return DL[l] || DL.en; }
+
+// ── Demo Localization ─────────────────────────────────────────
+const DL = {
+en: {
+  secBanner: '🔒 <strong>Your data is private — only you can access your projects.</strong> Documents are stored securely in your account. Only you see your data — we never share it with anyone. <span class="sec-banner-detail">Protected by Supabase Row Level Security — each user sees only their own records.</span>',
+  steps: [
+  {
+    appName: 'Mail — Inbox', type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>', to: 'projects@pm-master.io',
+    date: 'January 14, 2025, 09:42', subject: 'HR Portal — we need help',
+    body: `Hi,
+
+We're TechCorp Solutions, ~320 employees, B2B software company based in Warsaw.
+
+Our internal HR portal hasn't been updated since 2018. Employees hate it — they can't submit vacation requests without calling HR directly, onboarding takes 3 days of manual paperwork, and our HR team of 6 spends 60% of their time on admin tasks that should be automated.
+
+We want to rebuild it. React frontend, integrate with our existing SAP SuccessFactors. Budget is somewhere around $200–250k. We'd want this done before Q3 because we're hiring 80 people in H2 and the current system won't survive that.
+
+Can we talk? I'm VP of People here and this is my top priority for the year.
+
+Sarah Mitchell
+VP of People, TechCorp Solutions
+sarah.mitchell@techcorp.io
++48 22 555 0192`,
+    narr: '<strong>A potential client reached out to us.</strong> Sarah Mitchell, VP of People at TechCorp Solutions, sent an email requesting a rebuild of their HR portal. This message was the starting point of the entire project.',
+    nextLabel: 'Our reply →', stepLabel: 'Step 1 of 9 — Inbound email from client'
+  },
+  {
+    appName: 'Mail — Sent', type: 'email',
+    from: 'projects@pm-master.io', to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: 'January 14, 2025, 14:15', subject: 'Re: HR Portal — we need help',
+    body: `Hi Sarah,
+
+Thank you for reaching out — this sounds like exactly the kind of project we work on.
+
+A modern HR self-service portal integrated with SAP SuccessFactors, delivered before your H2 hiring wave — I'd love to explore this with you.
+
+Could we schedule a 30-minute discovery call this week? I have availability on:
+• Thursday, January 16 at 10:00–10:30 AM (CET)
+• Friday, January 17 at 14:00–14:30 PM (CET)
+
+We'll discuss your current pain points, technical constraints, and whether our approach is a good fit. No commitment required.
+
+Looking forward to speaking,
+
+Alex Kovalenko, PMP
+Project Manager, PM Master
+projects@pm-master.io`,
+    narr: '<strong>We replied to the client the same day.</strong> The PM confirmed he understood the task and proposed a 30-minute discovery call to clarify requirements.',
+    nextLabel: 'Meeting transcript →', stepLabel: 'Step 2 of 9 — Your reply: invitation to meet'
+  },
+  {
+    appName: 'Documents — Meeting Transcript', type: 'doc',
+    docIcon: '🎙️', docTitle: 'Kickoff Call Transcript',
+    docSub: 'January 17, 2025 · 18 minutes · Alex Kovalenko & Sarah Mitchell',
+    body: `PARTICIPANTS
+Alex Kovalenko (PM Master) · Sarah Mitchell (VP of People, TechCorp Solutions)
+
+─────────────────────────────────────────
+
+ALEX: Sarah, thanks for reaching out. Can you walk me through what's happening day-to-day?
+
+SARAH: Our HR portal was built in 2018. It runs on old PHP, no mobile support, breaks every second week. Our HR team — six people — spends probably 60% of their time just doing manual admin. Vacation approvals go through email, onboarding paperwork is printed and scanned, expense reports are Excel files.
+
+ALEX: And SAP SuccessFactors — you're already using that?
+
+SARAH: Yes, since 2022. But the portal doesn't connect to it at all. HR has to enter the same data twice. We want the new portal to be the front-end for SuccessFactors — everything syncs to SAP automatically.
+
+ALEX: Core features needed on day one?
+
+SARAH: Must-haves: employee self-service (vacation, sick leave, expenses), onboarding (new hire checklist, document collection, IT provisioning), and manager dashboard (approve requests, team calendar, headcount). Nice to have: performance review module and org chart.
+
+ALEX: Timeline?
+
+SARAH: We need to go live by July 31st. We're hiring 80 people in H2 — that starts August 1st. If we miss that date, we're onboarding 80 people on the old system. Not acceptable.
+
+ALEX: Budget?
+
+SARAH: The board approved $220,000. I could get another $20k with a business case, but let's plan for $220k.
+
+ALEX: Who's involved on your side?
+
+SARAH: I'm the sponsor. David Park (IT Director) handles SAP integration. Nina Kowalski (HR Manager) owns the business requirements. And we'll need ~10 beta testers before launch.
+
+ALEX: Technical constraints?
+
+SARAH: Must be React — our dev team knows it. Backend flexible, but DevOps runs on AWS. Must work on mobile — half our warehouse staff only use phones.
+
+ALEX: Security and compliance?
+
+SARAH: GDPR — we're in Poland. And we have ISO 27001 certification to maintain.
+
+ALEX: Success metrics?
+
+SARAH: HR admin time from 60% to under 20%. Employee satisfaction above 80% in Q3 survey. Zero manual data entry between portal and SAP. Onboarding from 3 days to half a day.
+
+ALEX: Biggest worry?
+
+SARAH: SAP integration — last time it took twice as long as planned. And scope creep from departments.
+
+ALEX: Both very manageable. I'll send you a Project Charter by end of week.
+
+SARAH: Perfect. Looking forward to it.`,
+    narr: '<strong>We held an 18-minute kickoff call with the client.</strong> The PM recorded the conversation and uploaded the transcript to PM Master. AI will now read it and extract all key project data — no manual input needed.',
+    nextLabel: 'AI fills the form →', stepLabel: 'Step 3 of 9 — Meeting transcript uploaded'
+  },
+  {
+    appName: 'PM Master — New Project', type: 'app',
+    docIcon: '🤖', docTitle: 'AI is extracting project data...',
+    docSub: 'Reading email + transcript · PMBOK® 8 framework',
+    showAI: true, aiText: 'Extracting: name, org, PM, budget, dates, team, KPIs, risks...',
+    body: `Extracted from email (Jan 14) + transcript (Jan 17):
+
+✅  Project Name     →  HR Portal Redesign 2025
+✅  Organization    →  TechCorp Solutions Ltd.
+✅  Project Manager →  Alex Kovalenko, PMP
+✅  Sponsor         →  Sarah Mitchell, VP of People
+✅  Budget (BAC)    →  $220,000
+✅  Start Date      →  February 1, 2025
+✅  Planned End     →  July 31, 2025
+✅  Project Type    →  IT / Software · Predictive (Waterfall)
+✅  Stakeholders    →  14 identified
+✅  Tech Stack      →  React · AWS · SAP SuccessFactors
+✅  Compliance      →  GDPR · ISO 27001
+✅  Key Risk #1     →  SAP integration delays (Prob 3 · Impact 4)
+✅  Key Risk #2     →  Scope creep from departments (Prob 4 · Impact 3)
+✅  Success KPI #1  →  HR admin time < 20% (from 60%)
+✅  Success KPI #2  →  Employee satisfaction > 80%
+✅  Success KPI #3  →  Zero manual SAP data entry
+
+Filling project form and generating documents...`,
+    narr: '<strong>AI extracted 15 key parameters from the transcript.</strong> Project name, budget, deadline, tech requirements, constraints, KPIs — all automatically filled into the form. The PM only reviews and confirms.'
+  },
+  {
+    appName: 'PM Master — Project Charter', type: 'doc', isHTML: true,
+    docIcon: '📄', docTitle: 'Project Charter',
+    docSub: 'HR Portal Redesign 2025 · Generated by AI · PMBOK® 8 · Section 4.1',
+    body: `<div class="charter-section"><h3>1. Project Purpose</h3><p>Redesign and rebuild the TechCorp Solutions internal HR self-service portal to replace a legacy PHP system (2018) with a modern React-based platform fully integrated with SAP SuccessFactors. Eliminate manual HR administrative work and support the H2 2025 hiring wave of 80 new employees.</p></div>
+<div class="charter-section"><h3>2. Objectives & Success Criteria</h3><ul><li>Reduce HR team administrative time from 60% to under 20%</li><li>Achieve employee satisfaction score above 80% in Q3 2025 survey</li><li>Zero manual data entry between portal and SAP SuccessFactors</li><li>Reduce new employee onboarding time from 3 days to 0.5 days</li><li>Go-live by July 31, 2025 — before H2 hiring wave begins</li></ul></div>
+<div class="charter-section"><h3>3. High-Level Scope</h3><p><strong>In Scope:</strong></p><ul><li>Employee self-service: vacation, sick leave, expense submissions</li><li>Onboarding module: checklist, document collection, IT provisioning</li><li>Manager dashboard: approvals, team calendar, headcount</li><li>SAP SuccessFactors bidirectional integration</li><li>Mobile-responsive UI (React · AWS)</li><li>GDPR compliance & ISO 27001 maintenance</li></ul><p><strong>Out of Scope (Phase 2):</strong></p><ul><li>Performance review module</li><li>Organizational chart</li></ul></div>
+<div class="charter-section"><h3>4. Budget</h3><p>Approved Budget (BAC): <strong>$220,000</strong><br>Reserve: up to $20,000 (subject to business case)<br>Currency: USD</p></div>
+<div class="charter-section"><h3>5. Timeline</h3><p>Start: February 1, 2025 · Completion: July 31, 2025 · Duration: 6 months</p></div>
+<div class="charter-section"><h3>6. Key Stakeholders</h3><ul><li><strong>Sarah Mitchell</strong> — Sponsor, VP of People</li><li><strong>David Park</strong> — IT Director (SAP integration owner)</li><li><strong>Nina Kowalski</strong> — HR Manager (requirements owner)</li><li><strong>Alex Kovalenko, PMP</strong> — Project Manager</li></ul></div>
+<div class="charter-section"><h3>7. High-Level Risks</h3><ul><li>SAP integration delays — Prob: Medium · Impact: High → Mitigate</li><li>Scope creep from departments — Prob: High · Impact: Medium → Avoid</li><li>Key developer attrition → Mitigate with knowledge transfer plan</li></ul></div>
+<div class="charter-section"><h3>8. Constraints & Assumptions</h3><ul><li>Frontend: React only · Infrastructure: AWS only</li><li>Mobile-first mandatory (warehouse staff — phone-first)</li><li>GDPR (Poland) and ISO 27001 compliance required</li><li>Assumes SAP API access granted by Week 2</li></ul></div>
+<div class="charter-section"><h3>9. Sponsor Authorization</h3><p>The Project Sponsor authorizes the PM to acquire resources, manage budget within approved limits, and make decisions to achieve project objectives.</p><p style="margin-top:12px;"><strong>Sponsor:</strong> Sarah Mitchell, VP of People — TechCorp Solutions Ltd.<br><strong>Date:</strong> February 1, 2025</p></div>`,
+    narr: '<strong>AI generated the Project Charter per PMBOK® 8.</strong> A complete document: objectives, budget, timeline, constraints, strategic rationale. Done in seconds — no templates, no copy-paste.',
+    nextLabel: 'Send to client →', stepLabel: 'Step 5 of 9 — Project Charter generated'
+  },
+  {
+    appName: 'Mail — Sent', type: 'email',
+    from: 'projects@pm-master.io', to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: 'February 1, 2025, 18:02', subject: 'HR Portal Redesign 2025 — Project Charter for your review',
+    body: `Hi Sarah,
+
+As promised — please find attached the Project Charter for the HR Portal Redesign 2025 project.
+
+The document covers:
+• Project purpose and business case
+• Objectives and measurable success criteria
+• High-level scope (in scope / out of scope)
+• Approved budget: $220,000
+• Timeline: Feb 1 – Jul 31, 2025
+• Key stakeholders and their roles
+• High-level risks and mitigation approach
+• Constraints and assumptions
+
+Please review and confirm your authorization as Project Sponsor. Once signed, we'll proceed with detailed planning.
+
+📎 Attached: HR_Portal_Redesign_2025_Project_Charter.pdf
+
+Alex Kovalenko, PMP
+Project Manager, PM Master`,
+    showSent: true, sentTo: 'sarah.mitchell@techcorp.io',
+    narr: '<strong>The PM sent the Charter to the client for approval.</strong> One click — and Sarah Mitchell received the full Project Charter by email. She can review, comment, or confirm.',
+    nextLabel: "Client's reply →", stepLabel: 'Step 6 of 9 — Charter sent to client'
+  },
+  {
+    appName: 'Mail — Inbox', type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>', to: 'projects@pm-master.io',
+    date: 'February 3, 2025, 10:14', subject: 'Re: HR Portal Redesign 2025 — Project Charter for your review',
+    body: `Hi Alex,
+
+Thank you for the Project Charter — this is exactly what I was hoping for.
+
+I've reviewed it with David (IT Director) and Nina (HR Manager) and we're all aligned. A few notes:
+
+✅  Objectives and success criteria — perfect, these are exactly our KPIs
+✅  Scope — in/out of scope is clearly defined, no surprises
+✅  Budget $220,000 — confirmed and approved by the board
+✅  Timeline July 31 — this is our hard deadline, we're counting on it
+✅  SAP integration risk — glad you flagged this, David will be your main contact
+
+One small addition: please include "mobile-first design" as a formal requirement, not just a constraint. Our warehouse staff use phones almost exclusively.
+
+I'm signing off as Project Sponsor. Let's proceed with detailed planning.
+
+Sarah Mitchell
+VP of People, TechCorp Solutions`,
+    narr: '<strong>The client approved the Charter.</strong> Sarah Mitchell signed off and gave the green light to start the project. PM Master can now auto-generate all 12 PMBOK® 8 documents.',
+    nextLabel: 'AI generates all documents →', stepLabel: 'Step 7 of 9 — Client approved the Charter ✅'
+  },
+  {
+    appName: 'PM Master — Generating Documents', type: 'doc', isHTML: true,
+    docIcon: '🤖', docTitle: 'AI is generating all 12 documents...',
+    docSub: 'Using project data from email + transcript + approved Charter',
+    showAI: true, aiText: 'Generating documents per PMBOK® 8 framework...',
+    body: '',
+    narr: '<strong>AI is generating all 12 PMBOK® 8 documents in parallel.</strong> Based on the email, transcript, and approved Charter — the system builds a complete PM workspace: from Stakeholder Register to Lessons Learned.',
+    nextLabel: 'See all documents →', stepLabel: 'Step 8 of 9 — Generating 12 documents'
+  },
+  {
+    appName: 'PM Master — Dashboard', type: 'doc',
+    docIcon: '🎉', docTitle: 'All 12 documents ready — open any to review',
+    docSub: 'Every document is filled with your project data. Click any card on the dashboard.',
+    body: `All documents were generated from the same source data — the email, the meeting transcript, and the approved Charter. Nothing was entered twice.
+
+📄  Project Charter         → Purpose, objectives, scope, budget, sponsor sign-off
+📝  Assumption Log          → 6 tracked assumptions with status and owner
+👥  Stakeholder Register    → 14 stakeholders with power/interest and engagement level
+🔀  Development Approach    → Predictive (Waterfall) rationale + hybrid assessment
+🎯  Scope Statement + WBS   → In/out of scope, acceptance criteria, full WBS hierarchy
+📅  Schedule + Milestones   → 6-month plan with 5 major milestones and critical path
+💰  Cost / Budget Plan      → $220,000 breakdown by category with contingency
+⚠️  Risk Register           → 8 risks with P×I scores, responses, and owners
+👤  Team Management Plan    → 8-person team, RACI matrix, working agreements
+📡  Communication Plan      → 91 channels (14 stakeholders), meeting cadence
+✅  Quality Management Plan → GDPR + ISO 27001 compliance, QA checklist
+📚  Lessons Learned         → Template ready — to be completed at project close
+
+Click any document card on the dashboard to open, review, edit, or export as PDF.
+
+🔒  Your data is encrypted client-side. Only you can read it.`,
+    narr: '<strong>The project is fully ready.</strong> From the first email to 12 filled PMBOK documents — in under 5 minutes. The PM can now open any document, edit it, download as PDF, or share with the team.',
+    nextLabel: 'Try it yourself →', stepLabel: 'Step 9 of 9 — Your complete PM workspace', isLast: true
+  }
+  ],
+  docs: {
+    charter: {
+      purpose: 'Replace the legacy HR portal (PHP, 2018) with a modern React-based self-service platform integrated with SAP SuccessFactors. Eliminate manual HR administrative work and support the H2 2025 hiring wave of 80 new employees.',
+      sponsor: 'Sarah Mitchell, VP of People', budget: '$220,000', start: '2025-02-01', end: '2025-07-31',
+      objectives: '1. Reduce HR admin time from 60% to under 20%\n2. Achieve employee satisfaction score > 80% (Q3 2025 survey)\n3. Zero manual data entry between portal and SAP SuccessFactors\n4. Reduce onboarding time from 3 days to 0.5 days\n5. Go-live by July 31, 2025 — before H2 hiring wave',
+      requirements: '1. Employee self-service: vacation, sick leave, expense submissions\n2. Onboarding module: checklists, document collection, IT provisioning\n3. Manager dashboard: approvals, team calendar, headcount\n4. SAP SuccessFactors bidirectional integration\n5. Mobile-first responsive design (React · AWS)\n6. GDPR + ISO 27001 compliance',
+      constraints: 'Budget fixed at $220,000. Frontend must be React. Infrastructure: AWS only. Go-live deadline July 31, 2025 is immovable. ISO 27001 and GDPR compliance mandatory.',
+      strategy: 'Supports TechCorp H2 2025 growth strategy (80 new hires). Directly reduces HR operational costs and improves employee experience — a board-level priority for 2025.'
+    },
+    assumptions: { content: 'ID | Assumption | Owner | Status | If False → Risk\n\nA-01 | SAP SuccessFactors API access granted by Week 2 | David Park | Active | Integration delayed → R-002\nA-02 | HR team (6 staff) available for workshops in Feb 2025 | Nina Kowalski | Active | Requirements delayed\nA-03 | AWS provisioning takes max 5 business days | DevOps | Active | Environment delays\nA-04 | React tech stack approved and dev team competent | Lead Developer | Confirmed | n/a\nA-05 | Board budget of $220,000 will not be reduced mid-project | Sarah Mitchell | Active | Scope reduction needed\nA-06 | Beta tester group (~10 employees) available from June 1 | HR Manager | Active | UAT delayed' },
+    stakeholders: { rows: [
+      ['Sarah Mitchell — VP of People (Sponsor)','TechCorp','High','High','Supportive','Leading'],
+      ['David Park — IT Director','TechCorp','High','High','Neutral','Supportive'],
+      ['Nina Kowalski — HR Manager','TechCorp','High','Med','Supportive','Leading'],
+      ['Alex Kovalenko — Project Manager','PM Master','High','High','Leading','Leading'],
+      ['Ivan Shevchenko — Lead Developer','PM Master','Med','High','Supportive','Leading'],
+      ['Anna Bondarenko — QA Engineer','PM Master','Med','Med','Neutral','Supportive'],
+      ['Taras Hrytsenko — UX Designer','PM Master','Med','Med','Supportive','Supportive'],
+      ['Viktor Moroz — DevOps Engineer','PM Master','Med','Med','Neutral','Supportive'],
+      ['Sofia Melnyk — Frontend Dev','PM Master','Low','Med','Neutral','Supportive'],
+      ['Dmytro Kravchenko — Backend Dev','PM Master','Low','Med','Neutral','Supportive'],
+      ['Warehouse Staff (10 reps)','TechCorp','High','Low','Unaware','Neutral'],
+      ['Office Employees (~310)','TechCorp','High','Low','Unaware','Supportive'],
+      ['SAP SuccessFactors Vendor','External','Med','High','Neutral','Supportive'],
+      ['ISO 27001 Auditor','External','Low','High','Neutral','Neutral'],
+    ]},
+    approach: { content: 'DEVELOPMENT APPROACH: Predictive (Waterfall)\n\nRationale: Requirements are well-defined. Deadline (Jul 31) is fixed. Budget approved upfront. SAP integration follows a documented API spec.\n\nPhases:\n1. Initiation & Planning     Feb 1–14    (2 weeks)\n2. Requirements & Design     Feb 15–Mar 14   (4 weeks)\n3. Development — Core        Mar 15–May 9    (8 weeks)\n4. Development — Integration May 10–May 30   (3 weeks)\n5. Testing & UAT             Jun 1–Jun 27    (4 weeks)\n6. Go-Live & Stabilization   Jul 1–Jul 31    (4 weeks)\n\nHybrid element: UX sprints (2-week iterations) within the Design phase.\nTools: Jira · Confluence · GitHub · Figma · Zoom' },
+    scope: {
+      inscope: '1. Employee Self-Service Portal (vacation, sick leave, expense submissions)\n2. Onboarding Module (checklist, document collection, IT provisioning)\n3. Manager Dashboard (approvals, team calendar, headcount, reports)\n4. SAP SuccessFactors bidirectional integration (real-time sync)\n5. Mobile-first responsive UI (React · Tailwind)\n6. AWS cloud infrastructure + CI/CD pipeline\n7. GDPR compliance (data consent, right to erasure)\n8. ISO 27001 controls implementation\n9. Beta testing with 10 employees\n10. Training for HR team (6 people) and managers',
+      outscope: '1. Performance Review Module (Phase 2)\n2. Organizational Chart (Phase 2)\n3. Payroll processing integration\n4. Recruitment / ATS module\n5. Mobile native app (iOS/Android) — web app only\n6. Content migration from old portal\n7. Hardware procurement',
+      criteria: '1. All self-service features pass QA with zero critical bugs\n2. SAP sync latency < 30 seconds\n3. Mobile Lighthouse score > 90\n4. Load test: 320 concurrent users, < 2s response\n5. GDPR DPIA completed and approved\n6. ISO 27001 internal audit passed\n7. Sarah Mitchell formal sign-off',
+      wbs: '1.0 Project Management\n  1.1 Charter & Planning\n  1.2 Weekly Status Reports\n  1.3 Steering Committee\n  1.4 Risk & Issue Management\n2.0 Requirements & Design\n  2.1 Stakeholder Workshops\n  2.2 Functional Requirements\n  2.3 UX Wireframes & Prototypes\n  2.4 Technical Architecture\n3.0 Development\n  3.1 Frontend (React)\n    3.1.1 Self-Service Module\n    3.1.2 Onboarding Module\n    3.1.3 Manager Dashboard\n  3.2 Backend (Node.js / AWS)\n  3.3 SAP SuccessFactors Integration\n4.0 Quality Assurance\n  4.1 Unit & Integration Tests\n  4.2 UAT with 10 Beta Users\n  4.3 Performance & Load Testing\n  4.4 Security Penetration Test\n5.0 Deployment\n  5.1 AWS Production Setup\n  5.2 CI/CD Pipeline\n  5.3 Go-Live Cutover\n  5.4 Hypercare (2 weeks)\n6.0 Training & Closeout'
+    },
+    schedule: { content: 'PROJECT SCHEDULE — HR Portal Redesign 2025\nDuration: Feb 1 – Jul 31, 2025 (6 months)\n\nMILESTONES:\nM1 | Feb 14  | Project Charter approved ✅\nM2 | Mar 14  | Requirements & Design signed off\nM3 | May 9   | Core development complete\nM4 | May 30  | SAP integration complete & tested\nM5 | Jun 27  | UAT complete, go/no-go decision\nM6 | Jul 31  | Go-Live 🚀\n\nPHASE SCHEDULE:\nPhase 1 — Initiation & Planning    Feb 1–14\nPhase 2 — Requirements & Design    Feb 15–Mar 14\nPhase 3 — Core Development         Mar 15–May 9\nPhase 4 — SAP Integration          May 10–May 30\nPhase 5 — Testing & UAT            Jun 1–Jun 27\nPhase 6 — Go-Live & Stabilization  Jul 1–Jul 31\n\nCRITICAL PATH: Requirements → Architecture → Backend API → SAP Integration → UAT → Go-Live' },
+    budget: {
+      bac: '$220,000',
+      rows: [
+        ['Project Management','$28,000','','Alex Kovalenko, PMP · 6 months'],
+        ['Business Analysis','$12,000','','Olena Petrenko · 3 months'],
+        ['UX Design','$14,000','','Taras Hrytsenko · 3 months'],
+        ['Frontend Development (React)','$36,000','','Sofia Melnyk · 5 months'],
+        ['Backend Development (Node.js)','$36,000','','Dmytro Kravchenko · 5 months'],
+        ['Lead Developer / Architecture','$24,000','','Ivan Shevchenko · 4 months'],
+        ['QA Engineering','$16,000','','Anna Bondarenko · 4 months'],
+        ['DevOps / AWS Infrastructure','$14,000','','Viktor Moroz · 3 months'],
+        ['AWS Cloud Infrastructure','$8,000','','Compute, storage, CDN · 6 months'],
+        ['Software & Licenses','$4,000','','Jira, Figma, monitoring tools'],
+        ['SAP Integration Consulting','$6,000','','External SAP consultant'],
+        ['Security Audit / Pen Test','$4,000','','ISO 27001 + GDPR review'],
+        ['Training Materials','$2,000','','HR team + manager guides'],
+        ['Contingency Reserve (10%)','$16,000','','PM-controlled reserve'],
+      ]
+    },
+    risk: { rows: [
+      ['SAP SuccessFactors API integration delays','External','3','4','','Engage SAP vendor early, dedicated integration sprint, 3-week buffer','David Park'],
+      ['Scope creep from department feature requests','Scope','4','3','','Formal change control, freeze requirements after Mar 14 sign-off','Alex Kovalenko'],
+      ['Key developer resignation during critical phase','HR','2','5','','Cross-training, pair programming, full code documentation','Ivan Shevchenko'],
+      ['Legacy data migration quality issues','Technical','3','4','','Data audit in Phase 1, ETL scripts with validation, parallel run','Viktor Moroz'],
+      ['Unclear requirements leading to rework','Scope','3','4','','2-week discovery workshop, wireframe sign-off before dev starts','Olena Petrenko'],
+      ['AWS infrastructure provisioning delays','External','2','3','','Provision environments 4 weeks early, use IaC (Terraform)','Viktor Moroz'],
+      ['Low employee adoption post-launch','Stakeholder','3','3','','Beta testing, training plan, manager champions program','Sarah Mitchell'],
+      ['GDPR / ISO 27001 audit findings pre-launch','Legal','2','5','','DPIA completed by May 1, external security review in June','Alex Kovalenko'],
+    ]},
+    team: { content: 'TEAM MANAGEMENT PLAN — HR Portal Redesign 2025\n\nTEAM (8 members):\nProject Manager         | Alex Kovalenko, PMP   | 100% | Remote (Kyiv)\nBusiness Analyst        | Olena Petrenko        | 100% | Remote (Lviv)\nLead Developer          | Ivan Shevchenko       | 100% | Remote (Kyiv)\nFrontend Developer      | Sofia Melnyk          | 100% | Remote (Warsaw)\nBackend Developer       | Dmytro Kravchenko     | 100% | Remote (Kyiv)\nQA Engineer             | Anna Bondarenko       | 100% | Remote (Kharkiv)\nUX Designer             | Taras Hrytsenko       |  80% | Remote (Kyiv)\nDevOps Engineer         | Viktor Moroz          |  60% | Remote (Kyiv)\n\nWORKING AGREEMENTS:\n• Daily standup: 9:30 AM CET · 15 minutes max\n• Sprint reviews: every 2 weeks, Fridays 14:00 CET\n• Response time: within 4 hours during work hours\n• Code review required before any merge to main\n• No deployment on Fridays\n\nSERVANT LEADERSHIP (PMBOK 8): PM commits to removing blockers within 24h and shielding the team from scope disruptions.' },
+    comms: { content: 'COMMUNICATION PLAN — HR Portal Redesign 2025\n\nSTAKEHOLDERS: 14 total · CHANNELS: 14×13/2 = 91\n\nCOMMUNICATION MATRIX:\nProject Sponsor    | Status Report + EVM      | Bi-weekly | Email + PDF | PM\nProject Sponsor    | Steering Committee       | Monthly   | Zoom call   | PM\nIT Director        | Technical Updates        | Weekly    | Slack/Email | Tech Lead\nHR Manager         | Requirements Review      | Weekly    | Zoom        | BA\nFull Team          | Daily Standup            | Daily     | Zoom 15m    | PM\nFull Team          | Sprint Review            | Bi-weekly | Zoom        | PM\nBeta Testers (10)  | UAT Instructions         | Phase 5   | Email       | QA Lead\nBoard of Directors | Executive Summary        | Monthly   | PDF         | Sponsor\nSAP Vendor         | Integration Status       | Weekly    | Email       | Tech Lead\n\nESCALATION: PM (24h) → PM+TechLead (48h) → PM+Sponsor (72h) → Board\nTOOLS: Slack · Jira · Confluence · Zoom · Email' },
+    quality: { content: 'QUALITY MANAGEMENT PLAN — HR Portal Redesign 2025\n\nSTANDARDS:\n• ISO 27001:2022 — Information Security\n• GDPR (EU) 2016/679 — Data Protection\n• WCAG 2.1 AA — Web Accessibility\n• OWASP Top 10 — Web Security\n\nQUALITY OBJECTIVES:\n1. Zero critical security vulnerabilities at launch\n2. Page load < 2 seconds (Lighthouse > 90)\n3. 320 concurrent users with no degradation\n4. SAP sync accuracy 100%\n5. UAT sign-off from HR Manager and 8/10 beta testers\n\nQUALITY ACTIVITIES BY PHASE:\nPhase 1: Requirements review checklist, stakeholder sign-off\nPhase 2: UX prototype review with 5 end users\nPhase 3: Code review (mandatory PR), unit tests > 80% coverage\nPhase 4: Integration testing matrix (30 SAP scenarios)\nPhase 5: UAT (45 test cases), load test, pen test\nPhase 6: Post-go-live monitoring (48h hypercare)\n\nCOST OF QUALITY: Prevention $8,000 + Appraisal $6,000 = $14,000 (6.4% of budget)' },
+    lessons: {
+      well: '1. Kickoff transcript captured all requirements in one session\n2. Risk register populated from day 1 — saved 3 hours of planning\n3. SAP vendor engaged in Week 1 — avoided integration surprises\n4. Daily standups kept team aligned across 4 time zones',
+      notwell: '— (To be completed at project close, July 31, 2025)',
+      differently: '— (To be completed at project close)',
+      recommendations: '1. For IT projects: SAP/ERP integration proof-of-concept before full development\n2. Freeze requirements with formal sign-off before development starts\n3. Include mobile-first as explicit requirement, not constraint\n4. Engage ISO auditor 8 weeks before go-live, not 4'
+    }
+  }
+},
+
+uk: {
+  secBanner: '🔒 <strong>Ваші дані приватні — тільки ви маєте доступ до своїх проєктів.</strong> Документи зберігаються захищено у вашому акаунті. Тільки ви бачите свої дані — ми нікому їх не передаємо. <span class="sec-banner-detail">Захищено Supabase Row Level Security — кожен користувач бачить лише свої записи.</span>',
+  steps: [
+  {
+    appName: 'Пошта — Вхідні', type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>', to: 'projects@pm-master.io',
+    date: '14 січня 2025, 09:42', subject: 'HR-портал — нам потрібна допомога',
+    body: `Привіт,
+
+Ми — TechCorp Solutions, ~320 співробітників, B2B-компанія у Варшаві.
+
+Наш внутрішній HR-портал не оновлювався з 2018 року. Співробітники ненавидять його — вони не можуть подати заявку на відпустку без дзвінка в HR, онбординг займає 3 дні паперової роботи, а наша HR-команда з 6 осіб витрачає 60% часу на адміністративні завдання, які мають бути автоматизовані.
+
+Ми хочемо переробити його. React-фронтенд, інтеграція з нашим SAP SuccessFactors. Бюджет — орієнтовно $200–250 тис. Хочемо завершити до Q3, бо в H2 наймаємо 80 людей і поточна система це не витримає.
+
+Можемо поговорити? Я VP of People і це мій головний пріоритет на рік.
+
+Sarah Mitchell
+VP of People, TechCorp Solutions
+sarah.mitchell@techcorp.io
++48 22 555 0192`,
+    narr: '<strong>Потенційний клієнт звернувся до нас.</strong> Sarah Mitchell, VP of People у TechCorp Solutions, написала email із запитом на перебудову HR-порталу. Саме цей лист став відправною точкою проєкту.',
+    nextLabel: 'Наша відповідь →', stepLabel: 'Крок 1 з 9 — Вхідний email від клієнта'
+  },
+  {
+    appName: 'Пошта — Надіслані', type: 'email',
+    from: 'projects@pm-master.io', to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: '14 січня 2025, 14:15', subject: 'Re: HR-портал — нам потрібна допомога',
+    body: `Привіт, Sarah,
+
+Дякую за звернення — це саме той тип проєктів, з яким ми працюємо.
+
+Сучасний HR self-service портал з інтеграцією SAP SuccessFactors, запущений до початку хвилі найму H2 — я з радістю це обговорю.
+
+Чи можемо ми запланувати 30-хвилинний дзвінок цього тижня? Маю вільні слоти:
+• Четвер, 16 січня, 10:00–10:30 (CET)
+• П'ятниця, 17 січня, 14:00–14:30 (CET)
+
+Обговоримо ваші поточні проблеми, технічні обмеження та чи підходить наш підхід. Жодних зобов'язань.
+
+З повагою,
+
+Alex Kovalenko, PMP
+Project Manager, PM Master
+projects@pm-master.io`,
+    narr: '<strong>Ми відповіли клієнту того ж дня.</strong> PM підтвердив, що розуміє задачу, і запропонував провести 30-хвилинний дзвінок для уточнення вимог.',
+    nextLabel: 'Транскрипт зустрічі →', stepLabel: 'Крок 2 з 9 — Наша відповідь: запрошення на зустріч'
+  },
+  {
+    appName: 'Документи — Транскрипт зустрічі', type: 'doc',
+    docIcon: '🎙️', docTitle: 'Транскрипт стартового дзвінка',
+    docSub: '17 січня 2025 · 18 хвилин · Alex Kovalenko та Sarah Mitchell',
+    body: `УЧАСНИКИ
+Alex Kovalenko (PM Master) · Sarah Mitchell (VP of People, TechCorp Solutions)
+
+─────────────────────────────────────────
+
+ALEX: Sarah, дякую, що звернулись. Розкажіть, що відбувається щодня?
+
+SARAH: Наш HR-портал побудований у 2018 році на старому PHP, без мобільної підтримки, ламається кожного другого тижня. Наша HR-команда з шести осіб витрачає десь 60% часу на ручну адмінку. Заявки на відпустку — через email, онбординг — на паперах, витрати — в Excel.
+
+ALEX: SAP SuccessFactors — ви вже використовуєте?
+
+SARAH: Так, з 2022-го. Але портал з ним ніяк не пов'язаний. HR вводить ті самі дані двічі. Ми хочемо, щоб новий портал був фронтендом для SuccessFactors — співробітники взаємодіють з порталом, все синхронізується в SAP автоматично.
+
+ALEX: Які ключові функції потрібні з першого дня?
+
+SARAH: Must-have: самообслуговування співробітників (відпустки, лікарняні, витрати), онбординг (чеклист нового співробітника, збір документів, IT-провізіонування), дашборд менеджера (погодження, командний календар, headcount). Nice-to-have: модуль оцінки ефективності та організаційна діаграма.
+
+ALEX: Терміни?
+
+SARAH: Нам потрібно запуститись до 31 липня. В H2 наймаємо 80 людей — це починається 1 серпня. Якщо пропустимо дату, онбордимо 80 людей на старій системі. Неприйнятно.
+
+ALEX: Бюджет?
+
+SARAH: Рада затвердила $220,000. Можу вибити ще $20k за наявності бізнес-кейсу, але плануємо на $220k.
+
+ALEX: Хто бере участь з вашого боку?
+
+SARAH: Я спонсор. Девід Парк (IT Director) — відповідає за SAP-інтеграцію. Ніна Ковальські (HR Manager) — власник бізнес-вимог. І нам знадобиться ~10 бета-тестерів перед запуском.
+
+ALEX: Технічні обмеження?
+
+SARAH: Тільки React — наша dev-команда його знає. Backend гнучкий, але DevOps на AWS. Обов'язкова мобільна підтримка — половина складських працівників використовує лише телефони.
+
+ALEX: Безпека і відповідність?
+
+SARAH: GDPR — ми в Польщі. І є ISO 27001, який треба підтримувати.
+
+ALEX: Як виглядає успіх через 6 місяців після запуску?
+
+SARAH: Час адмін-роботи HR з 60% до менш ніж 20%. Задоволеність співробітників вище 80% в квартальному опитуванні. Нуль ручного введення даних між порталом та SAP. Час онбордингу з 3 днів до半 дня.
+
+ALEX: Головне побоювання?
+
+SARAH: SAP-інтеграція — минулого разу вона тривала вдвічі довше. І розповзання обсягу — кожен відділ захоче додати функції, як тільки побачить, що щось будується.
+
+ALEX: Обидва дуже керовані при правильному підході. Надішлю Project Charter до кінця тижня.
+
+SARAH: Чудово. Чекаю з нетерпінням.`,
+    narr: '<strong>Ми провели 18-хвилинний дзвінок із замовником.</strong> PM записав розмову і завантажив транскрипт у PM Master. AI прочитає його і витягне всі ключові дані — без ручного введення.',
+    nextLabel: 'AI заповнює форму →', stepLabel: 'Крок 3 з 9 — Транскрипт зустрічі завантажено'
+  },
+  {
+    appName: 'PM Master — Новий проєкт', type: 'app',
+    docIcon: '🤖', docTitle: 'AI витягує дані проєкту...',
+    docSub: 'Читає email + транскрипт · Фреймворк PMBOK® 8',
+    showAI: true, aiText: 'Витягую: назву, організацію, PM, бюджет, дати, команду, KPI, ризики...',
+    body: `Витягнуто з email (14 січ.) + транскрипту (17 січ.):
+
+✅  Назва проєкту      →  HR Portal Redesign 2025
+✅  Організація        →  TechCorp Solutions Ltd.
+✅  Project Manager    →  Alex Kovalenko, PMP
+✅  Спонсор            →  Sarah Mitchell, VP of People
+✅  Бюджет (BAC)       →  $220,000
+✅  Дата початку       →  1 лютого 2025
+✅  Планове завершення →  31 липня 2025
+✅  Тип проєкту        →  IT / Software · Predictive (Waterfall)
+✅  Стейкхолдери       →  14 виявлено
+✅  Tech Stack         →  React · AWS · SAP SuccessFactors
+✅  Відповідність      →  GDPR · ISO 27001
+✅  Ризик #1           →  Затримки SAP-інтеграції (Ймов. 3 · Вплив 4)
+✅  Ризик #2           →  Розповзання обсягу (Ймов. 4 · Вплив 3)
+✅  KPI #1             →  Час адмін. HR < 20% (поточний 60%)
+✅  KPI #2             →  Задоволеність співробітників > 80%
+✅  KPI #3             →  Нуль ручного введення даних в SAP
+
+Заповнення форми проєкту та генерація документів...`,
+    narr: '<strong>AI витягнув 15 ключових параметрів із транскрипту.</strong> Назва проєкту, бюджет, дедлайн, технічні вимоги, обмеження, KPI — все автоматично заповнено у форму. PM лише перевіряє і підтверджує.'
+  },
+  {
+    appName: 'PM Master — Project Charter', type: 'doc', isHTML: true,
+    docIcon: '📄', docTitle: 'Project Charter',
+    docSub: 'HR Portal Redesign 2025 · Згенеровано AI · PMBOK® 8 · Розділ 4.1',
+    body: `<div class="charter-section"><h3>1. Мета проєкту</h3><p>Переробити та відбудувати внутрішній HR self-service портал TechCorp Solutions, замінивши застарілу PHP-систему (2018) на сучасну React-платформу, повністю інтегровану з SAP SuccessFactors. Усунути ручну HR-адміністрацію та підготуватися до хвилі найму 80 нових співробітників у H2 2025.</p></div>
+<div class="charter-section"><h3>2. Цілі та критерії успіху</h3><ul><li>Скоротити адмін-час HR-команди з 60% до менш ніж 20%</li><li>Досягти оцінки задоволеності співробітників вище 80% в опитуванні Q3 2025</li><li>Нуль ручного введення даних між порталом та SAP SuccessFactors</li><li>Скоротити час онбордингу нового співробітника з 3 днів до 0,5 дня</li><li>Запуск до 31 липня 2025 — до початку хвилі найму H2</li></ul></div>
+<div class="charter-section"><h3>3. Обсяг верхнього рівня</h3><p><strong>В обсязі:</strong></p><ul><li>Самообслуговування співробітників: відпустки, лікарняні, витрати</li><li>Модуль онбордингу: чеклист, збір документів, IT-провізіонування</li><li>Дашборд менеджера: погодження, командний календар, headcount</li><li>Двостороння інтеграція SAP SuccessFactors</li><li>Mobile-first UI (React · AWS)</li><li>Відповідність GDPR та підтримка ISO 27001</li></ul><p><strong>Поза обсягом (Фаза 2):</strong></p><ul><li>Модуль оцінки ефективності</li><li>Організаційна діаграма</li></ul></div>
+<div class="charter-section"><h3>4. Бюджет</h3><p>Затверджений бюджет (BAC): <strong>$220,000</strong><br>Резерв: до $20,000 (за наявності бізнес-кейсу)<br>Валюта: USD</p></div>
+<div class="charter-section"><h3>5. Часові рамки</h3><p>Початок: 1 лютого 2025 · Завершення: 31 липня 2025 · Тривалість: 6 місяців</p></div>
+<div class="charter-section"><h3>6. Ключові стейкхолдери</h3><ul><li><strong>Sarah Mitchell</strong> — Спонсор, VP of People</li><li><strong>David Park</strong> — IT Director (власник SAP-інтеграції)</li><li><strong>Nina Kowalski</strong> — HR Manager (власник бізнес-вимог)</li><li><strong>Alex Kovalenko, PMP</strong> — Project Manager</li></ul></div>
+<div class="charter-section"><h3>7. Ризики верхнього рівня</h3><ul><li>Затримки SAP-інтеграції — Ймов.: Середня · Вплив: Високий → Зниження</li><li>Розповзання обсягу від відділів — Ймов.: Висока · Вплив: Середній → Уникнення</li><li>Звільнення ключового розробника → Зниження: план передачі знань</li></ul></div>
+<div class="charter-section"><h3>8. Обмеження та припущення</h3><ul><li>Фронтенд: тільки React · Інфраструктура: тільки AWS</li><li>Обов'язковий mobile-first (складські — тільки телефони)</li><li>Обов'язкова відповідність GDPR (Польща) та ISO 27001</li><li>Передбачається: доступ до SAP API надано до 2-го тижня</li></ul></div>
+<div class="charter-section"><h3>9. Авторизація спонсора</h3><p>Спонсор проєкту уповноважує PM залучати ресурси, управляти бюджетом в межах затверджених лімітів і приймати рішення для досягнення цілей проєкту.</p><p style="margin-top:12px;"><strong>Спонсор:</strong> Sarah Mitchell, VP of People — TechCorp Solutions Ltd.<br><strong>Дата:</strong> 1 лютого 2025</p></div>`,
+    narr: '<strong>AI згенерував Project Charter за PMBOK® 8.</strong> Повноцінний документ: цілі, бюджет, часові рамки, обмеження, стратегічне обґрунтування. Готово за секунди — без шаблонів і копіювання.',
+    nextLabel: 'Відправити клієнту →', stepLabel: 'Крок 5 з 9 — Project Charter згенеровано'
+  },
+  {
+    appName: 'Пошта — Надіслані', type: 'email',
+    from: 'projects@pm-master.io', to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: '1 лютого 2025, 18:02', subject: 'HR Portal Redesign 2025 — Project Charter на ваш розгляд',
+    body: `Привіт, Sarah,
+
+Як і обіцяв — надсилаю Project Charter для проєкту HR Portal Redesign 2025.
+
+Документ охоплює:
+• Мету проєкту та бізнес-обґрунтування
+• Цілі та вимірювані критерії успіху
+• Обсяг верхнього рівня (що входить / що не входить)
+• Затверджений бюджет: $220,000
+• Часові рамки: 1 лют. – 31 лип. 2025
+• Ключових стейкхолдерів та їхні ролі
+• Ризики верхнього рівня та підходи до їх зниження
+• Обмеження та припущення
+
+Прошу переглянути і підтвердити авторизацію як Спонсора проєкту. Після підпису переходимо до детального планування.
+
+📎 Додаток: HR_Portal_Redesign_2025_Project_Charter.pdf
+
+З повагою,
+
+Alex Kovalenko, PMP
+Project Manager, PM Master`,
+    showSent: true, sentTo: 'sarah.mitchell@techcorp.io',
+    narr: '<strong>PM відправив Charter замовнику на погодження.</strong> Один клік — і Sarah Mitchell отримала повний Project Charter на пошту. Вона може переглянути, внести коментарі або підтвердити.',
+    nextLabel: 'Відповідь клієнта →', stepLabel: 'Крок 6 з 9 — Charter відправлено клієнту'
+  },
+  {
+    appName: 'Пошта — Вхідні', type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>', to: 'projects@pm-master.io',
+    date: '3 лютого 2025, 10:14', subject: 'Re: HR Portal Redesign 2025 — Project Charter на ваш розгляд',
+    body: `Привіт, Alex,
+
+Дякую за Project Charter — саме те, на що я сподівалася.
+
+Переглянула з Девідом (IT Director) та Ніною (HR Manager) — всі погоджуємось. Кілька нотаток:
+
+✅  Цілі та критерії успіху — чудово, це точно наші KPI
+✅  Обсяг — in/out of scope чітко визначені, без несподіванок
+✅  Бюджет $220,000 — підтверджено і затверджено радою директорів
+✅  Дедлайн 31 липня — це наш жорсткий дедлайн, ми розраховуємо на нього
+✅  Ризик SAP-інтеграції — добре, що зафіксували; Девід буде вашим контактом
+
+Одне невелике доповнення: будь ласка, включіть «mobile-first дизайн» як формальну вимогу, а не просто обмеження. Наші складські співробітники майже виключно використовують телефони.
+
+Підписую як Спонсор проєкту. Переходимо до детального планування.
+
+З нетерпінням чекаю на співпрацю,
+
+Sarah Mitchell
+VP of People, TechCorp Solutions`,
+    narr: '<strong>Замовник погодив Charter.</strong> Sarah Mitchell підписала документ і дала зелене світло. Тепер PM Master може автоматично згенерувати всі 12 документів PMBOK® 8.',
+    nextLabel: 'AI генерує всі документи →', stepLabel: 'Крок 7 з 9 — Клієнт погодив Charter ✅'
+  },
+  {
+    appName: 'PM Master — Генерація документів', type: 'doc', isHTML: true,
+    docIcon: '🤖', docTitle: 'AI генерує всі 12 документів...',
+    docSub: 'Використовує дані з email + транскрипту + погодженого Charter',
+    showAI: true, aiText: 'Генерую документи згідно з фреймворком PMBOK® 8...',
+    body: '',
+    narr: '<strong>AI генерує всі 12 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
+    nextLabel: 'Переглянути документи →', stepLabel: 'Крок 8 з 9 — Генерація 12 документів'
+  },
+  {
+    appName: 'PM Master — Панель керування', type: 'doc',
+    docIcon: '🎉', docTitle: 'Усі 12 документів готові — відкрийте будь-який',
+    docSub: 'Кожен документ заповнено даними вашого проєкту. Натисніть на будь-яку картку.',
+    body: `Всі документи згенеровано з одного джерела — email, транскрипту зустрічі та погодженого Charter. Нічого не вводилося двічі.
+
+📄  Project Charter         → Мета, цілі, обсяг, бюджет, підпис спонсора
+📝  Assumption Log          → 6 припущень зі статусом та власниками
+👥  Stakeholder Register    → 14 стейкхолдерів з рівнями залученості
+🔀  Development Approach    → Predictive (Waterfall) + оцінка гібридного варіанту
+🎯  Scope Statement + WBS   → In/out of scope, критерії прийняття, WBS-ієрархія
+📅  Schedule + Milestones   → 6-місячний план з 5 ключовими майлстоунами
+💰  Cost / Budget Plan      → $220,000 в розбивці за категоріями з резервом
+⚠️  Risk Register           → 8 ризиків з оцінками P×I, відповідями, власниками
+👤  Team Management Plan    → Команда з 8 осіб, робочі домовленості
+📡  Communication Plan      → 91 канал (14 стейкхолдерів), частота нарад
+✅  Quality Management Plan → GDPR + ISO 27001, чеклісти QA
+📚  Lessons Learned         → Шаблон готовий — заповнити після закриття проєкту
+
+Натисніть на будь-яку картку документа на дашборді, щоб відкрити, редагувати або експортувати в PDF.
+
+🔒  Ваші дані зашифровані на стороні клієнта. Тільки ви можете їх читати.`,
+    narr: '<strong>Проєкт повністю готовий до роботи.</strong> Від першого email до 12 заповнених PMBOK-документів — менш ніж за 5 хвилин. PM може відкрити будь-який документ, відредагувати, скачати PDF або поділитися з командою.',
+    nextLabel: 'Спробуйте самі →', stepLabel: 'Крок 9 з 9 — Ваш повний PM workspace', isLast: true
+  }
+  ],
+  docs: {
+    charter: {
+      purpose: 'Замінити застарілий HR-портал (PHP, 2018) на сучасну React-платформу самообслуговування, інтегровану з SAP SuccessFactors. Усунути ручну HR-адміністрацію та підготуватися до хвилі найму 80 нових співробітників у H2 2025.',
+      sponsor: 'Sarah Mitchell, VP of People', budget: '$220,000', start: '2025-02-01', end: '2025-07-31',
+      objectives: '1. Скоротити адмін-час HR з 60% до менш ніж 20%\n2. Досягти задоволеності співробітників > 80% (опитування Q3 2025)\n3. Нуль ручного введення даних між порталом та SAP SuccessFactors\n4. Скоротити час онбордингу з 3 днів до 0,5 дня\n5. Запуск до 31 липня 2025 — до початку хвилі найму H2',
+      requirements: '1. Самообслуговування співробітників: відпустки, лікарняні, витрати\n2. Модуль онбордингу: чеклисти, збір документів, IT-провізіонування\n3. Дашборд менеджера: погодження, командний календар, headcount\n4. Двостороння інтеграція SAP SuccessFactors\n5. Mobile-first дизайн (React · AWS)\n6. Відповідність GDPR + ISO 27001',
+      constraints: 'Бюджет фіксований — $220,000. Фронтенд — тільки React. Інфраструктура — тільки AWS. Дедлайн 31 липня 2025 є незмінним. Обов\'язкова відповідність ISO 27001 та GDPR.',
+      strategy: 'Підтримує стратегію зростання TechCorp у H2 2025 (80 нових найомів). Безпосередньо знижує операційні витрати HR та покращує досвід співробітників — пріоритет на рівні ради директорів на 2025 рік.'
+    },
+    assumptions: { content: 'ID | Припущення | Власник | Статус | Якщо хибне → Ризик\n\nA-01 | Доступ до API SAP SuccessFactors буде надано до 2-го тижня | David Park | Активне | Затримка інтеграції → R-002\nA-02 | HR-команда (6 осіб) доступна для воркшопів у лютому 2025 | Nina Kowalski | Активне | Затримка вимог\nA-03 | Провізіонування AWS займає макс. 5 робочих днів | DevOps | Активне | Затримка середовища\nA-04 | React затверджено, dev-команда компетентна | Lead Developer | Підтверджено | н/а\nA-05 | Бюджет $220,000 не буде зменшено в ході проєкту | Sarah Mitchell | Активне | Необхідне скорочення обсягу\nA-06 | Група бета-тестерів (~10 ос.) доступна з 1 червня | HR Manager | Активне | UAT затримано' },
+    stakeholders: { rows: [
+      ['Sarah Mitchell — VP of People (Спонсор)','TechCorp','Високий','Високий','Підтримує','Лідирує'],
+      ['David Park — IT Director','TechCorp','Високий','Високий','Нейтральний','Підтримує'],
+      ['Nina Kowalski — HR Manager','TechCorp','Високий','Серед.','Підтримує','Лідирує'],
+      ['Alex Kovalenko — Project Manager','PM Master','Високий','Високий','Лідирує','Лідирує'],
+      ['Ivan Shevchenko — Lead Developer','PM Master','Серед.','Високий','Підтримує','Лідирує'],
+      ['Anna Bondarenko — QA Engineer','PM Master','Серед.','Серед.','Нейтральний','Підтримує'],
+      ['Taras Hrytsenko — UX Designer','PM Master','Серед.','Серед.','Підтримує','Підтримує'],
+      ['Viktor Moroz — DevOps Engineer','PM Master','Серед.','Серед.','Нейтральний','Підтримує'],
+      ['Sofia Melnyk — Frontend Dev','PM Master','Низький','Серед.','Нейтральний','Підтримує'],
+      ['Dmytro Kravchenko — Backend Dev','PM Master','Низький','Серед.','Нейтральний','Підтримує'],
+      ['Складські працівники (10 ос.)','TechCorp','Високий','Низький','Необізнаний','Нейтральний'],
+      ['Офісні співробітники (~310)','TechCorp','Високий','Низький','Необізнаний','Підтримує'],
+      ['SAP SuccessFactors Vendor','External','Серед.','Високий','Нейтральний','Підтримує'],
+      ['Аудитор ISO 27001','External','Низький','Високий','Нейтральний','Нейтральний'],
+    ]},
+    approach: { content: 'ПІДХІД ДО РОЗРОБКИ: Предиктивний (Waterfall)\n\nОбґрунтування: Вимоги добре визначені з транскрипту стартового дзвінка. Дедлайн (31 лип.) фіксований і незмінний. Бюджет затверджено наперед. SAP-інтеграція слідує задокументованій специфікації API.\n\nФази:\n1. Ініціація та планування   1–14 лют.   (2 тижні)\n2. Вимоги та дизайн          15 лют.–14 бер.  (4 тижні)\n3. Розробка — ядро           15 бер.–9 трав.  (8 тижнів)\n4. Розробка — інтеграція     10–30 трав.      (3 тижні)\n5. Тестування та UAT         1–27 черв.       (4 тижні)\n6. Запуск та стабілізація    1–31 лип.        (4 тижні)\n\nГібридний елемент: UX-спринти (2-тижневі ітерації) в рамках фази дизайну.\nІнструменти: Jira · Confluence · GitHub · Figma · Zoom' },
+    scope: {
+      inscope: '1. Портал самообслуговування (відпустки, лікарняні, витрати)\n2. Модуль онбордингу (чеклист, збір документів, IT-провізіонування)\n3. Дашборд менеджера (погодження, командний календар, headcount)\n4. Двостороння інтеграція SAP SuccessFactors (реальний час)\n5. Mobile-first UI (React · Tailwind)\n6. Інфраструктура AWS + CI/CD pipeline\n7. Відповідність GDPR (згода, право на видалення)\n8. Контролі ISO 27001\n9. Бета-тестування з 10 співробітниками\n10. Навчання HR-команди (6 осіб) та менеджерів',
+      outscope: '1. Модуль оцінки ефективності (Фаза 2)\n2. Організаційна діаграма (Фаза 2)\n3. Інтеграція обробки зарплати\n4. Модуль рекрутингу / ATS\n5. Нативний мобільний додаток (iOS/Android) — тільки web-app\n6. Міграція контенту зі старого порталу\n7. Закупівля обладнання',
+      criteria: '1. Всі self-service функції пройшли QA без критичних багів\n2. Затримка SAP-синхронізації < 30 секунд\n3. Lighthouse на мобільних > 90\n4. Навантажувальний тест: 320 одночасних користувачів, < 2с відповідь\n5. DPIA (GDPR) завершена і затверджена\n6. Внутрішній аудит ISO 27001 пройдено\n7. Офіційне підписання Sarah Mitchell',
+      wbs: '1.0 Управління проєктом\n  1.1 Чартер та планування\n  1.2 Щотижневі статус-звіти\n  1.3 Steering Committee\n  1.4 Управління ризиками\n2.0 Вимоги та дизайн\n  2.1 Воркшопи зі стейкхолдерами\n  2.2 Функціональні вимоги\n  2.3 UX-вайрфрейми та прототипи\n  2.4 Технічна архітектура\n3.0 Розробка\n  3.1 Фронтенд (React)\n    3.1.1 Модуль самообслуговування\n    3.1.2 Модуль онбордингу\n    3.1.3 Дашборд менеджера\n  3.2 Бекенд (Node.js / AWS)\n  3.3 Інтеграція SAP SuccessFactors\n4.0 Забезпечення якості\n  4.1 Юніт та інтеграційні тести\n  4.2 UAT з 10 бета-тестерами\n  4.3 Тест продуктивності та навантаження\n  4.4 Тест на проникнення\n5.0 Розгортання\n  5.1 Налаштування AWS Production\n  5.2 CI/CD Pipeline\n  5.3 Перехід на продакшн\n  5.4 Гіперкер (2 тижні)\n6.0 Навчання та закриття'
+    },
+    schedule: { content: 'РОЗКЛАД ПРОЄКТУ — HR Portal Redesign 2025\nТривалість: 1 лют. – 31 лип. 2025 (6 місяців)\n\nМАЙЛСТОУНИ:\nM1 | 14 лют.  | Project Charter погоджено ✅\nM2 | 14 бер.  | Вимоги та UX-дизайн підписано\nM3 | 9 трав.  | Основна розробка завершена\nM4 | 30 трав. | SAP-інтеграція завершена та протестована\nM5 | 27 черв. | UAT завершено, рішення про запуск\nM6 | 31 лип.  | Запуск 🚀\n\nРОЗКЛАД ФАЗ:\nФаза 1 — Ініціація та планування   1–14 лют.\nФаза 2 — Вимоги та дизайн          15 лют.–14 бер.\nФаза 3 — Основна розробка          15 бер.–9 трав.\nФаза 4 — SAP-інтеграція            10–30 трав.\nФаза 5 — Тестування та UAT         1–27 черв.\nФаза 6 — Запуск та стабілізація    1–31 лип.\n\nКРИТИЧНИЙ ШЛЯХ: Вимоги → Архітектура → Backend API → SAP-інтеграція → UAT → Запуск' },
+    budget: {
+      bac: '$220,000',
+      rows: [
+        ['Управління проєктом (PM)','$28,000','','Alex Kovalenko, PMP · 6 місяців'],
+        ['Бізнес-аналіз','$12,000','','Olena Petrenko · 3 місяці'],
+        ['UX-дизайн','$14,000','','Taras Hrytsenko · 3 місяці'],
+        ['Фронтенд-розробка (React)','$36,000','','Sofia Melnyk · 5 місяців'],
+        ['Бекенд-розробка (Node.js)','$36,000','','Dmytro Kravchenko · 5 місяців'],
+        ['Lead Developer / Архітектура','$24,000','','Ivan Shevchenko · 4 місяці'],
+        ['QA-інженерія','$16,000','','Anna Bondarenko · 4 місяці'],
+        ['DevOps / AWS-інфраструктура','$14,000','','Viktor Moroz · 3 місяці'],
+        ['Хмарна інфраструктура AWS','$8,000','','Обчислення, сховище, CDN · 6 міс.'],
+        ['Програмне забезпечення та ліцензії','$4,000','','Jira, Figma, інструменти моніторингу'],
+        ['Консалтинг з SAP-інтеграції','$6,000','','Зовнішній SAP-консультант'],
+        ['Аудит безпеки / Пен-тест','$4,000','','ISO 27001 + GDPR-перевірка'],
+        ['Навчальні матеріали','$2,000','','HR-команда + інструкції для менеджерів'],
+        ['Резерв на непередбачені витрати (10%)','$16,000','','Резерв під управлінням PM'],
+      ]
+    },
+    risk: { rows: [
+      ['Затримки інтеграції SAP SuccessFactors API','Зовнішній','3','4','','Залучити SAP-вендора раніше, виділений спринт інтеграції, 3-тижневий буфер','David Park'],
+      ['Розповзання обсягу від запитів відділів','Обсяг','4','3','','Формальний процес контролю змін, заморожування вимог після 14 бер.','Alex Kovalenko'],
+      ['Звільнення ключового розробника у критичній фазі','HR','2','5','','Перехресне навчання, парне програмування, повна документація коду','Ivan Shevchenko'],
+      ['Проблеми якості міграції застарілих даних','Технічний','3','4','','Аудит даних у Фазі 1, ETL-скрипти з валідацією, паралельний запуск','Viktor Moroz'],
+      ['Нечіткі вимоги призводять до переробки','Обсяг','3','4','','2-тижневий воркшоп, підписання вайрфреймів до початку розробки','Olena Petrenko'],
+      ['Затримки провізіонування AWS-інфраструктури','Зовнішній','2','3','','Підготовка середовищ за 4 тижні наперед, IaC (Terraform)','Viktor Moroz'],
+      ['Низьке прийняття системи співробітниками після запуску','Стейкхолдери','3','3','','Бета-тестування, план навчання, програма менеджерів-чемпіонів','Sarah Mitchell'],
+      ['Зауваження GDPR / ISO 27001 перед запуском','Юридичний','2','5','','DPIA до 1 травня, зовнішня перевірка безпеки у червні','Alex Kovalenko'],
+    ]},
+    team: { content: 'ПЛАН УПРАВЛІННЯ КОМАНДОЮ — HR Portal Redesign 2025\n\nСКЛАД КОМАНДИ (8 осіб):\nProject Manager         | Alex Kovalenko, PMP   | 100% | Remote (Київ)\nБізнес-аналітик        | Olena Petrenko        | 100% | Remote (Львів)\nLead Developer          | Ivan Shevchenko       | 100% | Remote (Київ)\nФронтенд-розробник     | Sofia Melnyk          | 100% | Remote (Варшава)\nБекенд-розробник       | Dmytro Kravchenko     | 100% | Remote (Київ)\nQA-інженер             | Anna Bondarenko       | 100% | Remote (Харків)\nUX-дизайнер            | Taras Hrytsenko       |  80% | Remote (Київ)\nDevOps-інженер         | Viktor Moroz          |  60% | Remote (Київ)\n\nРОБОЧІ ДОМОВЛЕНОСТІ:\n• Щоденний standup: 9:30 CET · 15 хвилин максимум\n• Sprint review: кожні 2 тижні, п\'ятниці 14:00 CET\n• Час відповіді: до 4 годин в робочий час\n• Code review обов\'язковий перед злиттям у main\n• Заборона деплойментів по п\'ятницях\n\nСЛУЖІННЯ ЛІДЕРСТВОМ (PMBOK 8): PM зобов\'язується усувати блокери протягом 24 годин і захищати команду від порушень обсягу.' },
+    comms: { content: 'ПЛАН КОМУНІКАЦІЙ — HR Portal Redesign 2025\n\nСТЕЙКХОЛДЕРИ: 14 осіб · КАНАЛИ: 14×13/2 = 91\n\nМАТРИЦЯ КОМУНІКАЦІЙ:\nСпонсор проєкту      | Статус-звіт + EVM         | Раз на 2 тижні | Email + PDF | PM\nСпонсор проєкту      | Steering Committee        | Щомісяця       | Zoom        | PM\nIT Director          | Технічні оновлення        | Щотижня        | Slack/Email | Tech Lead\nHR Manager           | Огляд вимог               | Щотижня        | Zoom        | BA\nВся команда          | Daily Standup             | Щодня          | Zoom 15хв   | PM\nВся команда          | Sprint Review             | Раз на 2 тижні | Zoom        | PM\nБета-тестери (10)    | Інструкції UAT            | Тільки Фаза 5  | Email       | QA Lead\nРада директорів      | Executive Summary         | Щомісяця       | PDF         | Спонсор\nSAP Vendor           | Статус інтеграції         | Щотижня        | Email       | Tech Lead\n\nЕСКАЛАЦІЯ: PM (24г) → PM+TechLead (48г) → PM+Спонсор (72г) → Рада\nІНСТРУМЕНТИ: Slack · Jira · Confluence · Zoom · Email' },
+    quality: { content: 'ПЛАН УПРАВЛІННЯ ЯКІСТЮ — HR Portal Redesign 2025\n\nСТАНДАРТИ:\n• ISO 27001:2022 — Інформаційна безпека\n• GDPR (EU) 2016/679 — Захист даних\n• WCAG 2.1 AA — Веб-доступність\n• OWASP Top 10 — Безпека веб-додатків\n\nЦІЛІ ЯКОСТІ:\n1. Нуль критичних вразливостей безпеки на запуску\n2. Час завантаження < 2 секунди (Lighthouse > 90)\n3. 320 одночасних користувачів без деградації\n4. Точність SAP-синхронізації 100%\n5. Підписання UAT HR Manager та 8/10 бета-тестерів\n\nДІЇ ЩОДО ЯКОСТІ ПО ФАЗАХ:\nФаза 1: Чеклист огляду вимог, підписання стейкхолдерами\nФаза 2: Огляд прототипу UX з 5 кінцевими користувачами\nФаза 3: Обов\'язковий code review, покриття юніт-тестами > 80%\nФаза 4: Матриця тестування інтеграції (30 SAP-сценаріїв)\nФаза 5: UAT (45 тест-кейсів), тест навантаження, пен-тест\nФаза 6: Моніторинг після запуску (48г гіперкеру)\n\nВАРТІСТЬ ЯКОСТІ: Попередження $8,000 + Оцінка $6,000 = $14,000 (6,4% бюджету)' },
+    lessons: {
+      well: '1. Транскрипт стартового дзвінка захопив всі вимоги за одну сесію\n2. Реєстр ризиків заповнено з першого дня — зекономило 3 години планування\n3. SAP-вендор залучений на 1-му тижні — уникнули несподіванок з інтеграцією\n4. Щоденні standups тримали команду в узгодженні попри 4 часові зони',
+      notwell: '— (Заповнити після закриття проєкту, 31 липня 2025)',
+      differently: '— (Заповнити після закриття проєкту)',
+      recommendations: '1. Для всіх IT-проєктів: proof-of-concept SAP/ERP-інтеграції до повної розробки\n2. Заморожувати вимоги офіційним підписанням до початку розробки\n3. Включати mobile-first як явну вимогу, а не обмеження\n4. Залучати ISO-аудитора за 8 тижнів до запуску, не за 4'
+    }
+  }
+}
+}; // end DL
+
+// ── Step actions (language-independent) ──────────────────────
+const STEP_ACTIONS = {
+  3: { action: () => {
+    showPage('setup');
+    setTimeout(() => {
+      typeIntoField('s-name', 'HR Portal Redesign 2025', 45);
+      setTimeout(() => typeIntoField('s-org', 'TechCorp Solutions Ltd.', 40), 700);
+      setTimeout(() => typeIntoField('s-pm', 'Alex Kovalenko, PMP', 45), 1400);
+      setTimeout(() => typeIntoField('s-budget', '$220,000', 55), 2100);
+      setTimeout(() => { document.getElementById('s-start').value = '2025-02-01'; document.getElementById('s-end').value = '2025-07-31'; }, 2600);
+      setTimeout(() => {
+        document.querySelectorAll('.type-card').forEach(el => el.classList.toggle('active', el.querySelector('.tl')?.textContent === 'IT / Software'));
+        project.type = 'IT / Software'; project.approach = 'Predictive (Waterfall)';
+      }, 3000);
+    }, 400);
+  }},
+  4: { action: () => {
+    project.name = 'HR Portal Redesign 2025';
+    project.org = 'TechCorp Solutions Ltd.';
+    project.pm = 'Alex Kovalenko, PMP';
+    project.start = '2025-02-01'; project.end = '2025-07-31'; project.budget = '$220,000';
+    DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
+    project.docStatus['charter'] = 'ready';
+    project.selectedDocs = DOCS.map(d => d.key);
+    buildDashboard();
+  }},
+  7: {
+    action: () => {
+      fillAllDemoDocs(); showPage('dashboard');
+      setTimeout(() => {
+        document.getElementById('inp-pv').value = 80000;
+        document.getElementById('inp-ev').value = 65000;
+        document.getElementById('inp-ac').value = 75000;
+        document.getElementById('inp-bac').value = 220000;
+        calcEVM();
+        if (!document.getElementById('evm-body').classList.contains('open')) toggleCalc('evm');
+        document.getElementById('inp-stakeholders').value = 14;
+        calcChannels();
+      }, 300);
+    },
+    buildBody: () => {
+      const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','lessons'];
+      const names = {charter:'Project Charter',assumptions:'Assumption Log',stakeholders:'Stakeholder Register',approach:'Development Approach',scope:'Scope Statement + WBS',schedule:'Schedule + Milestones',budget:'Cost / Budget Plan',risk:'Risk Register',team:'Team Management Plan',comms:'Communication Plan',quality:'Quality Management Plan',lessons:'Lessons Learned'};
+      const icons = {charter:'📄',assumptions:'📝',stakeholders:'👥',approach:'🔀',scope:'🎯',schedule:'📅',budget:'💰',risk:'⚠️',team:'👤',comms:'📡',quality:'✅',lessons:'📚'};
+      return keys.map(k => `<div id="gendoc-${k}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#64748b;"><span style="font-size:16px;">${icons[k]}</span><span style="flex:1;">${names[k]}</span><span id="genstatus-${k}" style="font-size:12px;font-weight:700;color:#94a3b8;">...</span></div>`).join('');
+    }
+  }
+};
+
+function getDemoSteps() {
+  const base = dl().steps;
+  return base.map((s, i) => STEP_ACTIONS[i] ? Object.assign({}, s, STEP_ACTIONS[i]) : s);
+}
+
+const DEMO_STEPS = [
+  {
+    appName: 'Mail — Inbox',
+    type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    to: EMAIL_PM,
+    date: 'January 14, 2025, 09:42',
+    subject: 'HR Portal — we need help',
+    body: `Hi,
+
+We're TechCorp Solutions, ~320 employees, B2B software company based in Warsaw.
+
+Our internal HR portal hasn't been updated since 2018. Employees hate it — they can't submit vacation requests without calling HR directly, onboarding takes 3 days of manual paperwork, and our HR team of 6 spends 60% of their time on admin tasks that should be automated.
+
+We want to rebuild it. React frontend, integrate with our existing SAP SuccessFactors. Budget is somewhere around $200–250k. We'd want this done before Q3 because we're hiring 80 people in H2 and the current system won't survive that.
+
+Can we talk? I'm VP of People here and this is my top priority for the year.
+
+Sarah Mitchell
+VP of People, TechCorp Solutions
+sarah.mitchell@techcorp.io
++48 22 555 0192`,
+    narr: '<strong>Потенційний клієнт звернувся до нас.</strong> Sarah Mitchell, VP of People у TechCorp Solutions, написала email із запитом на перебудову HR-порталу. Ось що вона написала — саме цей лист став відправною точкою проєкту.',
+    nextLabel: 'Our reply →',
+    stepLabel: 'Step 1 of 9 — Inbound email from client'
+  },
+  {
+    appName: 'Mail — Sent',
+    type: 'email',
+    from: EMAIL_PM,
+    to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: 'January 14, 2025, 14:15',
+    subject: 'Re: HR Portal — we need help',
+    body: `Hi Sarah,
+
+Thank you for reaching out — this sounds like exactly the kind of project we work on.
+
+A modern HR self-service portal integrated with SAP SuccessFactors, delivered before your H2 hiring wave — I'd love to explore this with you.
+
+Could we schedule a 30-minute discovery call this week? I have availability on:
+• Thursday, January 16 at 10:00–10:30 AM (CET)
+• Friday, January 17 at 14:00–14:30 PM (CET)
+
+We'll discuss your current pain points, technical constraints, and whether our approach is a good fit. No commitment required.
+
+Looking forward to speaking,
+
+Alex Kovalenko, PMP
+Project Manager, PM Master
+projects@pm-master.io`,
+    narr: '<strong>Ми відповіли клієнту.</strong> PM відреагував того ж дня — підтвердив, що розуміє задачу, і запропонував провести 30-хвилинний дзвінок для уточнення вимог.',
+    nextLabel: 'Meeting transcript →',
+    stepLabel: 'Step 2 of 9 — Your reply: invitation to meet'
+  },
+  {
+    appName: 'Documents — Meeting Transcript',
+    type: 'doc',
+    docIcon: '🎙️',
+    docTitle: 'Kickoff Call Transcript',
+    docSub: 'January 17, 2025 · 18 minutes · Alex Kovalenko & Sarah Mitchell',
+    body: `PARTICIPANTS
+Alex Kovalenko (PM Master) · Sarah Mitchell (VP of People, TechCorp Solutions)
+
+─────────────────────────────────────────
+
+ALEX: Sarah, thanks for reaching out. Can you walk me through what's happening day-to-day?
+
+SARAH: Our HR portal was built in 2018. It runs on old PHP, no mobile support, breaks every second week. Our HR team — six people — spends probably 60% of their time just doing manual admin. Vacation approvals go through email, onboarding paperwork is printed and scanned, expense reports are Excel files.
+
+ALEX: And SAP SuccessFactors — you're already using that?
+
+SARAH: Yes, since 2022. But the portal doesn't connect to it at all. HR has to enter the same data twice. We want the new portal to be the front-end for SuccessFactors — employees interact with the portal, everything syncs to SAP automatically.
+
+ALEX: What are the core features you need on day one?
+
+SARAH: Must-haves: employee self-service (vacation, sick leave, expenses), onboarding (new hire checklist, document collection, IT provisioning), and manager dashboard (approve requests, team calendar, headcount). Nice to have: performance review module and org chart.
+
+ALEX: Timeline?
+
+SARAH: We need to go live by July 31st. We're hiring 80 people in H2 — that starts August 1st. If we miss that date, we're doing onboarding on the old system for 80 people, which is not acceptable.
+
+ALEX: Budget?
+
+SARAH: The board approved $220,000. I could probably get another $20k if there's a strong business case, but let's plan for $220k.
+
+ALEX: Who's involved on your side?
+
+SARAH: I'm the sponsor. David Park (IT Director) handles the SAP integration side. Nina Kowalski (HR Manager) is the business owner for requirements. And we'll need ~10 employees as beta testers before launch.
+
+ALEX: Technical constraints?
+
+SARAH: Must be React — our dev team knows React. Backend flexible, but DevOps runs on AWS. Must work on mobile — half our warehouse staff only use phones.
+
+ALEX: Security and compliance?
+
+SARAH: GDPR — we're in Poland. And we have ISO 27001 certification to maintain.
+
+ALEX: What does success look like six months after launch?
+
+SARAH: HR admin time drops from 60% to under 20%. Employee satisfaction above 80% in our quarterly survey. Zero manual data entry between portal and SAP. Onboarding time from 3 days to half a day.
+
+ALEX: Biggest worry?
+
+SARAH: SAP integration — last time it took twice as long as planned. And scope creep — every department will want to add features once they see it's being built.
+
+ALEX: Both very manageable with the right approach. I'll send you a Project Charter by end of week.
+
+SARAH: Perfect. Looking forward to it.`,
+    narr: '<strong>Ми провели 18-хвилинний дзвінок із замовником.</strong> PM записав розмову і завантажив транскрипт у PM Master. Тепер AI прочитає його і витягне всі ключові дані проєкту — без ручного введення.',
+    nextLabel: 'AI fills the form →',
+    stepLabel: 'Step 3 of 9 — Meeting transcript uploaded',
+    showAI: false
+  },
+  {
+    appName: 'PM Master — New Project',
+    type: 'app',
+    docIcon: '🤖',
+    docTitle: 'AI is extracting project data...',
+    docSub: 'Reading email + transcript · PMBOK® 8 framework',
+    showAI: true,
+    aiText: 'Extracting: name, org, PM, budget, dates, team, KPIs, risks...',
+    body: `Extracted from email (Jan 14) + transcript (Jan 17):
+
+✅  Project Name    →  HR Portal Redesign 2025
+✅  Organization   →  TechCorp Solutions Ltd.
+✅  Project Manager →  Alex Kovalenko, PMP
+✅  Sponsor         →  Sarah Mitchell, VP of People
+✅  Budget (BAC)    →  $220,000
+✅  Start Date      →  February 1, 2025
+✅  Planned End     →  July 31, 2025
+✅  Project Type    →  IT / Software · Predictive (Waterfall)
+✅  Stakeholders    →  14 identified
+✅  Tech Stack      →  React · AWS · SAP SuccessFactors
+✅  Compliance      →  GDPR · ISO 27001
+✅  Key Risk #1     →  SAP integration delays (Prob 3 · Impact 4)
+✅  Key Risk #2     →  Scope creep from departments (Prob 4 · Impact 3)
+✅  Success KPI #1  →  HR admin time < 20% (from 60%)
+✅  Success KPI #2  →  Employee satisfaction > 80%
+✅  Success KPI #3  →  Zero manual SAP data entry
+
+Filling project form and generating documents...`,
+    narr: '<strong>AI витягнув 15 ключових параметрів із транскрипту.</strong> Назва проєкту, бюджет, дедлайн, технічні вимоги, обмеження, KPI — все автоматично заповнено у форму. PM лише перевіряє і підтверджує.',
+    nextLabel: 'See Project Charter →',
+    stepLabel: 'Step 4 of 9 — AI extracted 15 data points',
+    action: () => {
+      showPage('setup');
+      setTimeout(() => {
+        typeIntoField('s-name', 'HR Portal Redesign 2025', 45);
+        setTimeout(() => typeIntoField('s-org', 'TechCorp Solutions Ltd.', 40), 700);
+        setTimeout(() => typeIntoField('s-pm', 'Alex Kovalenko, PMP', 45), 1400);
+        setTimeout(() => typeIntoField('s-budget', '$220,000', 55), 2100);
+        setTimeout(() => { document.getElementById('s-start').value = '2025-02-01'; document.getElementById('s-end').value = '2025-07-31'; }, 2600);
+        setTimeout(() => {
+          document.querySelectorAll('.type-card').forEach(el => el.classList.toggle('active', el.querySelector('.tl')?.textContent === 'IT / Software'));
+          project.type = 'IT / Software'; project.approach = 'Predictive (Waterfall)';
+        }, 3000);
+      }, 400);
+    }
+  },
+  {
+    appName: 'PM Master — Project Charter',
+    type: 'doc',
+    docIcon: '📄',
+    docTitle: 'Project Charter',
+    docSub: 'HR Portal Redesign 2025 · Generated by AI · PMBOK® 8 · Section 4.1',
+    body: `<div class="charter-section"><h3>1. Project Purpose</h3><p>Redesign and rebuild the TechCorp Solutions internal HR self-service portal to replace a legacy PHP system (2018) with a modern React-based platform fully integrated with SAP SuccessFactors. The new portal will eliminate manual HR administrative work, enable mobile access, and support the planned H2 2025 hiring wave of 80 new employees.</p></div>
+
+<div class="charter-section"><h3>2. Objectives & Success Criteria</h3><ul><li>Reduce HR team administrative time from 60% to under 20%</li><li>Achieve employee satisfaction score above 80% in Q3 2025 survey</li><li>Zero manual data entry between portal and SAP SuccessFactors</li><li>Reduce new employee onboarding time from 3 days to 0.5 days</li><li>Go-live by July 31, 2025 — before H2 hiring wave begins</li></ul></div>
+
+<div class="charter-section"><h3>3. High-Level Scope</h3><p><strong>In Scope:</strong></p><ul><li>Employee self-service: vacation requests, sick leave, expense submissions</li><li>Onboarding module: new hire checklist, document collection, IT provisioning requests</li><li>Manager dashboard: approvals, team calendar, headcount view</li><li>SAP SuccessFactors bidirectional integration</li><li>Mobile-responsive interface (React · AWS)</li><li>GDPR compliance & ISO 27001 certification maintenance</li></ul><p><strong>Out of Scope (Phase 2):</strong></p><ul><li>Performance review module</li><li>Organizational chart</li></ul></div>
+
+<div class="charter-section"><h3>4. Budget</h3><p>Approved Budget (BAC): <strong>$220,000</strong><br>Budget Reserve: up to $20,000 (subject to business case approval)<br>Currency: USD</p></div>
+
+<div class="charter-section"><h3>5. Timeline</h3><p>Project Start: February 1, 2025<br>Planned Completion: July 31, 2025<br>Duration: 6 months (Predictive / Waterfall approach)</p></div>
+
+<div class="charter-section"><h3>6. Key Stakeholders</h3><ul><li><strong>Sarah Mitchell</strong> — Project Sponsor, VP of People</li><li><strong>David Park</strong> — IT Director (SAP integration owner)</li><li><strong>Nina Kowalski</strong> — HR Manager (business requirements owner)</li><li><strong>Alex Kovalenko, PMP</strong> — Project Manager</li><li>~10 employees as beta testers pre-launch</li></ul></div>
+
+<div class="charter-section"><h3>7. High-Level Risks</h3><ul><li>SAP SuccessFactors integration delays — Probability: Medium · Impact: High → Mitigate</li><li>Scope creep from departmental feature requests — Probability: High · Impact: Medium → Avoid</li><li>Key developer attrition during critical phase → Mitigate with knowledge transfer plan</li></ul></div>
+
+<div class="charter-section"><h3>8. Constraints & Assumptions</h3><ul><li>Frontend must be built in React (TechCorp internal standard)</li><li>Infrastructure: AWS only</li><li>Mobile support mandatory (warehouse staff — phone-first)</li><li>GDPR (Poland) and ISO 27001 compliance required</li><li>Assumes SAP SuccessFactors API access granted by Week 2</li></ul></div>
+
+<div class="charter-section"><h3>9. Sponsor Authorization</h3><p>By proceeding with this project, the Project Sponsor authorizes the Project Manager to acquire resources, manage budget within approved limits, and make decisions necessary to achieve project objectives.</p><p style="margin-top:12px;"><strong>Sponsor:</strong> Sarah Mitchell, VP of People — TechCorp Solutions Ltd.<br><strong>Date:</strong> February 1, 2025</p></div>`,
+    isHTML: true,
+    narr: '<strong>AI згенерував Project Charter за PMBOK® 8.</strong> Повноцінний документ: цілі, бюджет, часові рамки, обмеження, стратегічне обґрунтування. Готово за секунди — без шаблонів і копіювання.',
+    nextLabel: 'Send to client →',
+    stepLabel: 'Step 5 of 9 — Project Charter generated',
+    action: () => {
+      project.name = 'HR Portal Redesign 2025';
+      project.org = 'TechCorp Solutions Ltd.';
+      project.pm = 'Alex Kovalenko, PMP';
+      project.start = '2025-02-01';
+      project.end = '2025-07-31';
+      project.budget = '$220,000';
+      DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
+      project.docStatus['charter'] = 'ready';
+      project.selectedDocs = DOCS.map(d => d.key);
+      buildDashboard();
+    }
+  },
+  {
+    appName: 'Mail — Sent',
+    type: 'email',
+    from: EMAIL_PM,
+    to: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    date: 'February 1, 2025, 18:02',
+    subject: 'HR Portal Redesign 2025 — Project Charter for your review',
+    body: `Hi Sarah,
+
+As promised — please find attached the Project Charter for the HR Portal Redesign 2025 project.
+
+The document covers:
+• Project purpose and business case
+• Objectives and measurable success criteria
+• High-level scope (in scope / out of scope)
+• Approved budget: $220,000
+• Timeline: Feb 1 – Jul 31, 2025
+• Key stakeholders and their roles
+• High-level risks and mitigation approach
+• Constraints and assumptions
+
+Please review and confirm your authorization as Project Sponsor. Once signed, we'll proceed with detailed planning: WBS, schedule, resource plan, and Risk Register.
+
+📎 Attached: HR_Portal_Redesign_2025_Project_Charter.pdf
+
+Looking forward to your feedback,
+
+Alex Kovalenko, PMP
+Project Manager, PM Master`,
+    showSent: true,
+    sentTo: 'sarah.mitchell@techcorp.io',
+    narr: '<strong>PM відправив Charter замовнику на погодження.</strong> Один клік — і Sarah Mitchell отримала повний Project Charter на пошту. Вона може переглянути, внести коментарі або підтвердити.',
+    nextLabel: "Client's reply →",
+    stepLabel: 'Step 6 of 9 — Charter sent to client'
+  },
+  {
+    appName: 'Mail — Inbox',
+    type: 'email',
+    from: 'Sarah Mitchell <sarah.mitchell@techcorp.io>',
+    to: 'projects@pm-master.io',
+    date: 'February 3, 2025, 10:14',
+    subject: 'Re: HR Portal Redesign 2025 — Project Charter for your review',
+    body: `Hi Alex,
+
+Thank you for the Project Charter — this is exactly what I was hoping for.
+
+I've reviewed it with David (IT Director) and Nina (HR Manager) and we're all aligned. A few notes:
+
+✅  Objectives and success criteria — perfect, these are exactly our KPIs
+✅  Scope — in/out of scope is clearly defined, no surprises
+✅  Budget $220,000 — confirmed and approved by the board
+✅  Timeline July 31 — this is our hard deadline, we're counting on it
+✅  SAP integration risk — glad you flagged this, David will be your main contact
+
+One small addition: please include "mobile-first design" as a formal requirement, not just a constraint. Our warehouse staff use phones almost exclusively.
+
+I'm signing off as Project Sponsor. Let's proceed with detailed planning.
+
+Looking forward to working with you,
+
+Sarah Mitchell
+VP of People, TechCorp Solutions
+sarah.mitchell@techcorp.io`,
+    narr: '<strong>Замовник погодив Charter.</strong> Sarah Mitchell підписала документ і дала зелене світло на старт проєкту. Тепер PM Master може автоматично згенерувати всі 12 документів PMBOK® 8.',
+    nextLabel: 'AI generates all documents →',
+    stepLabel: 'Step 7 of 9 — Client approved the Charter ✅'
+  },
+  {
+    appName: 'PM Master — Generating Documents',
+    type: 'doc',
+    docIcon: '🤖',
+    docTitle: 'AI is generating all 12 documents...',
+    docSub: 'Using project data from email + transcript + approved Charter',
+    showAI: true,
+    aiText: 'Generating documents per PMBOK® 8 framework...',
+    body: '',
+    isHTML: true,
+    narr: '<strong>AI генерує всі 12 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
+    nextLabel: 'See all documents →',
+    stepLabel: 'Step 8 of 9 — Generating 12 documents',
+    action: () => {
+      fillAllDemoDocs();
+      showPage('dashboard');
+      setTimeout(() => {
+        document.getElementById('inp-pv').value = 80000;
+        document.getElementById('inp-ev').value = 65000;
+        document.getElementById('inp-ac').value = 75000;
+        document.getElementById('inp-bac').value = 220000;
+        calcEVM();
+        if (!document.getElementById('evm-body').classList.contains('open')) toggleCalc('evm');
+        document.getElementById('inp-stakeholders').value = 14;
+        calcChannels();
+      }, 300);
+    },
+    buildBody: () => {
+      const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','lessons'];
+      const names = {charter:'Project Charter',assumptions:'Assumption Log',stakeholders:'Stakeholder Register',approach:'Development Approach',scope:'Scope Statement + WBS',schedule:'Schedule + Milestones',budget:'Cost / Budget Plan',risk:'Risk Register',team:'Team Management Plan',comms:'Communication Plan',quality:'Quality Management Plan',lessons:'Lessons Learned'};
+      const icons = {charter:'📄',assumptions:'📝',stakeholders:'👥',approach:'🔀',scope:'🎯',schedule:'📅',budget:'💰',risk:'⚠️',team:'👤',comms:'📡',quality:'✅',lessons:'📚'};
+      return keys.map((k,i) => `<div id="gendoc-${k}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#64748b;"><span style="font-size:16px;">${icons[k]}</span><span style="flex:1;">${names[k]}</span><span id="genstatus-${k}" style="font-size:12px;font-weight:700;color:#94a3b8;">waiting...</span></div>`).join('');
+    }
+  },
+  {
+    appName: 'PM Master — Dashboard',
+    type: 'doc',
+    docIcon: '🎉',
+    docTitle: 'All 12 documents ready — open any to review',
+    docSub: 'Every document is filled with your project data. Click any card on the dashboard.',
+    body: `All documents were generated from the same source data — the email, the meeting transcript, and the approved Charter. Nothing was entered twice.
+
+Here is what each document contains:
+
+📄  Project Charter         → Purpose, objectives, scope, budget, sponsor sign-off
+📝  Assumption Log          → 6 tracked assumptions with status and owner
+👥  Stakeholder Register    → 14 stakeholders with power/interest and engagement level
+🔀  Development Approach    → Predictive (Waterfall) rationale + hybrid option assessment
+🎯  Scope Statement + WBS   → In/out of scope, acceptance criteria, full WBS hierarchy
+📅  Schedule + Milestones   → 6-month plan with 5 major milestones and critical path
+💰  Cost / Budget Plan      → $220,000 breakdown by category with contingency
+⚠️  Risk Register           → 8 risks with P×I scores, responses, and owners
+👤  Team Management Plan    → 8-person team, RACI matrix, onboarding plan
+📡  Communication Plan      → 91 channels (14 stakeholders), meeting cadence
+✅  Quality Management Plan → GDPR + ISO 27001 compliance, QA checklist
+📚  Lessons Learned         → Template ready — to be completed at project close
+
+Click any document card on the dashboard to open, review, edit, or export as PDF.
+
+🔒  Your data is encrypted client-side. Only you can read it.`,
+    narr: '<strong>Проєкт повністю готовий до роботи.</strong> Від першого email до 12 заповнених PMBOK-документів — менше ніж за 5 хвилин. Тепер PM може відкрити будь-який документ, редагувати, скачати PDF або поділитися з командою.',
+    nextLabel: 'Try it yourself →',
+    stepLabel: 'Step 9 of 9 — Your complete PM workspace',
+    isLast: true
+  }
+];
+
+var tourStep = 0;
+
+function startTour() {
+  tourStep = 0;
+  showPage('setup');
+  document.getElementById('demo-overlay').classList.add('active');
+  document.getElementById('demo-modal').classList.add('active');
+  renderDemo();
+}
+
+function endTour() {
+  document.getElementById('demo-overlay').classList.remove('active');
+  document.getElementById('demo-modal').classList.remove('active');
+}
+
+function tourNext() {
+  const steps = getDemoSteps();
+  if (tourStep >= steps.length - 1) { endTour(); showPage('setup'); return; }
+  tourStep++;
+  renderDemo();
+}
+
+function renderDemo() {
+  const steps = getDemoSteps();
+  const s = steps[tourStep];
+  const total = steps.length;
+
+  if (s.action) s.action();
+
+  document.getElementById('dm-app-name').textContent = s.appName || 'PM Master';
+  // Narrator bar
+  const narrEl = document.getElementById('dm-narr');
+  if (s.narr) { narrEl.innerHTML = s.narr; narrEl.style.display = 'block'; }
+  else { narrEl.style.display = 'none'; }
+
+  document.getElementById('dm-step-info').textContent = s.stepLabel || `Step ${tourStep+1} of ${total}`;
+  document.getElementById('dm-next-btn').textContent = s.nextLabel || 'Next →';
+
+  // Progress dots
+  document.getElementById('dm-progress').innerHTML = steps.map((_,i) =>
+    `<div class="dm-pdot ${i < tourStep ? 'done' : i===tourStep ? 'active' : ''}"></div>`).join('');
+
+  // Email vs Doc header
+  const emailH = document.getElementById('dm-email-header');
+  const docH   = document.getElementById('dm-doc-header');
+  if (s.type === 'email') {
+    emailH.style.display = 'block'; docH.style.display = 'none';
+    document.getElementById('dm-from').textContent = s.from;
+    document.getElementById('dm-to').textContent   = s.to;
+    document.getElementById('dm-date').textContent = s.date;
+    document.getElementById('dm-subject').textContent = s.subject;
+  } else {
+    emailH.style.display = 'none'; docH.style.display = 'flex';
+    document.getElementById('dm-doc-icon').textContent  = s.docIcon || '📄';
+    document.getElementById('dm-doc-title').textContent = s.docTitle || '';
+    document.getElementById('dm-doc-sub').textContent   = s.docSub  || '';
+  }
+
+  // AI bar
+  const aiBar = document.getElementById('dm-ai-bar');
+  if (s.showAI) { aiBar.style.display = 'flex'; document.getElementById('dm-ai-text').textContent = s.aiText || 'AI is processing...'; }
+  else aiBar.style.display = 'none';
+
+  // Body
+  const body = document.getElementById('dm-body');
+  if (s.isHTML) body.innerHTML = s.body;
+  else body.textContent = s.body;
+
+  // Sent banner
+  const banner = document.getElementById('dm-sent-banner');
+  if (s.showSent) { banner.style.display = 'flex'; document.getElementById('dm-sent-to').textContent = s.sentTo; }
+  else banner.style.display = 'none';
+
+  // Scroll body to top
+  body.scrollTop = 0;
+}
+
+function fillAllDemoDocs() {
+  project.docData = dl().docs;
+  DOCS.forEach(d => { project.docStatus[d.key] = 'done'; });
+  buildDashboard();
+  const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','lessons'];
+  const readyLabel = curLang() === 'uk' ? '✅ Готово' : '✅ Ready';
+  keys.forEach((k, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('genstatus-' + k);
+      if (el) { el.textContent = readyLabel; el.style.color = '#059669'; }
+    }, i * 280);
+  });
+}
+
+function typeIntoField(id, text, speed) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = '';
+  el.classList.add('tour-typing');
+  let i = 0;
+  const t = setInterval(() => {
+    el.value += text[i++];
+    if (i >= text.length) { clearInterval(t); el.classList.remove('tour-typing'); }
+  }, speed);
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE AUTH
+// ══════════════════════════════════════════
+const SUPA_URL = 'https://ijfawcrcmmvjhilpytsg.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZmF3Y3JjbW12amhpbHB5dHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDY0NjQsImV4cCI6MjA5ODQ4MjQ2NH0.bcjSxVd5UNeaoM1yiK7NQoma2HEZepmTrDaz7A_p5CQ';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+
+// Init — check session on load
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) onSignIn(session.user);
+});
+
+// Listen for auth state changes (Google OAuth redirect, etc.)
+sb.auth.onAuthStateChange((_event, session) => {
+  if (session) onSignIn(session.user);
+  else onSignOut();
+});
+
+function onSignIn(user) {
+  currentUser = user;
+  const btn = document.getElementById('btn-auth');
+  const initial = (user.email || 'U')[0].toUpperCase();
+  btn.innerHTML = `<div class="user-avatar">${initial}</div> ${user.email.split('@')[0]}`;
+  btn.onclick = openUserMenu;
+  document.getElementById('btn-my-projects').style.display = 'flex';
+  closeAuth();
+  loadProjects();
+  showPage('projects');
+}
+
+function onSignOut() {
+  currentUser = null;
+  const btn = document.getElementById('btn-auth');
+  btn.innerHTML = '🔑 Sign In';
+  btn.onclick = openAuth;
+  document.getElementById('btn-my-projects').style.display = 'none';
+  showPage('setup');
+}
+
+function goMyProjects() {
+  if (!currentUser) { openAuth(); return; }
+  loadProjects();
+  showPage('projects');
+}
+
+// ── Auth Modal ──
+function openAuth() {
+  document.getElementById('auth-overlay').classList.add('active');
+  document.getElementById('auth-email').focus();
+}
+function closeAuth() {
+  document.getElementById('auth-overlay').classList.remove('active');
+  setAuthMsg('', '');
+}
+document.getElementById('auth-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAuth();
+});
+
+let authMode = 'login';
+function switchTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+  setAuthMsg('', '');
+}
+
+function setAuthMsg(text, type) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = 'auth-msg' + (type ? ' ' + type : '');
+}
+
+async function authSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { setAuthMsg('Please fill in email and password.', 'error'); return; }
+
+  const btn = document.getElementById('auth-submit-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  let result;
+  if (authMode === 'login') {
+    result = await sb.auth.signInWithPassword({ email, password });
+  } else {
+    result = await sb.auth.signUp({ email, password });
+  }
+
+  btn.disabled = false;
+  btn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+
+  if (result.error) {
+    setAuthMsg(result.error.message, 'error');
+  } else if (authMode === 'register' && !result.data.session) {
+    setAuthMsg('✅ Check your email to confirm your account.', 'success');
+  }
+}
+
+async function authGoogle() {
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+}
+
+function openUserMenu() {
+  if (confirm('Sign out from PM Master?')) {
+    sb.auth.signOut();
+  }
+}
+
+// ══════════════════════════════════════════
+// PROJECTS — SAVE / LOAD
+// ══════════════════════════════════════════
+async function loadProjects() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('projects').select('*').order('updated_at', { ascending: false });
+  if (error) { console.error('loadProjects:', error); return; }
+  renderProjectsList(data || []);
+}
+
+function renderProjectsList(projects) {
+  const body = document.getElementById('projects-list-body');
+  if (!projects.length) {
+    body.innerHTML = '<div class="proj-empty"><div class="icon">📂</div><p>No projects yet. Create your first one!</p></div>';
+    return;
+  }
+  const icons = { 'IT / Software': '💻', 'Construction': '🏗️', 'Marketing': '📣', 'Finance': '💰', 'Healthcare': '🏥', 'Education': '🎓', 'Retail': '🛒', 'Energy': '⚡', 'Other': '📋' };
+  body.innerHTML = projects.map(p => `
+    <div class="proj-card" onclick="openProject('${p.id}')">
+      <div class="proj-card-icon">${icons[p.type] || '📋'}</div>
+      <div class="proj-card-info">
+        <div class="proj-card-name">${p.name}</div>
+        <div class="proj-card-meta">${p.pm_name || ''}${p.pm_name && p.description ? ' · ' : ''}${p.description || ''} · Updated ${new Date(p.updated_at).toLocaleDateString()}</div>
+      </div>
+      <div class="proj-card-status">${p.status}</div>
+    </div>
+  `).join('');
+}
+
+async function saveCurrentProject() {
+  if (!currentUser) { openAuth(); return; }
+  const payload = {
+    user_id: currentUser.id,
+    name: project.name || 'Untitled Project',
+    type: project.type || 'IT / Software',
+    status: 'Planning',
+    pm_name: project.pm || '',
+    description: project.org || '',
+    start_date: project.start || null,
+    end_date_plan: project.end || null,
+    budget: project.budget ? parseFloat(project.budget.replace(/[^0-9.]/g,'')) || null : null,
+    language: curLang()
+  };
+
+  let result;
+  if (project.supabaseId) {
+    result = await sb.from('projects').update(payload).eq('id', project.supabaseId).select().single();
+  } else {
+    result = await sb.from('projects').insert(payload).select().single();
+  }
+
+  if (result.error) { alert('Save error: ' + result.error.message); return; }
+  project.supabaseId = result.data.id;
+
+  // Save documents
+  const docKeys = Object.keys(project.docData || {});
+  for (const key of docKeys) {
+    await sb.from('project_documents').upsert({
+      project_id: project.supabaseId,
+      user_id: currentUser.id,
+      doc_type: key,
+      content: project.docData[key],
+      version: 1
+    }, { onConflict: 'project_id,doc_type,version' });
+  }
+
+  showSaveToast();
+}
+
+async function openProject(id) {
+  const { data: p } = await sb.from('projects').select('*').eq('id', id).single();
+  const { data: docs } = await sb.from('project_documents').select('*').eq('project_id', id);
+  if (!p) return;
+
+  project.supabaseId = p.id;
+  project.name    = p.name;
+  project.org     = p.description || '';
+  project.pm      = p.pm_name || '';
+  project.type    = p.type || 'IT / Software';
+  project.start   = p.start_date || '';
+  project.end     = p.end_date_plan || '';
+  project.budget  = p.budget ? '$' + p.budget : '';
+  project.docData = {};
+  project.docStatus = {};
+
+  DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
+  if (docs) docs.forEach(d => {
+    project.docData[d.doc_type] = d.content;
+    project.docStatus[d.doc_type] = 'done';
+  });
+
+  buildDashboard();
+  showPage('dashboard');
+}
+
+function showSaveToast() {
+  let toast = document.getElementById('save-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'save-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = '✅ Project saved!';
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+</script>
+</body>
+</html>
