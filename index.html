@@ -2746,16 +2746,25 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let currentUser = null;
 
-// Init — check session on load
+// Init — check session on load (also handles OAuth redirect hash)
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) onSignIn(session.user);
 });
 
-// Listen for auth state changes (Google OAuth redirect, etc.)
+// Listen for auth state changes
 sb.auth.onAuthStateChange((_event, session) => {
   if (session) onSignIn(session.user);
   else onSignOut();
 });
+
+// Fallback: якщо в URL є access_token (після Google OAuth) — явно перевіряємо сесію
+if (window.location.hash.includes('access_token')) {
+  setTimeout(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session && !currentUser) onSignIn(session.user);
+    });
+  }, 800);
+}
 
 function onSignIn(user) {
   currentUser = user;
