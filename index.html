@@ -2899,6 +2899,7 @@ function renderProjectsList(projects) {
 }
 
 async function saveCurrentProject() {
+  console.log('[PM] Save clicked, user:', currentUser?.id || 'NOT LOGGED IN');
   if (!currentUser) { openAuth(); return; }
   const payload = {
     user_id: currentUser.id,
@@ -2920,6 +2921,7 @@ async function saveCurrentProject() {
     result = await sb.from('projects').insert(payload).select().single();
   }
 
+  console.log('[PM] Save result:', result.error || 'OK', result.data?.id);
   if (result.error) { alert('Save error: ' + result.error.message); return; }
   project.supabaseId = result.data.id;
 
