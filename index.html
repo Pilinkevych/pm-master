@@ -2742,7 +2742,12 @@ function typeIntoField(id, text, speed) {
 // ══════════════════════════════════════════
 const SUPA_URL = 'https://ijfawcrcmmvjhilpytsg.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZmF3Y3JjbW12amhpbHB5dHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDY0NjQsImV4cCI6MjA5ODQ4MjQ2NH0.bcjSxVd5UNeaoM1yiK7NQoma2HEZepmTrDaz7A_p5CQ';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    detectSessionInUrl: true,
+    flowType: 'implicit'
+  }
+});
 
 let currentUser = null;
 
