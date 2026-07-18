@@ -2859,7 +2859,7 @@ async function authSubmit() {
 async function authGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: window.location.origin + '/' }
   });
 }
 
