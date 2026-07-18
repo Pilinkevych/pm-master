@@ -2847,7 +2847,7 @@ async function authGoogle() {
 
 function openUserMenu() {
   if (confirm('Sign out from PM Master?')) {
-    sb.auth.signOut();
+    sb.auth.signOut().then(() => window.location.reload());
   }
 }
 

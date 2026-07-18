@@ -1,0 +1,54 @@
+MEETING TRANSCRIPT
+Project: HR Portal Redesign
+Date: January 17, 2025
+Participants: Alex Kovalenko (PM, PM Master), Sarah Mitchell (VP of People, TechCorp Solutions)
+Duration: 18 minutes
+
+---
+
+ALEX: Sarah, thanks for reaching out. I read your email — sounds like a real pain point. Can you walk me through what's happening day-to-day?
+
+SARAH: Absolutely. So we have 320 employees right now and our HR portal was built in 2018. It runs on an old PHP system, no mobile support, and honestly it breaks every second week. Our HR team — six people — spends probably 60% of their time just doing manual admin that should be automated. Vacation approvals go through email, onboarding paperwork is printed and scanned, expense reports are Excel files sent by email.
+
+ALEX: And SAP SuccessFactors — you're already using that?
+
+SARAH: Yes, since 2022. But the portal doesn't connect to it at all. So HR has to enter the same data twice. It's a nightmare. We want the new portal to be the front-end for SuccessFactors — employees interact with the portal, everything syncs to SAP automatically.
+
+ALEX: Got it. What are the core features you need on day one?
+
+SARAH: The must-haves: employee self-service — vacation requests, sick leave, expense submissions. Then onboarding — new hire checklist, document collection, IT provisioning requests. And manager dashboard — approve requests, see team calendar, track headcount. Nice to have but not critical for launch: performance review module and org chart.
+
+ALEX: Timeline — you mentioned Q3 in your email?
+
+SARAH: We need to go live by July 31st. We're hiring 80 people in H2 — that starts August 1st. If we miss that date, we're doing onboarding on the old system for 80 people, which is... not acceptable.
+
+ALEX: Understood. July 31st is the hard deadline. What's your budget flexibility?
+
+SARAH: The board approved $220,000. I could probably get another $20k if there's a strong business case, but let's plan for $220k.
+
+ALEX: Team on your side — who's involved?
+
+SARAH: I'm the sponsor and main stakeholder. Then we have David Park, he's our IT Director, he'll handle the SAP integration side. Nina Kowalski is our HR Manager, she'll be the business owner for requirements. And we'll need to involve maybe 10 employees as beta testers before launch.
+
+ALEX: Any existing technical constraints we should know?
+
+SARAH: It has to be React — our dev team knows React. Backend, we're flexible, but our DevOps runs on AWS. And it must work on mobile — half our warehouse staff only use phones.
+
+ALEX: Security and compliance?
+
+SARAH: GDPR obviously — we're in Poland. And we have an ISO 27001 certification to maintain, so any vendor or system needs to pass our security review.
+
+ALEX: What does success look like for you six months after launch?
+
+SARAH: HR admin time drops from 60% to under 20%. Employee satisfaction with HR services goes above 80% in our quarterly survey. Zero manual data entry between the portal and SAP. And onboarding time for a new hire goes from 3 days to half a day.
+
+ALEX: Those are very clear KPIs. Last question — what's your biggest worry about this project?
+
+SARAH: Honestly? The SAP integration. Last time we did an integration project it took twice as long as planned. And scope creep — every department will want to add features once they see it's being built.
+
+ALEX: Both are very manageable with the right approach. I'll put together a Project Charter based on what we discussed and send it to you by end of week. Does that work?
+
+SARAH: Perfect. Looking forward to it.
+
+---
+END OF TRANSCRIPT

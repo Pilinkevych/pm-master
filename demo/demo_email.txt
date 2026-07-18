@@ -1,0 +1,19 @@
+FROM: sarah.mitchell@techcorp.io
+TO: projects@pm-master.io
+DATE: January 14, 2025
+SUBJECT: HR Portal — we need help
+
+Hi,
+
+We're TechCorp Solutions, ~320 employees, B2B software company based in Warsaw.
+
+Our internal HR portal hasn't been updated since 2018. Employees hate it — they can't submit vacation requests without calling HR directly, onboarding takes 3 days of manual paperwork, and our HR team of 6 spends 60% of their time on admin tasks that should be automated.
+
+We want to rebuild it. React frontend, integrate with our existing SAP SuccessFactors. Budget is somewhere around $200-250k. We'd want this done before Q3 because we're hiring 80 people in H2 and the current system won't survive that.
+
+Can we talk? I'm VP of People here and this is my top priority for the year.
+
+Sarah Mitchell
+VP of People, TechCorp Solutions
+sarah.mitchell@techcorp.io
++48 22 555 0192
