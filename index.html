@@ -2753,22 +2753,26 @@ let currentUser = null;
 
 // Init — check session on load (also handles OAuth redirect hash)
 sb.auth.getSession().then(({ data: { session } }) => {
+  console.log('[PM] getSession:', session ? 'found' : 'null');
   if (session) onSignIn(session.user);
 });
 
 // Listen for auth state changes
-sb.auth.onAuthStateChange((_event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
+  console.log('[PM] onAuthStateChange:', event, session ? session.user.email : 'null');
   if (session) onSignIn(session.user);
   else onSignOut();
 });
 
-// Fallback: якщо в URL є access_token (після Google OAuth) — явно перевіряємо сесію
+// Fallback: якщо в URL є access_token (після Google OAuth)
 if (window.location.hash.includes('access_token')) {
+  console.log('[PM] OAuth hash detected in URL');
   setTimeout(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
+      console.log('[PM] fallback getSession:', session ? 'found' : 'null');
       if (session && !currentUser) onSignIn(session.user);
     });
-  }, 800);
+  }, 1000);
 }
 
 function onSignIn(user) {
