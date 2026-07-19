@@ -27,10 +27,10 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
 .header-title{flex:1;position:relative;z-index:1;min-width:0;}
 .header-title h1{font-size:20px;font-weight:900;white-space:nowrap;}
 .header-title p{font-size:12px;opacity:.75;white-space:nowrap;}
-.sec-banner{position:sticky;top:75px;z-index:99;background:linear-gradient(90deg,#0f4c35,#065f46,#0f4c35);border-bottom:2px solid #059669;padding:10px 20px;font-size:13px;color:#d1fae5;text-align:center;line-height:1.6;box-shadow:0 2px 12px rgba(5,150,105,.25);letter-spacing:.1px;}
-.sec-banner strong{color:#6ee7b7;font-weight:900;}
-.sec-banner .sec-lock{font-size:16px;vertical-align:-2px;margin-right:4px;}
-.sec-banner-detail{color:#a7f3d0;font-size:12px;}
+.sec-banner{position:sticky;top:75px;z-index:99;background:#1e3a8a;border-bottom:1px solid rgba(255,255,255,.1);padding:5px 24px;font-size:11.5px;color:rgba(255,255,255,.55);text-align:center;line-height:1.4;letter-spacing:.2px;}
+.sec-banner strong{color:rgba(255,255,255,.85);font-weight:700;}
+.sec-banner-detail{color:rgba(255,255,255,.38);}
+@media(max-width:600px){.sec-banner{display:none;}}
 .header-actions{display:flex;align-items:center;gap:10px;position:relative;z-index:1;flex-shrink:0;}
 .lang-select{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;width:auto;max-width:170px;}
 .lang-select option{color:#0f172a;background:white;}
@@ -422,7 +422,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
 </div>
 <div class="sec-banner" id="sec-banner">
-  🔒 <strong>Your data is private — only you can access your projects.</strong> Documents are stored securely in your account. Only you see your data — we never share it with anyone. <span class="sec-banner-detail">Protected by Supabase Row Level Security — each user sees only their own records.</span>
+  🔒 <strong>Your data is private.</strong> Documents are stored securely in your account — only you can access them. <span class="sec-banner-detail">Protected by Row Level Security.</span>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -1625,7 +1625,7 @@ function dl() { const l = curLang(); return DL[l] || DL.en; }
 // ── Demo Localization ─────────────────────────────────────────
 const DL = {
 en: {
-  secBanner: '🔒 <strong>Your data is private — only you can access your projects.</strong> Documents are stored securely in your account. Only you see your data — we never share it with anyone. <span class="sec-banner-detail">Protected by Supabase Row Level Security — each user sees only their own records.</span>',
+  secBanner: '🔒 <strong>Your data is private.</strong> Documents are stored securely in your account — only you can access them. <span class="sec-banner-detail">Protected by Row Level Security.</span>',
   steps: [
   {
     appName: 'Mail — Inbox', type: 'email',
@@ -1934,7 +1934,7 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
 },
 
 uk: {
-  secBanner: '🔒 <strong>Ваші дані приватні — тільки ви маєте доступ до своїх проєктів.</strong> Документи зберігаються захищено у вашому акаунті. Тільки ви бачите свої дані — ми нікому їх не передаємо. <span class="sec-banner-detail">Захищено Supabase Row Level Security — кожен користувач бачить лише свої записи.</span>',
+  secBanner: '🔒 <strong>Ваші дані приватні.</strong> Документи зберігаються захищено у вашому акаунті — тільки ви маєте до них доступ. <span class="sec-banner-detail">Захищено Row Level Security.</span>',
   steps: [
   {
     appName: 'Пошта — Вхідні', type: 'email',
