@@ -1142,14 +1142,32 @@ function buildDocsGrid() {
 // ══════════════════════════════════════════
 // DOCUMENT MODAL
 // ══════════════════════════════════════════
-function openDoc(key) {
+function openDoc(key, mode) {
   currentDocKey = key;
   const doc = DOCS.find(d => d.key === key);
   document.getElementById('modal-icon').textContent = doc.icon;
   document.getElementById('modal-title').textContent = doc.name;
   document.getElementById('modal-subtitle').textContent = doc.phase + ' · PMBOK® 8th Edition';
-  document.getElementById('modal-body').innerHTML = buildDocForm(key);
+  const hasContent = project.docContent && project.docContent[key];
+  const showGenerated = hasContent && mode !== 'form';
+  if (showGenerated) {
+    document.getElementById('modal-body').innerHTML = `
+      <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="openDoc('${key}','form')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📝 Edit Form</button>
+        <button onclick="copyDocContent('${key}')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📋 Copy</button>
+        <button onclick="exportDocPDF('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:13px;">📥 Export PDF</button>
+      </div>
+      <div class="generated-doc-content" style="font-size:14px;line-height:1.7;color:#1e293b;">${project.docContent[key]}</div>`;
+  } else {
+    document.getElementById('modal-body').innerHTML = (hasContent ? `<div style="margin-bottom:12px;"><button onclick="openDoc('${key}','generated')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#2563eb;cursor:pointer;font-size:13px;">✨ View Generated Document</button></div>` : '') + buildDocForm(key);
+  }
   document.getElementById('docModal').classList.add('active');
+}
+
+function copyDocContent(key) {
+  const content = project.docContent[key] || '';
+  const text = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  navigator.clipboard.writeText(text).then(() => alert('✅ Copied to clipboard!'));
 }
 
 function buildDocForm(key) {
@@ -1359,15 +1377,29 @@ function generateDoc(key) {
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
   btn.disabled = true;
 
-  // Stub — will call n8n webhook with project context
-  setTimeout(() => {
+  fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ key, project })
+  })
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
     btn.innerHTML = orig;
     btn.disabled = false;
+    if (!data.success) throw new Error('Generation failed');
     project.docStatus[key] = 'done';
+    project.docContent = project.docContent || {};
+    project.docContent[key] = data.content;
     updateStats();
     buildDocsGrid();
-    alert(`✨ "${DOCS.find(d=>d.key===key)?.name}" generated!\n\nIn production: AI will use project context + PMBOK RAG to generate a complete document.`);
-  }, 2000);
+    scheduleAutosave();
+    openDoc(key);
+  })
+  .catch(err => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    alert('⚠️ Generation failed: ' + err.message + '\n\nCheck that n8n workflow is active.');
+  });
 }
 
 function closeModal() {
