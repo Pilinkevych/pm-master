@@ -1026,7 +1026,8 @@ function createProject() {
 
   buildDashboard();
   showPage('dashboard');
-  saveCurrentProject(true);
+  updateAutosaveIndicator('saving');
+  setTimeout(() => saveCurrentProject(true), 1000);
 
   // Auto-fill EVM and PERT if demo data exists
   if (project._demoEVM) {
