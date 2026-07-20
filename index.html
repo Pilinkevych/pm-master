@@ -973,51 +973,92 @@ function removeFile(i) {
 function analyzeContext() {
   const btn = event.target.closest('button');
   const orig = btn.innerHTML;
-  btn.innerHTML = '<span class="spinner-inline"></span> Analyzing...';
-  btn.disabled = true;
+  const paste = document.getElementById('pasteText').value.trim();
+  const hasFiles = uploadedFilesList.length > 0;
 
-  // Stub — will call n8n webhook
-  setTimeout(() => {
-    btn.innerHTML = orig;
-    btn.disabled = false;
+  if (!paste && !hasFiles) {
+    alert('Please upload a file or paste text (MoM, email, brief) first.');
+    return;
+  }
 
-    const paste = document.getElementById('pasteText').value;
-    const hasFiles = uploadedFilesList.length > 0;
+  // Read text files + combine with paste
+  function sendToAI(textContent) {
+    btn.innerHTML = '<span class="spinner-inline"></span> Analyzing with AI...';
+    btn.disabled = true;
 
-    if (!paste && !hasFiles) {
-      alert('Please upload files or paste text first.');
+    fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-analyze-mom', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: textContent, projectType: project.type, approach: project.approach })
+    })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      applyExtractedData(data);
+    })
+    .catch(err => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      alert('⚠️ Analysis failed: ' + err.message + '\n\nCheck n8n workflow pm-master-analyze-mom is active.');
+    });
+  }
+
+  // If files, read text ones; otherwise use paste directly
+  if (hasFiles) {
+    const textFiles = uploadedFilesList.filter(f => f.name.match(/\.(txt|md|csv)$/i));
+    if (textFiles.length === 0) {
+      // No readable text files — use paste only
+      sendToAI(paste);
       return;
     }
-
-    // Simulate extraction
-    const items = [
-      { found: true,  label: 'Project name', value: 'Website Redesign 2025' },
-      { found: true,  label: 'Sponsor', value: 'John Smith, CEO' },
-      { found: true,  label: 'Budget', value: '$150,000' },
-      { found: true,  label: 'Timeline', value: 'Q3 2025 deadline' },
-      { found: false, label: 'Risk information', value: '' },
-      { found: false, label: 'Team members', value: '' },
-    ];
-
-    // Auto-fill form
-    if (!document.getElementById('s-name').value) document.getElementById('s-name').value = 'Website Redesign 2025';
-    if (!document.getElementById('s-budget').value) document.getElementById('s-budget').value = '$150,000';
-
-    // Store context
-    project.context = { sponsor: 'John Smith, CEO', budget: '$150,000', timeline: 'Q3 2025' };
-
-    document.getElementById('extractItems').innerHTML = items.map(it => `
-      <div class="aer-item">
-        <div class="aer-dot ${it.found?'found':'missing'}"></div>
-        <div>
-          <strong>${it.label}:</strong>
-          ${it.found ? it.value : '<span style="color:var(--amber);">Not found — will need manual input</span>'}
-        </div>
-      </div>`).join('');
-
-    document.getElementById('extractResult').classList.add('active');
-  }, 2000);
+    const readers = textFiles.map(f => new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsText(f);
+    }));
+    Promise.all(readers).then(contents => {
+      const combined = contents.join('\n\n---\n\n') + (paste ? '\n\n---\n\n' + paste : '');
+      sendToAI(combined);
+    });
+  } else {
+    sendToAI(paste);
+  }
 }
+
+function applyExtractedData(data) {
+  // Auto-fill form fields
+  const fields = ['name','org','pm','start','end','budget','description','objectives'];
+  const fieldMap = { name:'s-name', org:'s-org', pm:'s-pm', start:'s-start', end:'s-end', budget:'s-budget', description:'s-description', objectives:'s-objectives' };
+  fields.forEach(k => {
+    if (data[k]) {
+      const el = document.getElementById(fieldMap[k]);
+      if (el && !el.value) el.value = data[k];
+      else if (el && data[k]) el.value = data[k]; // always overwrite from AI
+    }
+  });
+
+  // Save risks
+  if (data.risks && data.risks.length) {
+    project.risks = data.risks;
+  }
+
+  // Store full context
+  project.context = { ...project.context, ...data };
+
+  // Show extracted summary
+  const items = data.extracted || fields.filter(k => data[k]).map(k => ({ label: k, value: data[k], found: true }));
+  const risksCount = (data.risks || []).length;
+  document.getElementById('extractItems').innerHTML = items.map(it => `
+    <div class="aer-item">
+      <div class="aer-dot ${it.found !== false ? 'found' : 'missing'}"></div>
+      <span class="aer-label">${it.label}:</span>
+      <span class="aer-val">${it.value || '—'}</span>
+    </div>`).join('') + (risksCount ? `<div class="aer-item"><div class="aer-dot found"></div><span class="aer-label">Risks generated:</span><span class="aer-val">${risksCount} risks auto-added to Risk Register</span></div>` : '');
+  document.getElementById('extractResult').style.display = 'block';
+}
+
 
 function createProject() {
   const name = document.getElementById('s-name').value.trim();
