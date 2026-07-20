@@ -1001,6 +1001,11 @@ function analyzeContext() {
     .then(data => {
       btn.innerHTML = orig;
       btn.disabled = false;
+      console.log('[PM Master] AI response:', JSON.stringify(data, null, 2));
+      if (!data.success) {
+        alert('⚠️ AI returned an error:\n' + (data.error || JSON.stringify(data).slice(0, 300)));
+        return;
+      }
       applyExtractedData(data);
     })
     .catch(err => {
