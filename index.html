@@ -554,6 +554,16 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
   </div>
 
+  <div class="field">
+    <label>Project Description <span style="font-weight:400;color:#94a3b8;font-size:12px;">(AI використає це для генерації документів)</span></label>
+    <textarea id="s-description" rows="3" placeholder="Опишіть проєкт: що будуємо, яка проблема вирішується, для кого..."></textarea>
+  </div>
+
+  <div class="field">
+    <label>Project Objectives <span style="font-weight:400;color:#94a3b8;font-size:12px;">(цілі проєкту — AI вставить їх у кожен документ)</span></label>
+    <textarea id="s-objectives" rows="2" placeholder="1. Запустити MVP до... 2. Досягти... 3. Інтегрувати..."></textarea>
+  </div>
+
   <div style="display:flex;gap:12px;flex-wrap:wrap;">
     <button class="btn btn-primary" style="flex:1;" onclick="createProject()">🚀 Create Project & Open Dashboard</button>
     <button class="btn btn-secondary" style="background:#f0fdf4;border-color:#86efac;color:#166534;font-weight:800;" onclick="loadDemoProject()">🧪 Load Demo Project</button>
@@ -1013,12 +1023,14 @@ function createProject() {
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
-  project.name    = name;
-  project.org     = document.getElementById('s-org').value.trim();
-  project.pm      = document.getElementById('s-pm').value.trim();
-  project.start   = document.getElementById('s-start').value;
-  project.end     = document.getElementById('s-end').value;
-  project.budget  = document.getElementById('s-budget').value.trim();
+  project.name        = name;
+  project.org         = document.getElementById('s-org').value.trim();
+  project.pm          = document.getElementById('s-pm').value.trim();
+  project.start       = document.getElementById('s-start').value;
+  project.end         = document.getElementById('s-end').value;
+  project.budget      = document.getElementById('s-budget').value.trim();
+  project.description = document.getElementById('s-description').value.trim();
+  project.objectives  = document.getElementById('s-objectives').value.trim();
 
   // Init doc status
   DOCS.forEach(d => {
@@ -1065,7 +1077,7 @@ function createProject() {
 // DASHBOARD
 // ══════════════════════════════════════════
 function buildDashboard() {
-  document.getElementById('dash-name').textContent = project.name;
+  document.getElementById('dash-name').innerHTML = `<span style="cursor:pointer;" title="Click to rename" onclick="editProjectName()">${project.name} <span style="font-size:14px;opacity:.5;font-weight:400;">✏️</span></span>`;
   const meta = [
     project.org, project.pm ? 'PM: '+project.pm : '',
     project.type, project.approach,
@@ -1400,6 +1412,16 @@ function generateDoc(key) {
     btn.disabled = false;
     alert('⚠️ Generation failed: ' + err.message + '\n\nCheck that n8n workflow is active.');
   });
+}
+
+function editProjectName() {
+  const current = project.name;
+  const newName = prompt('Rename project:', current);
+  if (newName && newName.trim() && newName.trim() !== current) {
+    project.name = newName.trim();
+    buildDashboard();
+    scheduleAutosave();
+  }
 }
 
 function closeModal() {
@@ -2496,8 +2518,10 @@ sb.auth.getSession().then(({ data: { session } }) => {
 // Listen for auth state changes
 sb.auth.onAuthStateChange((event, session) => {
   console.log('[PM] onAuthStateChange:', event, session ? session.user.email : 'null');
-  if (session) onSignIn(session.user);
-  else onSignOut();
+  if (session) {
+    if (!currentUser) onSignIn(session.user); // тільки перший раз
+    else currentUser = session.user; // просто оновлюємо юзера без редіректу
+  } else onSignOut();
 });
 
 // Fallback: якщо в URL є access_token (після Google OAuth)
