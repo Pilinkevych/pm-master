@@ -78,6 +78,12 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
 .proj-card-name{font-size:16px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .proj-card-meta{font-size:12px;color:#64748b;margin-top:3px;}
 .proj-card-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#eff6ff;color:#2563eb;flex-shrink:0;}
+.proj-card-actions{display:flex;gap:6px;flex-shrink:0;opacity:0;transition:.2s;}
+.proj-card:hover .proj-card-actions{opacity:1;}
+.proj-act-btn{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:5px 9px;font-size:13px;cursor:pointer;color:#64748b;transition:.15s;}
+.proj-act-btn:hover{background:#f8fafc;color:#0f172a;}
+.proj-act-btn.del:hover{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+.proj-act-btn.arch:hover{background:#fef9c3;border-color:#fde047;color:#92400e;}
 .proj-empty{text-align:center;padding:60px 20px;color:#94a3b8;}
 .proj-empty .icon{font-size:48px;margin-bottom:12px;}
 .proj-empty p{font-size:15px;}
@@ -1064,6 +1070,7 @@ function createProject() {
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
+  project.supabaseId  = null;
   project.name        = name;
   project.org         = document.getElementById('s-org').value.trim();
   project.pm          = document.getElementById('s-pm').value.trim();
@@ -2695,6 +2702,10 @@ function renderProjectsList(projects) {
         <div class="proj-card-meta">${p.pm_name || ''}${p.pm_name && p.description ? ' · ' : ''}${p.description || ''} · Updated ${new Date(p.updated_at).toLocaleDateString()}</div>
       </div>
       <div class="proj-card-status">${p.status}</div>
+      <div class="proj-card-actions" onclick="event.stopPropagation()">
+        <button class="proj-act-btn arch" title="Архівувати проєкт" onclick="archiveProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">📦 Архів</button>
+        <button class="proj-act-btn del" title="Видалити проєкт" onclick="deleteProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
+      </div>
     </div>
   `).join('');
 }
@@ -2773,6 +2784,46 @@ async function saveCurrentProject(silent) {
 
   updateAutosaveIndicator('saved');
   scheduleAutosave();
+}
+
+async function deleteProject(id, name) {
+  const confirmed = confirm(`⚠️ Видалити проєкт?\n\n"${name}"\n\nЦю дію неможливо скасувати. Ти впевнений???`);
+  if (!confirmed) return;
+  const confirmed2 = confirm(`🚨 Останній шанс!\n\nПроєкт "${name}" та всі його документи будуть НАЗАВЖДИ видалені.\n\nПродовжити?`);
+  if (!confirmed2) return;
+
+  await sb.from('project_documents').delete().eq('project_id', id);
+  const { error } = await sb.from('projects').delete().eq('id', id);
+  if (error) { alert('Помилка видалення: ' + error.message); return; }
+  loadProjects();
+}
+
+async function archiveProject(id, name) {
+  const confirmed = confirm(`📦 Архівувати проєкт "${name}"?\n\nПроєкт буде збережено як JSON-файл на ваш комп'ютер і видалено з кабінету.\n\nПродовжити?`);
+  if (!confirmed) return;
+
+  const { data: p } = await sb.from('projects').select('*').eq('id', id).single();
+  const { data: docs } = await sb.from('project_documents').select('*').eq('project_id', id);
+
+  const archive = {
+    archived_at: new Date().toISOString(),
+    project: p,
+    documents: docs || []
+  };
+
+  const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = (name || 'project').replace(/[^a-zA-Z0-9а-яА-ЯіїєІЇЄ\s]/g, '').replace(/\s+/g, '_');
+  a.href = url;
+  a.download = `PM_Archive_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // Видаляємо з Supabase після збереження
+  await sb.from('project_documents').delete().eq('project_id', id);
+  await sb.from('projects').delete().eq('id', id);
+  loadProjects();
 }
 
 async function openProject(id) {
