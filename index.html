@@ -391,7 +391,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <div class="header-actions">
     <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
       <option value="en">🌐 English</option>
-      <option value="uk">🇺🇦 Українська</option>
+      <option value="ua">🇺🇦 Українська</option>
       <option value="de">🇩🇪 Deutsch</option>
       <option value="fr">🇫🇷 Français</option>
       <option value="es">🇪🇸 Español</option>
@@ -1061,7 +1061,7 @@ function analyzeContext_internal() {
   }
 }
 
-const LANG_NAMES = { en: 'English', uk: 'Українська', pl: 'Polski', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', it: 'Italiano' };
+const LANG_NAMES = { en: 'English', ua: 'Українська', pl: 'Polski', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', it: 'Italiano' };
 
 function applyExtractedData(data) {
   // Language detection
@@ -1128,7 +1128,7 @@ function applyExtractedData(data) {
   if (data.pm || data.org)
     affectedDocs.push({ icon: '📡', name: 'Communication Plan', reason: 'PM & stakeholder context' });
 
-  const docsLabel = curLang() === 'uk' ? '📝 Документи з pre-filled даними:' : '📝 Documents with pre-filled data:';
+  const docsLabel = curLang() === 'ua' ? '📝 Документи з pre-filled даними:' : '📝 Documents with pre-filled data:';
   const docsHtml = affectedDocs.length ? `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid #bbf7d0;">
       <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">${docsLabel}</div>
@@ -2299,7 +2299,7 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'modal.editCancel': '✕ Cancel'
 },
 
-uk: {
+ua: {
   secBanner: '🔒 <strong>Ваші дані на 100% приватні.</strong> Всі документи зберігаються захищено у вашому особистому акаунті — тільки ви маєте до них доступ.<span class="sec-banner-detail">Захищено Supabase Row Level Security · Ніхто інший не бачить ваших даних</span>',
   steps: [
   {
@@ -3497,7 +3497,7 @@ function fillAllDemoDocs() {
   DOCS.forEach(d => { project.docStatus[d.key] = 'done'; });
   buildDashboard();
   const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','lessons'];
-  const readyLabel = curLang() === 'uk' ? '✅ Готово' : '✅ Ready';
+  const readyLabel = curLang() === 'ua' ? '✅ Готово' : '✅ Ready';
   keys.forEach((k, i) => {
     setTimeout(() => {
       const el = document.getElementById('genstatus-' + k);
