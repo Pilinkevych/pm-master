@@ -394,7 +394,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       <option value="hi">🇮🇳 हिन्दी</option>
     </select>
     <button class="btn-demo" onclick="startTour()">▶ Demo</button>
-    <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;">My Projects</button>
+    <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
     <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
     <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
   </div>
@@ -454,44 +454,44 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 <div class="setup-wrap">
   <div class="setup-hero">
     <div class="icon">🚀</div>
-    <h2>New Project</h2>
-    <p>Fill in project details or upload documents — AI will auto-fill what it can</p>
+    <h2 data-i18n="setup.title">New Project</h2>
+    <p data-i18n="setup.subtitle">Fill in project details or upload documents — AI will auto-fill what it can</p>
   </div>
 
   <!-- Basic info -->
   <div class="card">
-    <div class="card-title">📋 Project Information</div>
+    <div class="card-title" data-i18n="setup.projectInfo">📋 Project Information</div>
     <div class="field">
-      <label>Project Name *</label>
-      <input type="text" id="s-name" placeholder="e.g. Corporate Portal Redesign 2025">
+      <label data-i18n="setup.projectName">Project Name *</label>
+      <input type="text" id="s-name" placeholder="e.g. Corporate Portal Redesign 2025" data-i18n-ph="ph.projectName">
     </div>
     <div class="form-row-2">
       <div class="field">
-        <label>Organization / Company</label>
-        <input type="text" id="s-org" placeholder="Acme Corp">
+        <label data-i18n="setup.org">Organization / Company</label>
+        <input type="text" id="s-org" placeholder="Acme Corp" data-i18n-ph="ph.org">
       </div>
       <div class="field">
-        <label>Project Manager</label>
-        <input type="text" id="s-pm" placeholder="Your name">
+        <label data-i18n="setup.pm">Project Manager</label>
+        <input type="text" id="s-pm" placeholder="Your name" data-i18n-ph="ph.pm">
       </div>
     </div>
     <div class="form-row-3">
       <div class="field">
-        <label>Start Date</label>
+        <label data-i18n="setup.startDate">Start Date</label>
         <input type="date" id="s-start">
       </div>
       <div class="field">
-        <label>Planned End Date</label>
+        <label data-i18n="setup.endDate">Planned End Date</label>
         <input type="date" id="s-end">
       </div>
       <div class="field">
-        <label>Budget</label>
-        <input type="text" id="s-budget" placeholder="e.g. $150,000">
+        <label data-i18n="setup.budget">Budget</label>
+        <input type="text" id="s-budget" placeholder="e.g. $150,000" data-i18n-ph="ph.budget">
       </div>
     </div>
 
     <div class="field">
-      <label>Project Type</label>
+      <label data-i18n="setup.projectType">Project Type</label>
       <div class="type-grid">
         <div class="type-card active" onclick="selType(this,'IT / Software')"><div class="ti">💻</div><div class="tl">IT / Software</div></div>
         <div class="type-card" onclick="selType(this,'Construction')"><div class="ti">🏗️</div><div class="tl">Construction</div></div>
@@ -503,7 +503,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
 
     <div class="field">
-      <label>Development Approach <span class="badge-new">PMBOK 8</span></label>
+      <label><span data-i18n="setup.approach">Development Approach</span> <span class="badge-new">PMBOK 8</span></label>
       <div class="chip-row">
         <div class="chip active" onclick="selChip(this,'approach')">Predictive (Waterfall)</div>
         <div class="chip" onclick="selChip(this,'approach')">Agile / Scrum</div>
@@ -515,8 +515,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
   <!-- Upload documents -->
   <div class="card">
-    <div class="card-title">📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span></div>
-    <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents</p>
+    <div class="card-title" data-i18n="setup.uploadTitle">📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span></div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;" data-i18n="setup.uploadDesc">Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents</p>
 
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
          ondragover="event.preventDefault();this.classList.add('drag')"
@@ -524,55 +524,55 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
          ondrop="handleDrop(event)">
       <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.mp3,.m4a,.wav" onchange="handleFiles(this.files)">
       <div class="uz-icon">📂</div>
-      <div class="uz-title">Drop files here or click to upload</div>
-      <div class="uz-sub">PDF · DOCX · TXT · MP3 · M4A · WAV</div>
+      <div class="uz-title" data-i18n="setup.dropTitle">Drop files here or click to upload</div>
+      <div class="uz-sub" data-i18n="setup.dropSub">PDF · DOCX · TXT · MP3 · M4A · WAV</div>
     </div>
     <div class="upload-files" id="uploadedFiles"></div>
 
     <div class="paste-area" style="margin-top:14px;">
-      <label>Or paste text (email, MoM, brief)</label>
-      <textarea id="pasteText" placeholder="Paste email from client, meeting notes, project brief..."></textarea>
+      <label data-i18n="setup.pasteLabel">Or paste text (email, MoM, brief)</label>
+      <textarea id="pasteText" placeholder="Paste email from client, meeting notes, project brief..." data-i18n-ph="ph.pasteText"></textarea>
     </div>
 
     <button class="btn btn-ai" style="margin-top:12px;width:100%;" onclick="analyzeContext()">
-      <span>🔍</span> Analyze & Auto-fill Documents
+      <span>🔍</span> <span data-i18n="setup.analyzeBtn">Analyze & Auto-fill Documents</span>
     </button>
 
     <div class="ai-extract-result" id="extractResult">
-      <div class="aer-title">✅ AI found the following information:</div>
+      <div class="aer-title" data-i18n="setup.aiFound">✅ AI found the following information:</div>
       <div id="extractItems"></div>
     </div>
   </div>
 
   <!-- Document selection -->
   <div class="card">
-    <div class="card-title">📑 Select Documents to Generate</div>
-    <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">You can add or remove documents at any time from the dashboard</p>
+    <div class="card-title" data-i18n="setup.selectDocsTitle">📑 Select Documents to Generate</div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;" data-i18n="setup.selectDocsSub">You can add or remove documents at any time from the dashboard</p>
     <div class="doc-selector" id="docSelector">
       <!-- Filled by JS -->
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:13px;color:var(--gray-500);" id="selCount">12 of 12 selected</span>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(true)">Select All</button>
-        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(false)">Clear</button>
+        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(true)" data-i18n="setup.selectAll">Select All</button>
+        <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(false)" data-i18n="setup.clear">Clear</button>
       </div>
     </div>
   </div>
 
   <div class="field">
-    <label>Project Description <span style="font-weight:400;color:#94a3b8;font-size:12px;">(AI використає це для генерації документів)</span></label>
-    <textarea id="s-description" rows="3" placeholder="Опишіть проєкт: що будуємо, яка проблема вирішується, для кого..."></textarea>
+    <label><span data-i18n="setup.descriptionLabel">Project Description</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.descriptionHint">(AI will use this for document generation)</span></label>
+    <textarea id="s-description" rows="3" placeholder="Describe the project: what are we building, what problem does it solve, for whom..." data-i18n-ph="ph.description"></textarea>
   </div>
 
   <div class="field">
-    <label>Project Objectives <span style="font-weight:400;color:#94a3b8;font-size:12px;">(цілі проєкту — AI вставить їх у кожен документ)</span></label>
-    <textarea id="s-objectives" rows="2" placeholder="1. Запустити MVP до... 2. Досягти... 3. Інтегрувати..."></textarea>
+    <label><span data-i18n="setup.objectivesLabel">Project Objectives</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.objectivesHint">(objectives — AI will insert them into every document)</span></label>
+    <textarea id="s-objectives" rows="2" placeholder="1. Launch MVP by... 2. Achieve... 3. Integrate..." data-i18n-ph="ph.objectives"></textarea>
   </div>
 
   <div style="display:flex;gap:12px;flex-wrap:wrap;">
-    <button class="btn btn-primary" style="flex:1;" onclick="createProject()">🚀 Create Project & Open Dashboard</button>
-    <button class="btn btn-secondary" style="background:#f0fdf4;border-color:#86efac;color:#166534;font-weight:800;" onclick="loadDemoProject()">🧪 Load Demo Project</button>
+    <button class="btn btn-primary" style="flex:1;" onclick="createProject()">🚀 <span data-i18n="setup.createBtn">Create Project & Open Dashboard</span></button>
+    <button class="btn btn-secondary" style="background:#f0fdf4;border-color:#86efac;color:#166534;font-weight:800;" onclick="loadDemoProject()">🧪 <span data-i18n="setup.demoBtn">Load Demo Project</span></button>
   </div>
 </div>
 </div>
@@ -590,8 +590,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       <div class="dash-project-meta" id="dash-meta"></div>
     </div>
     <div class="dash-header-actions">
-      <button class="btn btn-secondary" style="font-size:13px;padding:9px 16px;" onclick="openUploadUpdate()">📎 Update from Document</button>
-      <button class="btn btn-ai" style="font-size:13px;padding:9px 16px;" onclick="generateJira()">🔗 Generate Jira Tasks</button>
+      <button class="btn btn-secondary" style="font-size:13px;padding:9px 16px;" onclick="openUploadUpdate()">📎 <span data-i18n="dash.updateBtn">Update from Document</span></button>
+      <button class="btn btn-ai" style="font-size:13px;padding:9px 16px;" onclick="generateJira()">🔗 <span data-i18n="dash.jiraBtn">Generate Jira Tasks</span></button>
       <div id="autosave-indicator" style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap;display:none;"></div>
     </div>
   </div>
@@ -600,19 +600,19 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-value" id="stat-docs">0/12</div>
-      <div class="stat-label">Documents Ready</div>
+      <div class="stat-label" data-i18n="dash.docsReady">Documents Ready</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-risks" style="color:var(--amber);">0</div>
-      <div class="stat-label">Open Risks</div>
+      <div class="stat-label" data-i18n="dash.openRisks">Open Risks</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-days" style="color:var(--green);">—</div>
-      <div class="stat-label">Days Remaining</div>
+      <div class="stat-label" data-i18n="dash.daysLeft">Days Remaining</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-cpi" style="color:var(--blue);">—</div>
-      <div class="stat-label">CPI (Cost)</div>
+      <div class="stat-label" data-i18n="dash.cpi">CPI (Cost)</div>
     </div>
   </div>
 
@@ -713,11 +713,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
 
   <!-- Documents -->
-  <div class="docs-section-title">📁 Project Documents</div>
+  <div class="docs-section-title" data-i18n="dash.docsTitle">📁 Project Documents</div>
   <div class="docs-grid" id="docsGrid"></div>
 
   <!-- Updates -->
-  <div class="docs-section-title" style="margin-top:24px;">🔄 Recent Updates</div>
+  <div class="docs-section-title" style="margin-top:24px;" data-i18n="dash.updatesTitle">🔄 Recent Updates</div>
   <div class="updates-wrap">
     <div class="update-item">
       <div class="update-dot" style="background:var(--green);"></div>
@@ -1738,7 +1738,7 @@ function updateNavButtons(page) {
     if (page === 'projects') {
       myBtn.style.display = 'none';
       homeBtn.style.display = 'flex';
-      homeBtn.textContent = '🏠 Home';
+      homeBtn.textContent = (DL[curLang()]||DL.en)['nav.home'] || '🏠 Home';
       homeBtn.onclick = () => showPage('setup');
     } else {
       myBtn.style.display = 'flex';
@@ -1747,14 +1747,33 @@ function updateNavButtons(page) {
   } else {
     myBtn.style.display = 'none';
     homeBtn.style.display = 'flex';
-    homeBtn.textContent = '+ New Project';
+    homeBtn.textContent = (DL[curLang()]||DL.en)['nav.newProject'] || '+ New Project';
     homeBtn.onclick = () => showPage('setup');
   }
 }
 
 function setLang(lang) {
+  const t = DL[lang] || DL.en;
+
+  // Banner
   const banner = document.getElementById('sec-banner');
-  if (banner) banner.innerHTML = (DL[lang] || DL.en).secBanner;
+  if (banner) banner.innerHTML = t.secBanner;
+
+  // All data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t[key];
+    if (val === undefined) return;
+    if (val.includes('<')) el.innerHTML = val;
+    else el.textContent = val;
+  });
+
+  // Placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    const val = t[key];
+    if (val !== undefined) el.placeholder = val;
+  });
 }
 </script>
 
@@ -2123,7 +2142,53 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
       differently: '— (To be completed at project close)',
       recommendations: '1. For IT projects: SAP/ERP integration proof-of-concept before full development\n2. Freeze requirements with formal sign-off before development starts\n3. Include mobile-first as explicit requirement, not constraint\n4. Engage ISO auditor 8 weeks before go-live, not 4'
     }
-  }
+  },
+  'setup.title': 'New Project',
+  'setup.subtitle': 'Fill in project details or upload documents — AI will auto-fill what it can',
+  'setup.projectInfo': '📋 Project Information',
+  'setup.projectName': 'Project Name *',
+  'setup.org': 'Organization / Company',
+  'setup.pm': 'Project Manager',
+  'setup.startDate': 'Start Date',
+  'setup.endDate': 'Planned End Date',
+  'setup.budget': 'Budget',
+  'setup.projectType': 'Project Type',
+  'setup.approach': 'Development Approach',
+  'setup.uploadTitle': '📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span>',
+  'setup.uploadDesc': 'Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents',
+  'setup.dropTitle': 'Drop files here or click to upload',
+  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.pasteLabel': 'Or paste text (email, MoM, brief)',
+  'setup.analyzeBtn': 'Analyze & Auto-fill Documents',
+  'setup.aiFound': '✅ AI found the following information:',
+  'setup.selectDocsTitle': '📑 Select Documents to Generate',
+  'setup.selectDocsSub': 'You can add or remove documents at any time from the dashboard',
+  'setup.selectAll': 'Select All',
+  'setup.clear': 'Clear',
+  'setup.descriptionLabel': 'Project Description',
+  'setup.descriptionHint': '(AI will use this for document generation)',
+  'setup.objectivesLabel': 'Project Objectives',
+  'setup.objectivesHint': '(objectives — AI will insert them into every document)',
+  'setup.createBtn': 'Create Project & Open Dashboard',
+  'setup.demoBtn': 'Load Demo Project',
+  'dash.docsReady': 'Documents Ready',
+  'dash.openRisks': 'Open Risks',
+  'dash.daysLeft': 'Days Remaining',
+  'dash.cpi': 'CPI (Cost)',
+  'dash.updateBtn': 'Update from Document',
+  'dash.jiraBtn': 'Generate Jira Tasks',
+  'dash.docsTitle': '📁 Project Documents',
+  'dash.updatesTitle': '🔄 Recent Updates',
+  'nav.myProjects': 'My Projects',
+  'nav.home': '🏠 Home',
+  'nav.newProject': '+ New Project',
+  'ph.projectName': 'e.g. Corporate Portal Redesign 2025',
+  'ph.org': 'Acme Corp',
+  'ph.pm': 'Your name',
+  'ph.budget': 'e.g. $150,000',
+  'ph.pasteText': 'Paste email from client, meeting notes, project brief...',
+  'ph.description': 'Describe the project: what are we building, what problem does it solve, for whom...',
+  'ph.objectives': '1. Launch MVP by... 2. Achieve... 3. Integrate...'
 },
 
 uk: {
@@ -2436,7 +2501,53 @@ VP of People, TechCorp Solutions`,
       differently: '— (Заповнити після закриття проєкту)',
       recommendations: '1. Для всіх IT-проєктів: proof-of-concept SAP/ERP-інтеграції до повної розробки\n2. Заморожувати вимоги офіційним підписанням до початку розробки\n3. Включати mobile-first як явну вимогу, а не обмеження\n4. Залучати ISO-аудитора за 8 тижнів до запуску, не за 4'
     }
-  }
+  },
+  'setup.title': 'Новий проєкт',
+  'setup.subtitle': 'Заповніть деталі або завантажте документи — AI автозаповнить що зможе',
+  'setup.projectInfo': '📋 Інформація про проєкт',
+  'setup.projectName': 'Назва проєкту *',
+  'setup.org': 'Організація / Компанія',
+  'setup.pm': 'Керівник проєкту',
+  'setup.startDate': 'Дата початку',
+  'setup.endDate': 'Планова дата завершення',
+  'setup.budget': 'Бюджет',
+  'setup.projectType': 'Тип проєкту',
+  'setup.approach': 'Підхід до розробки',
+  'setup.uploadTitle': '📎 Контекст проєкту <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— необов\'язково, але рекомендовано</span>',
+  'setup.uploadDesc': 'Завантажте МоМ, листи, брифи — AI витягне дані і автозаповнить документи',
+  'setup.dropTitle': 'Перетягніть файли або натисніть для завантаження',
+  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.pasteLabel': 'Або вставте текст (email, МоМ, бриф)',
+  'setup.analyzeBtn': 'Аналізувати та автозаповнити',
+  'setup.aiFound': '✅ AI знайшов наступну інформацію:',
+  'setup.selectDocsTitle': '📑 Оберіть документи для генерації',
+  'setup.selectDocsSub': 'Ви можете додавати або видаляти документи в будь-який час з дашборду',
+  'setup.selectAll': 'Обрати всі',
+  'setup.clear': 'Очистити',
+  'setup.descriptionLabel': 'Опис проєкту',
+  'setup.descriptionHint': '(AI використає це для генерації документів)',
+  'setup.objectivesLabel': 'Цілі проєкту',
+  'setup.objectivesHint': '(AI вставить їх у кожен документ)',
+  'setup.createBtn': 'Створити проєкт та відкрити дашборд',
+  'setup.demoBtn': 'Завантажити демо-проєкт',
+  'dash.docsReady': 'Документів готово',
+  'dash.openRisks': 'Відкритих ризиків',
+  'dash.daysLeft': 'Днів залишилось',
+  'dash.cpi': 'CPI (Вартість)',
+  'dash.updateBtn': 'Оновити з документа',
+  'dash.jiraBtn': 'Генерувати Jira-задачі',
+  'dash.docsTitle': '📁 Документи проєкту',
+  'dash.updatesTitle': '🔄 Останні оновлення',
+  'nav.myProjects': 'Мої проєкти',
+  'nav.home': '🏠 Головна',
+  'nav.newProject': '+ Новий проєкт',
+  'ph.projectName': 'наприклад: Редизайн порталу 2025',
+  'ph.org': 'Назва компанії',
+  'ph.pm': 'Ваше ім\'я',
+  'ph.budget': 'наприклад: $150,000',
+  'ph.pasteText': 'Вставте лист від клієнта, нотатки з наради, бриф проєкту...',
+  'ph.description': 'Опишіть проєкт: що будуємо, яка проблема вирішується, для кого...',
+  'ph.objectives': '1. Запустити MVP до... 2. Досягти... 3. Інтегрувати...'
 }
 }; // end DL
 
