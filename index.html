@@ -784,7 +784,7 @@ const DOCS = [
   { key:'scope',        icon:'🎯', name:'Scope Statement + WBS',        phase:'Planning · Scope',           pmbok8:false },
   { key:'schedule',     icon:'📅', name:'Schedule + Milestones',        phase:'Planning · Schedule',        pmbok8:false },
   { key:'budget',       icon:'💰', name:'Cost / Budget Plan',           phase:'Planning · Cost',            pmbok8:false },
-  { key:'risk',         icon:'⚠️', name:'Risks',                       phase:'Planning · Uncertainty',     pmbok8:false },
+  { key:'risk',         icon:'⚠️', name:'Risk Register',               phase:'Planning · Uncertainty',     pmbok8:false },
   { key:'team',         icon:'👤', name:'Team Management Plan',         phase:'Planning · Team · PMBOK 8',  pmbok8:true  },
   { key:'comms',        icon:'📡', name:'Communication Plan',           phase:'Planning · Communication',   pmbok8:false },
   { key:'quality',      icon:'✅', name:'Quality Management Plan',      phase:'Planning · Delivery',        pmbok8:false },
@@ -1067,12 +1067,41 @@ function applyExtractedData(data) {
   // Show extracted summary
   const items = data.extracted || fields.filter(k => data[k]).map(k => ({ label: k, value: data[k], found: true }));
   const risksCount = (data.risks || []).length;
+
+  // Determine which documents got pre-populated data
+  const affectedDocs = [];
+  if (data.name || data.org || data.pm || data.start || data.end || data.budget || data.description || data.objectives)
+    affectedDocs.push({ icon: '📋', name: 'Project Charter', reason: 'name, org, PM, dates, budget, objectives' });
+  if (data.description || data.objectives)
+    affectedDocs.push({ icon: '🎯', name: 'Scope Statement + WBS', reason: 'description & objectives' });
+  if (data.start || data.end)
+    affectedDocs.push({ icon: '📅', name: 'Schedule + Milestones', reason: 'start & end dates' });
+  if (data.budget)
+    affectedDocs.push({ icon: '💰', name: 'Cost / Budget Plan', reason: 'budget amount' });
+  if (risksCount)
+    affectedDocs.push({ icon: '⚠️', name: 'Risk Register', reason: `${risksCount} risks pre-loaded` });
+  if (data.pm || data.org)
+    affectedDocs.push({ icon: '👥', name: 'Team Management Plan', reason: 'PM & organization' });
+  if (data.pm || data.org)
+    affectedDocs.push({ icon: '📡', name: 'Communication Plan', reason: 'PM & stakeholder context' });
+
+  const docsHtml = affectedDocs.length ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #bbf7d0;">
+      <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">📝 Документи з pre-filled даними:</div>
+      ${affectedDocs.map(d => `
+        <div class="aer-item">
+          <div class="aer-dot found"></div>
+          <span class="aer-label">${d.icon} ${d.name}:</span>
+          <span class="aer-val">${d.reason}</span>
+        </div>`).join('')}
+    </div>` : '';
+
   document.getElementById('extractItems').innerHTML = items.map(it => `
     <div class="aer-item">
       <div class="aer-dot ${it.found !== false ? 'found' : 'missing'}"></div>
       <span class="aer-label">${it.label}:</span>
       <span class="aer-val">${it.value || '—'}</span>
-    </div>`).join('') + (risksCount ? `<div class="aer-item"><div class="aer-dot found"></div><span class="aer-label">Risks generated:</span><span class="aer-val">${risksCount} risks auto-added to Risk Register</span></div>` : '');
+    </div>`).join('') + (risksCount ? `<div class="aer-item"><div class="aer-dot found"></div><span class="aer-label">Risks generated:</span><span class="aer-val">${risksCount} risks auto-added to Risk Register</span></div>` : '') + docsHtml;
   document.getElementById('extractResult').style.display = 'block';
 }
 
