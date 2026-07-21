@@ -1044,7 +1044,33 @@ function analyzeContext() {
   }
 }
 
+const LANG_NAMES = { en: 'English', uk: 'Українська', pl: 'Polski', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', it: 'Italiano' };
+
 function applyExtractedData(data) {
+  // Language detection
+  const detected = data.detectedLang;
+  const current = curLang();
+  if (detected && detected !== current && LANG_NAMES[detected]) {
+    const detName = LANG_NAMES[detected];
+    const curName = LANG_NAMES[current] || current.toUpperCase();
+    const switchIt = confirm(`🌐 Detected language: ${detName}\n\nYour document appears to be in ${detName}, but the project is set to ${curName}.\n\nSwitch project language to ${detName}?`);
+    if (switchIt) {
+      document.getElementById('langSelect').value = detected;
+      setLang(detected);
+    } else {
+      // Show notice in extract result after rendering
+      setTimeout(() => {
+        const el = document.getElementById('extractItems');
+        if (el) el.insertAdjacentHTML('beforeend', `
+          <div class="aer-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #bbf7d0;">
+            <div class="aer-dot" style="background:#f59e0b;"></div>
+            <span class="aer-label">⚠️ Language note:</span>
+            <span class="aer-val">MoM stays in ${detName}. Documents will be generated in ${curName}.</span>
+          </div>`);
+      }, 50);
+    }
+  }
+
   // Auto-fill form fields
   const fields = ['name','org','pm','start','end','budget','description','objectives'];
   const fieldMap = { name:'s-name', org:'s-org', pm:'s-pm', start:'s-start', end:'s-end', budget:'s-budget', description:'s-description', objectives:'s-objectives' };
