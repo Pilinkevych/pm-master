@@ -995,6 +995,7 @@ function removeFile(i) {
 }
 
 function analyzeContext() {
+  if (!currentUser) { openAuth(); return; }
   const btn = event.target.closest('button');
   const orig = btn.innerHTML;
   const paste = document.getElementById('pasteText').value.trim();
@@ -1151,6 +1152,7 @@ function applyExtractedData(data) {
 
 
 function createProject() {
+  if (!currentUser) { openAuth(); return; }
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
