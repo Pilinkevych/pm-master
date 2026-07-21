@@ -995,8 +995,12 @@ function removeFile(i) {
 }
 
 function analyzeContext() {
-  if (!currentUser) { openAuth(); return; }
-  const btn = event.target.closest('button');
+  if (!currentUser) { window._pendingAuthAction = 'analyze'; openAuth(); return; }
+  analyzeContext_internal();
+}
+
+function analyzeContext_internal() {
+  const btn = document.querySelector('[onclick="analyzeContext()"]') || document.createElement('button');
   const orig = btn.innerHTML;
   const paste = document.getElementById('pasteText').value.trim();
   const hasFiles = uploadedFilesList.length > 0;
@@ -1152,7 +1156,7 @@ function applyExtractedData(data) {
 
 
 function createProject() {
-  if (!currentUser) { openAuth(); return; }
+  if (!currentUser) { window._pendingAuthAction = 'create'; openAuth(); return; }
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
@@ -3396,7 +3400,7 @@ const STEP_ACTIONS = {
 };
 
 function getDemoSteps() {
-  const base = dl().steps;
+  const base = dl().steps || DL.en.steps;
   return base.map((s, i) => STEP_ACTIONS[i] ? Object.assign({}, s, STEP_ACTIONS[i]) : s);
 }
 
@@ -3565,7 +3569,11 @@ function onSignIn(user) {
   document.getElementById('btn-my-projects').style.display = 'flex';
   closeAuth();
   loadProjects();
-  showPage('projects');
+  const pending = window._pendingAuthAction;
+  window._pendingAuthAction = null;
+  if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 100); }
+  else if (pending === 'create') { showPage('setup'); }
+  else { showPage('projects'); }
 }
 
 function onSignOut() {
