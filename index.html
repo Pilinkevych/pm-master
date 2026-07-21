@@ -1085,9 +1085,10 @@ function applyExtractedData(data) {
   if (data.pm || data.org)
     affectedDocs.push({ icon: '📡', name: 'Communication Plan', reason: 'PM & stakeholder context' });
 
+  const docsLabel = curLang() === 'uk' ? '📝 Документи з pre-filled даними:' : '📝 Documents with pre-filled data:';
   const docsHtml = affectedDocs.length ? `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid #bbf7d0;">
-      <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">📝 Документи з pre-filled даними:</div>
+      <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">${docsLabel}</div>
       ${affectedDocs.map(d => `
         <div class="aer-item">
           <div class="aer-dot found"></div>
