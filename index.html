@@ -1147,11 +1147,7 @@ function applyExtractedData(data) {
       <span class="aer-val">${it.value || '—'}</span>
     </div>`).join('') + (risksCount ? `<div class="aer-item"><div class="aer-dot found"></div><span class="aer-label">Risks generated:</span><span class="aer-val">${risksCount} risks auto-added to Risk Register</span></div>` : '') + docsHtml;
   document.getElementById('extractResult').style.display = 'block';
-
-  // Offer to generate all docs
-  setTimeout(() => {
-    if (confirm(dl()['genAll.prompt'])) project._pendingGenerateAll = true;
-  }, 400);
+  project._momAnalyzed = true;
 }
 
 
@@ -1180,9 +1176,11 @@ function createProject() {
   updateAutosaveIndicator('saving');
   setTimeout(() => saveCurrentProject(true), 1000);
 
-  if (project._pendingGenerateAll) {
-    delete project._pendingGenerateAll;
-    setTimeout(() => generateAllDocs(), 800);
+  if (project._momAnalyzed) {
+    delete project._momAnalyzed;
+    setTimeout(() => {
+      if (confirm(dl()['genAll.prompt'])) generateAllDocs();
+    }, 600);
   }
 
   // Auto-fill EVM and PERT if demo data exists
