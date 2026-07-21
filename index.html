@@ -515,7 +515,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
   <!-- Upload documents -->
   <div class="card">
-    <div class="card-title" data-i18n="setup.uploadTitle">📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span></div>
+    <div class="card-title">📎 <span data-i18n="setup.uploadTitle">Upload Project Context</span> <span style="font-size:12px;font-weight:600;color:var(--gray-500)" data-i18n="setup.uploadHint">— optional but recommended</span></div>
     <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;" data-i18n="setup.uploadDesc">Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents</p>
 
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
@@ -1759,13 +1759,11 @@ function setLang(lang) {
   const banner = document.getElementById('sec-banner');
   if (banner) banner.innerHTML = t.secBanner;
 
-  // All data-i18n elements
+  // All data-i18n elements — always textContent, never innerHTML
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t[key];
-    if (val === undefined) return;
-    if (val.includes('<')) el.innerHTML = val;
-    else el.textContent = val;
+    if (val !== undefined) el.textContent = val;
   });
 
   // Placeholders
@@ -2154,7 +2152,8 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'setup.budget': 'Budget',
   'setup.projectType': 'Project Type',
   'setup.approach': 'Development Approach',
-  'setup.uploadTitle': '📎 Upload Project Context <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— optional but recommended</span>',
+  'setup.uploadTitle': 'Upload Project Context',
+  'setup.uploadHint': '— optional but recommended',
   'setup.uploadDesc': 'Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents',
   'setup.dropTitle': 'Drop files here or click to upload',
   'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
@@ -2513,7 +2512,8 @@ VP of People, TechCorp Solutions`,
   'setup.budget': 'Бюджет',
   'setup.projectType': 'Тип проєкту',
   'setup.approach': 'Підхід до розробки',
-  'setup.uploadTitle': '📎 Контекст проєкту <span style="font-size:12px;font-weight:600;color:var(--gray-500)">— необов\'язково, але рекомендовано</span>',
+  'setup.uploadTitle': 'Контекст проєкту',
+  'setup.uploadHint': '— необов\'язково, але рекомендовано',
   'setup.uploadDesc': 'Завантажте МоМ, листи, брифи — AI витягне дані і автозаповнить документи',
   'setup.dropTitle': 'Перетягніть файли або натисніть для завантаження',
   'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
