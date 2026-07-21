@@ -693,16 +693,22 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
 
   <!-- Risk Matrix -->
-  <div class="risk-matrix-wrap">
-    <div class="evm-title">⚠️ Risk Probability × Impact Matrix <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Uncertainty Domain</span></div>
-    <div class="risk-matrix" id="riskMatrix">
-      <!-- Built by JS -->
+  <div class="calc-section">
+    <div class="calc-header" onclick="toggleCalc('risk')">
+      <div class="calc-header-left">
+        ⚠️ Risk Probability × Impact Matrix
+        <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Uncertainty Domain</span>
+      </div>
+      <span class="calc-toggle" id="risk-toggle">▶</span>
     </div>
-    <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;font-weight:700;">
-      <span style="color:#166534;">■ Low (1-4)</span>
-      <span style="color:#854d0e;">■ Medium (5-9)</span>
-      <span style="color:#991b1b;">■ High (10-16)</span>
-      <span style="color:#dc2626;">■ Critical (20-25)</span>
+    <div class="calc-body" id="risk-body">
+      <div class="risk-matrix" id="riskMatrix"></div>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;font-weight:700;">
+        <span style="color:#166534;">■ Low (1-4)</span>
+        <span style="color:#854d0e;">■ Medium (5-9)</span>
+        <span style="color:#991b1b;">■ High (10-16)</span>
+        <span style="color:#dc2626;">■ Critical (20-25)</span>
+      </div>
     </div>
   </div>
 
@@ -778,7 +784,7 @@ const DOCS = [
   { key:'scope',        icon:'🎯', name:'Scope Statement + WBS',        phase:'Planning · Scope',           pmbok8:false },
   { key:'schedule',     icon:'📅', name:'Schedule + Milestones',        phase:'Planning · Schedule',        pmbok8:false },
   { key:'budget',       icon:'💰', name:'Cost / Budget Plan',           phase:'Planning · Cost',            pmbok8:false },
-  { key:'risk',         icon:'⚠️', name:'Risk Register',               phase:'Planning · Uncertainty',     pmbok8:false },
+  { key:'risk',         icon:'⚠️', name:'Risks',                       phase:'Planning · Uncertainty',     pmbok8:false },
   { key:'team',         icon:'👤', name:'Team Management Plan',         phase:'Planning · Team · PMBOK 8',  pmbok8:true  },
   { key:'comms',        icon:'📡', name:'Communication Plan',           phase:'Planning · Communication',   pmbok8:false },
   { key:'quality',      icon:'✅', name:'Quality Management Plan',      phase:'Planning · Delivery',        pmbok8:false },
