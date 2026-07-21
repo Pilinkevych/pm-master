@@ -1145,7 +1145,7 @@ function applyExtractedData(data) {
 
   // Offer to generate all docs
   setTimeout(() => {
-    if (confirm(dl()['genAll.prompt'])) generateAllDocs();
+    if (confirm(dl()['genAll.prompt'])) project._pendingGenerateAll = true;
   }, 400);
 }
 
@@ -1173,6 +1173,11 @@ function createProject() {
   showPage('dashboard');
   updateAutosaveIndicator('saving');
   setTimeout(() => saveCurrentProject(true), 1000);
+
+  if (project._pendingGenerateAll) {
+    delete project._pendingGenerateAll;
+    setTimeout(() => generateAllDocs(), 800);
+  }
 
   // Auto-fill EVM and PERT if demo data exists
   if (project._demoEVM) {
