@@ -1852,6 +1852,7 @@ function updateNavButtons(page) {
 
 function setLang(lang) {
   const t = DL[lang] || DL.en;
+  localStorage.setItem('_pmLang', lang);
 
   // RTL support
   const isRTL = lang === 'ar';
@@ -3410,6 +3411,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const hdr = document.querySelector('header');
   const banner = document.getElementById('sec-banner');
   if (hdr && banner) banner.style.top = hdr.offsetHeight + 'px';
+
+  const savedLang = localStorage.getItem('_pmLang');
+  if (savedLang && DL[savedLang]) {
+    document.getElementById('langSelect').value = savedLang;
+    setLang(savedLang);
+  }
 });
 window.addEventListener('beforeunload', () => {
   if (currentUser && project.name) saveCurrentProject(true);
