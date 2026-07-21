@@ -995,7 +995,7 @@ function removeFile(i) {
 }
 
 function analyzeContext() {
-  if (!currentUser) { window._pendingAuthAction = 'analyze'; openAuth(); return; }
+  if (!currentUser) { localStorage.setItem('_pmPendingAction', 'analyze'); openAuth(); return; }
   analyzeContext_internal();
 }
 
@@ -1156,7 +1156,7 @@ function applyExtractedData(data) {
 
 
 function createProject() {
-  if (!currentUser) { window._pendingAuthAction = 'create'; openAuth(); return; }
+  if (!currentUser) { localStorage.setItem('_pmPendingAction', 'create'); openAuth(); return; }
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
@@ -3569,9 +3569,10 @@ function onSignIn(user) {
   document.getElementById('btn-my-projects').style.display = 'flex';
   closeAuth();
   loadProjects();
-  const pending = window._pendingAuthAction;
-  window._pendingAuthAction = null;
-  if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 100); }
+  const pending = localStorage.getItem('_pmPendingAction');
+  localStorage.removeItem('_pmPendingAction');
+  console.log('[PM] onSignIn pending action:', pending);
+  if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 300); }
   else if (pending === 'create') { showPage('setup'); }
   else { showPage('projects'); }
 }
