@@ -1142,6 +1142,11 @@ function applyExtractedData(data) {
       <span class="aer-val">${it.value || '—'}</span>
     </div>`).join('') + (risksCount ? `<div class="aer-item"><div class="aer-dot found"></div><span class="aer-label">Risks generated:</span><span class="aer-val">${risksCount} risks auto-added to Risk Register</span></div>` : '') + docsHtml;
   document.getElementById('extractResult').style.display = 'block';
+
+  // Offer to generate all docs
+  setTimeout(() => {
+    if (confirm(dl()['genAll.prompt'])) generateAllDocs();
+  }, 400);
 }
 
 
@@ -1290,9 +1295,11 @@ function openDoc(key, mode) {
   const hasContent = project.docContent && project.docContent[key];
   const showGenerated = hasContent && mode !== 'form';
   if (showGenerated) {
+    const t = dl();
     document.getElementById('modal-body').innerHTML = `
       <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
         <button onclick="openDoc('${key}','form')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📝 Edit Form</button>
+        <button onclick="editDocContent('${key}')" style="padding:6px 14px;border:1px solid #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;cursor:pointer;font-size:13px;font-weight:700;">${t['modal.edit'] || '✏️ Edit'}</button>
         <button onclick="copyDocContent('${key}')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📋 Copy</button>
         <button onclick="exportDocPDF('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:13px;">📥 Export PDF</button>
       </div>
@@ -1545,6 +1552,68 @@ function generateDoc(key) {
     btn.disabled = false;
     alert('⚠️ Generation failed: ' + err.message + '\n\nCheck that n8n workflow is active.');
   });
+}
+
+async function generateAllDocs() {
+  const keys = DOCS.filter(d => project.docStatus[d.key] && project.docStatus[d.key] !== 'excluded').map(d => d.key);
+  if (!keys.length) return;
+  const t = dl();
+  // Show progress banner
+  let banner = document.getElementById('genall-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'genall-banner';
+    banner.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:#1e3a8a;color:white;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:260px;';
+    document.body.appendChild(banner);
+  }
+  let done = 0;
+  for (const key of keys) {
+    const doc = DOCS.find(d => d.key === key);
+    banner.textContent = `${t['genAll.generating'] || '⏳ Generating...'} ${doc?.icon || ''} ${doc?.name || key} (${done+1}/${keys.length})`;
+    try {
+      const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ key, project, lang: curLang() })
+      });
+      const text = await r.text();
+      const data = JSON.parse(text);
+      if (data.success && data.content) {
+        project.docStatus[key] = 'done';
+        project.docContent = project.docContent || {};
+        project.docContent[key] = data.content;
+      }
+    } catch(e) { /* skip failed, continue */ }
+    done++;
+  }
+  updateStats();
+  buildDocsGrid();
+  scheduleAutosave();
+  banner.style.background = '#166534';
+  banner.textContent = t['genAll.done'] || '✅ All documents generated!';
+  setTimeout(() => banner.remove(), 3000);
+}
+
+function editDocContent(key) {
+  const content = project.docContent[key] || '';
+  const t = dl();
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button onclick="saveEditedDoc('${key}')" style="padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${t['modal.editSave'] || '💾 Save Changes'}</button>
+      <button onclick="openDoc('${key}','generated')" style="padding:7px 14px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;cursor:pointer;">${t['modal.editCancel'] || '✕ Cancel'}</button>
+      <span style="font-size:12px;color:#64748b;align-self:center;margin-left:4px;">Editing HTML source</span>
+    </div>
+    <textarea id="doc-edit-area" style="width:100%;height:calc(100% - 50px);min-height:420px;font-family:monospace;font-size:13px;border:1px solid #cbd5e1;border-radius:8px;padding:12px;resize:vertical;line-height:1.5;box-sizing:border-box;">${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>`;
+}
+
+function saveEditedDoc(key) {
+  const ta = document.getElementById('doc-edit-area');
+  if (!ta) return;
+  project.docContent = project.docContent || {};
+  project.docContent[key] = ta.value.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  project.docStatus[key] = 'done';
+  scheduleAutosave();
+  openDoc(key, 'generated');
 }
 
 function editProjectName() {
@@ -2210,7 +2279,13 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'ph.budget': 'e.g. $150,000',
   'ph.pasteText': 'Paste email from client, meeting notes, project brief...',
   'ph.description': 'Describe the project: what are we building, what problem does it solve, for whom...',
-  'ph.objectives': '1. Launch MVP by... 2. Achieve... 3. Integrate...'
+  'ph.objectives': '1. Launch MVP by... 2. Achieve... 3. Integrate...',
+  'genAll.prompt': '🚀 AI successfully extracted your project data!\n\nGenerate all selected documents now?\n\nThis will create all your project documents in English using the AI. It takes ~2 minutes.',
+  'genAll.generating': '⏳ Generating documents...',
+  'genAll.done': '✅ All documents generated!',
+  'modal.edit': '✏️ Edit',
+  'modal.editSave': '💾 Save Changes',
+  'modal.editCancel': '✕ Cancel'
 },
 
 uk: {
@@ -2570,7 +2645,13 @@ VP of People, TechCorp Solutions`,
   'ph.budget': 'наприклад: $150,000',
   'ph.pasteText': 'Вставте лист від клієнта, нотатки з наради, бриф проєкту...',
   'ph.description': 'Опишіть проєкт: що будуємо, яка проблема вирішується, для кого...',
-  'ph.objectives': '1. Запустити MVP до... 2. Досягти... 3. Інтегрувати...'
+  'ph.objectives': '1. Запустити MVP до... 2. Досягти... 3. Інтегрувати...',
+  'genAll.prompt': '🚀 ШІ успішно витягнув дані проєкту!\n\nСгенерувати всі обрані документи зараз?\n\nЦе створить усі документи проєкту українською. Займе ~2 хвилини.',
+  'genAll.generating': '⏳ Генерація документів...',
+  'genAll.done': '✅ Усі документи згенеровано!',
+  'modal.edit': '✏️ Редагувати',
+  'modal.editSave': '💾 Зберегти зміни',
+  'modal.editCancel': '✕ Скасувати'
 },
 
 de: {
@@ -2621,7 +2702,13 @@ de: {
   'ph.budget': 'z.B. $150.000',
   'ph.pasteText': 'E-Mail vom Kunden, Besprechungsnotizen, Projektbriefing einfügen...',
   'ph.description': 'Beschreiben Sie das Projekt: Was bauen wir, welches Problem löst es, für wen...',
-  'ph.objectives': '1. MVP bis... starten 2. Erreichen... 3. Integrieren...'
+  'ph.objectives': '1. MVP bis... starten 2. Erreichen... 3. Integrieren...',
+  'genAll.prompt': '🚀 KI hat Ihre Projektdaten erfolgreich extrahiert!\n\nAlle ausgewählten Dokumente jetzt generieren?\n\nDies erstellt alle Projektdokumente auf Deutsch. Dauert ~2 Minuten.',
+  'genAll.generating': '⏳ Dokumente werden generiert...',
+  'genAll.done': '✅ Alle Dokumente generiert!',
+  'modal.edit': '✏️ Bearbeiten',
+  'modal.editSave': '💾 Änderungen speichern',
+  'modal.editCancel': '✕ Abbrechen'
 },
 
 fr: {
@@ -2672,7 +2759,13 @@ fr: {
   'ph.budget': 'ex. $150 000',
   'ph.pasteText': 'Collez un e-mail client, des notes de réunion, un brief projet...',
   'ph.description': 'Décrivez le projet : que construisons-nous, quel problème résout-il, pour qui...',
-  'ph.objectives': '1. Lancer le MVP avant... 2. Atteindre... 3. Intégrer...'
+  'ph.objectives': '1. Lancer le MVP avant... 2. Atteindre... 3. Intégrer...',
+  'genAll.prompt': '🚀 L\'IA a extrait les données du projet!\n\nGénérer tous les documents sélectionnés maintenant?\n\nCela créera tous les documents en Français. ~2 minutes.',
+  'genAll.generating': '⏳ Génération des documents...',
+  'genAll.done': '✅ Tous les documents générés!',
+  'modal.edit': '✏️ Modifier',
+  'modal.editSave': '💾 Enregistrer',
+  'modal.editCancel': '✕ Annuler'
 },
 
 es: {
@@ -2723,7 +2816,13 @@ es: {
   'ph.budget': 'ej. $150.000',
   'ph.pasteText': 'Pegue un correo del cliente, notas de reunión, brief del proyecto...',
   'ph.description': 'Describa el proyecto: qué construimos, qué problema resuelve, para quién...',
-  'ph.objectives': '1. Lanzar MVP antes de... 2. Lograr... 3. Integrar...'
+  'ph.objectives': '1. Lanzar MVP antes de... 2. Lograr... 3. Integrar...',
+  'genAll.prompt': '🚀 ¡La IA extrajo los datos del proyecto!\n\n¿Generar todos los documentos ahora?\n\nSe crearán en Español. ~2 minutos.',
+  'genAll.generating': '⏳ Generando documentos...',
+  'genAll.done': '✅ ¡Todos los documentos generados!',
+  'modal.edit': '✏️ Editar',
+  'modal.editSave': '💾 Guardar cambios',
+  'modal.editCancel': '✕ Cancelar'
 },
 
 pl: {
@@ -2774,7 +2873,13 @@ pl: {
   'ph.budget': 'np. $150 000',
   'ph.pasteText': 'Wklej e-mail od klienta, notatki ze spotkania, brief projektu...',
   'ph.description': 'Opisz projekt: co budujemy, jaki problem rozwiązuje, dla kogo...',
-  'ph.objectives': '1. Uruchomić MVP do... 2. Osiągnąć... 3. Zintegrować...'
+  'ph.objectives': '1. Uruchomić MVP do... 2. Osiągnąć... 3. Zintegrować...',
+  'genAll.prompt': '🚀 AI pomyślnie wyodrębnił dane projektu!\n\nWygenerować wszystkie dokumenty teraz?\n\nDokumenty powstaną po polsku. ~2 minuty.',
+  'genAll.generating': '⏳ Generowanie dokumentów...',
+  'genAll.done': '✅ Wszystkie dokumenty wygenerowane!',
+  'modal.edit': '✏️ Edytuj',
+  'modal.editSave': '💾 Zapisz zmiany',
+  'modal.editCancel': '✕ Anuluj'
 },
 
 pt: {
@@ -2825,7 +2930,13 @@ pt: {
   'ph.budget': 'ex. $150.000',
   'ph.pasteText': 'Cole um e-mail do cliente, notas de reunião, briefing do projeto...',
   'ph.description': 'Descreva o projeto: o que estamos construindo, que problema resolve, para quem...',
-  'ph.objectives': '1. Lançar MVP até... 2. Alcançar... 3. Integrar...'
+  'ph.objectives': '1. Lançar MVP até... 2. Alcançar... 3. Integrar...',
+  'genAll.prompt': '🚀 A IA extraiu os dados do projeto!\n\nGerar todos os documentos agora?\n\nSerão criados em Português. ~2 minutos.',
+  'genAll.generating': '⏳ Gerando documentos...',
+  'genAll.done': '✅ Todos os documentos gerados!',
+  'modal.edit': '✏️ Editar',
+  'modal.editSave': '💾 Salvar alterações',
+  'modal.editCancel': '✕ Cancelar'
 },
 
 it: {
@@ -2876,7 +2987,13 @@ it: {
   'ph.budget': 'es. $150.000',
   'ph.pasteText': 'Incolla un\'e-mail del cliente, note di riunione, brief del progetto...',
   'ph.description': 'Descrivi il progetto: cosa stiamo costruendo, quale problema risolve, per chi...',
-  'ph.objectives': '1. Lanciare MVP entro... 2. Raggiungere... 3. Integrare...'
+  'ph.objectives': '1. Lanciare MVP entro... 2. Raggiungere... 3. Integrare...',
+  'genAll.prompt': '🚀 L\'AI ha estratto i dati del progetto!\n\nGenerare tutti i documenti ora?\n\nSaranno creati in Italiano. ~2 minuti.',
+  'genAll.generating': '⏳ Generazione documenti...',
+  'genAll.done': '✅ Tutti i documenti generati!',
+  'modal.edit': '✏️ Modifica',
+  'modal.editSave': '💾 Salva modifiche',
+  'modal.editCancel': '✕ Annulla'
 },
 
 tr: {
@@ -2927,7 +3044,13 @@ tr: {
   'ph.budget': 'örn. $150.000',
   'ph.pasteText': 'Müşteri e-postası, toplantı notları, proje brifingi yapıştırın...',
   'ph.description': 'Projeyi açıklayın: ne inşa ediyoruz, hangi sorunu çözüyor, kimin için...',
-  'ph.objectives': '1. MVP\'yi ... tarihine kadar başlat 2. Ulaş... 3. Entegre et...'
+  'ph.objectives': '1. MVP\'yi ... tarihine kadar başlat 2. Ulaş... 3. Entegre et...',
+  'genAll.prompt': '🚀 AI proje verilerini başarıyla çıkardı!\n\nTüm seçili belgeleri şimdi oluştur?\n\nTürkçe olarak oluşturulacak. ~2 dakika.',
+  'genAll.generating': '⏳ Belgeler oluşturuluyor...',
+  'genAll.done': '✅ Tüm belgeler oluşturuldu!',
+  'modal.edit': '✏️ Düzenle',
+  'modal.editSave': '💾 Değişiklikleri kaydet',
+  'modal.editCancel': '✕ İptal'
 },
 
 zh: {
@@ -2978,7 +3101,13 @@ zh: {
   'ph.budget': '例：$150,000',
   'ph.pasteText': '粘贴客户邮件、会议记录、项目简报...',
   'ph.description': '描述项目：我们在构建什么，解决什么问题，为谁服务...',
-  'ph.objectives': '1. 在...之前启动MVP 2. 实现... 3. 整合...'
+  'ph.objectives': '1. 在...之前启动MVP 2. 实现... 3. 整合...',
+  'genAll.prompt': '🚀 AI成功提取了项目数据！\n\n现在生成所有选定的文档？\n\n将以中文创建。约2分钟。',
+  'genAll.generating': '⏳ 正在生成文档...',
+  'genAll.done': '✅ 所有文档已生成！',
+  'modal.edit': '✏️ 编辑',
+  'modal.editSave': '💾 保存更改',
+  'modal.editCancel': '✕ 取消'
 },
 
 ja: {
@@ -3029,7 +3158,13 @@ ja: {
   'ph.budget': '例：$150,000',
   'ph.pasteText': 'クライアントのメール、会議メモ、プロジェクトブリーフを貼り付け...',
   'ph.description': 'プロジェクトを説明してください：何を構築するか、どんな問題を解決するか、誰のために...',
-  'ph.objectives': '1. ...までにMVPを開始 2. 達成... 3. 統合...'
+  'ph.objectives': '1. ...までにMVPを開始 2. 達成... 3. 統合...',
+  'genAll.prompt': '🚀 AIがプロジェクトデータを正常に抽出しました！\n\n今すぐすべてのドキュメントを生成しますか？\n\n日本語で作成されます。約2分。',
+  'genAll.generating': '⏳ ドキュメントを生成中...',
+  'genAll.done': '✅ すべてのドキュメントが生成されました！',
+  'modal.edit': '✏️ 編集',
+  'modal.editSave': '💾 変更を保存',
+  'modal.editCancel': '✕ キャンセル'
 },
 
 ko: {
@@ -3080,7 +3215,13 @@ ko: {
   'ph.budget': '예: $150,000',
   'ph.pasteText': '클라이언트 이메일, 회의 노트, 프로젝트 브리프 붙여넣기...',
   'ph.description': '프로젝트를 설명하세요: 무엇을 구축하는지, 어떤 문제를 해결하는지, 누구를 위해...',
-  'ph.objectives': '1. ...까지 MVP 출시 2. 달성... 3. 통합...'
+  'ph.objectives': '1. ...까지 MVP 출시 2. 달성... 3. 통합...',
+  'genAll.prompt': '🚀 AI가 프로젝트 데이터를 성공적으로 추출했습니다!\n\n지금 모든 문서를 생성하시겠습니까?\n\n한국어로 생성됩니다. 약 2분.',
+  'genAll.generating': '⏳ 문서 생성 중...',
+  'genAll.done': '✅ 모든 문서 생성 완료!',
+  'modal.edit': '✏️ 편집',
+  'modal.editSave': '💾 변경사항 저장',
+  'modal.editCancel': '✕ 취소'
 },
 
 hi: {
@@ -3131,7 +3272,13 @@ hi: {
   'ph.budget': 'उदा.: $1,50,000',
   'ph.pasteText': 'क्लाइंट का ईमेल, मीटिंग नोट्स, प्रोजेक्ट ब्रीफ पेस्ट करें...',
   'ph.description': 'प्रोजेक्ट का वर्णन करें: हम क्या बना रहे हैं, कौन सी समस्या हल हो रही है, किसके लिए...',
-  'ph.objectives': '1. MVP को... तक लॉन्च करें 2. हासिल करें... 3. एकीकृत करें...'
+  'ph.objectives': '1. MVP को... तक लॉन्च करें 2. हासिल करें... 3. एकीकृत करें...',
+  'genAll.prompt': '🚀 AI ने प्रोजेक्ट डेटा सफलतापूर्वक निकाला!\n\nअभी सभी दस्तावेज़ बनाएं?\n\nहिंदी में बनाए जाएंगे। ~2 मिनट।',
+  'genAll.generating': '⏳ दस्तावेज़ बनाए जा रहे हैं...',
+  'genAll.done': '✅ सभी दस्तावेज़ बन गए!',
+  'modal.edit': '✏️ संपादित करें',
+  'modal.editSave': '💾 परिवर्तन सहेजें',
+  'modal.editCancel': '✕ रद्द करें'
 },
 
 ar: {
@@ -3182,7 +3329,13 @@ ar: {
   'ph.budget': 'مثال: $150,000',
   'ph.pasteText': 'الصق بريداً إلكترونياً أو ملاحظات اجتماع أو موجز مشروع...',
   'ph.description': 'صف المشروع: ماذا نبني، ما المشكلة التي يحلها، لمن...',
-  'ph.objectives': '1. إطلاق MVP بحلول... 2. تحقيق... 3. دمج...'
+  'ph.objectives': '1. إطلاق MVP بحلول... 2. تحقيق... 3. دمج...',
+  'genAll.prompt': '🚀 استخرج الذكاء الاصطناعي بيانات المشروع بنجاح!\n\nإنشاء جميع المستندات الآن؟\n\nستُنشأ باللغة العربية. ~دقيقتان.',
+  'genAll.generating': '⏳ جارٍ إنشاء المستندات...',
+  'genAll.done': '✅ تم إنشاء جميع المستندات!',
+  'modal.edit': '✏️ تعديل',
+  'modal.editSave': '💾 حفظ التغييرات',
+  'modal.editCancel': '✕ إلغاء'
 }
 }; // end DL
 
