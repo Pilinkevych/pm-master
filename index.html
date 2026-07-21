@@ -377,6 +377,35 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 [dir="rtl"] .aer-label{text-align:right;}
 [dir="rtl"] .calc-header{flex-direction:row-reverse;}
 [dir="rtl"] input,[dir="rtl"] textarea,[dir="rtl"] select{text-align:right;}
+/* ── Custom Modal ──────────────────────── */
+#pm-modal-overlay{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:pmFadeIn .15s ease;}
+@keyframes pmFadeIn{from{opacity:0}to{opacity:1}}
+.pm-modal-box{background:white;border-radius:24px;padding:36px 32px 28px;max-width:460px;width:92%;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:pmSlideIn .18s ease;}
+@keyframes pmSlideIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.pm-modal-logo{font-size:42px;text-align:center;margin-bottom:6px;}
+.pm-modal-brand{text-align:center;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#94a3b8;text-transform:uppercase;margin-bottom:20px;}
+.pm-modal-msg{font-size:15px;line-height:1.65;color:#1e293b;text-align:center;white-space:pre-line;margin-bottom:26px;}
+.pm-modal-btns{display:flex;gap:10px;justify-content:center;}
+.pm-modal-btn{padding:10px 26px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;border:none;transition:all .12s;}
+.pm-modal-ok{background:linear-gradient(135deg,#2563eb,#1e40af);color:white;}
+.pm-modal-ok:hover{filter:brightness(1.1);}
+.pm-modal-cancel{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;}
+.pm-modal-cancel:hover{background:#e2e8f0;}
+/* ── Gen Banner ────────────────────────── */
+#genall-banner{position:fixed;bottom:24px;right:24px;z-index:9999;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border-radius:16px;padding:16px 20px;box-shadow:0 8px 32px rgba(37,99,235,.4);min-width:280px;max-width:360px;transition:background .4s;}
+.gen-banner-inner{display:flex;align-items:center;gap:12px;}
+.gen-spinner{width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:genSpin .7s linear infinite;flex-shrink:0;}
+@keyframes genSpin{to{transform:rotate(360deg)}}
+.gen-banner-text{flex:1;}
+.gen-banner-title{font-size:11px;font-weight:800;opacity:.7;letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px;}
+.gen-banner-doc{font-size:14px;font-weight:800;}
+.gen-banner-count{font-size:11px;opacity:.7;margin-top:2px;}
+/* ── Rich Text Edit ────────────────────── */
+#doc-edit-area[contenteditable]{outline:none;font-size:14px;line-height:1.7;color:#1e293b;}
+#doc-edit-area[contenteditable]:focus{outline:none;}
+.edit-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;}
+.edit-tb-btn{padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;font-size:12px;font-weight:700;cursor:pointer;color:#475569;}
+.edit-tb-btn:hover{background:#e2e8f0;}
 </style>
 </head>
 <body>
@@ -1061,31 +1090,58 @@ function analyzeContext_internal() {
   }
 }
 
-const LANG_NAMES = { en: 'English', ua: 'Українська', pl: 'Polski', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', it: 'Italiano' };
+const LANG_NAMES = { en:'English', ua:'Українська', uk:'Українська', pl:'Polski', de:'Deutsch', fr:'Français', es:'Español', pt:'Português', it:'Italiano', tr:'Türkçe', zh:'中文', ja:'日本語', ko:'한국어', hi:'हिन्दी', ar:'العربية' };
+// normalize ISO 639-1 'uk' (Ukrainian) → our internal code 'ua'
+function normLang(code) { return code === 'uk' ? 'ua' : code; }
+
+// ── Custom modal (replaces confirm/alert) ─────────────────────────────
+function pmModal({ icon='📋', msg, okText='OK', cancelText=null, onOk, onCancel } = {}) {
+  const existing = document.getElementById('pm-modal-overlay');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'pm-modal-overlay';
+  el.innerHTML = `<div class="pm-modal-box">
+    <div class="pm-modal-logo">${icon}</div>
+    <div class="pm-modal-brand">PM Master · PMBOK® 8th Edition</div>
+    <div class="pm-modal-msg">${msg}</div>
+    <div class="pm-modal-btns">
+      ${cancelText ? `<button class="pm-modal-btn pm-modal-cancel" id="pm-modal-cancel">${cancelText}</button>` : ''}
+      <button class="pm-modal-btn pm-modal-ok" id="pm-modal-ok">${okText}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  document.getElementById('pm-modal-ok').onclick = () => { el.remove(); if (onOk) onOk(); };
+  if (cancelText) document.getElementById('pm-modal-cancel').onclick = () => { el.remove(); if (onCancel) onCancel(); };
+  el.addEventListener('click', e => { if (e.target === el) { el.remove(); if (onCancel) onCancel(); } });
+}
+function pmAlert(msg, icon='📋', onOk) { pmModal({ icon, msg, onOk }); }
+function pmConfirm(msg, onOk, onCancel, icon='📋', okText='OK', cancelText='Cancel') {
+  pmModal({ icon, msg, okText, cancelText, onOk, onCancel });
+}
 
 function applyExtractedData(data) {
   // Language detection
-  const detected = data.detectedLang;
+  const detected = normLang(data.detectedLang);
   const current = curLang();
   if (detected && detected !== current && LANG_NAMES[detected]) {
     const detName = LANG_NAMES[detected];
     const curName = LANG_NAMES[current] || current.toUpperCase();
-    const switchIt = confirm(`🌐 Detected language: ${detName}\n\nYour document appears to be in ${detName}, but the project is set to ${curName}.\n\nSwitch project language to ${detName}?`);
-    if (switchIt) {
-      document.getElementById('langSelect').value = detected;
-      setLang(detected);
-    } else {
-      // Show notice in extract result after rendering
-      setTimeout(() => {
-        const el = document.getElementById('extractItems');
-        if (el) el.insertAdjacentHTML('beforeend', `
-          <div class="aer-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #bbf7d0;">
-            <div class="aer-dot" style="background:#f59e0b;"></div>
-            <span class="aer-label">⚠️ Language note:</span>
-            <span class="aer-val">MoM stays in ${detName}. Documents will be generated in ${curName}.</span>
-          </div>`);
-      }, 50);
-    }
+    pmConfirm(
+      `🌐 Виявлена мова: <strong>${detName}</strong>\n\nВаш документ написаний ${detName}, але проєкт налаштований на ${curName}.\n\nПерейти на ${detName}?`,
+      () => { document.getElementById('langSelect').value = detected; setLang(detected); },
+      () => {
+        setTimeout(() => {
+          const el = document.getElementById('extractItems');
+          if (el) el.insertAdjacentHTML('beforeend', `
+            <div class="aer-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #bbf7d0;">
+              <div class="aer-dot" style="background:#f59e0b;"></div>
+              <span class="aer-label">⚠️ Мова:</span>
+              <span class="aer-val">МоМ залишається ${detName}. Документи будуть згенеровані ${curName}.</span>
+            </div>`);
+        }, 50);
+      },
+      '🌐', 'Так, перейти', 'Залишити ' + curName
+    );
   }
 
   // Auto-fill form fields
@@ -1179,7 +1235,7 @@ function createProject() {
   if (project._momAnalyzed) {
     delete project._momAnalyzed;
     setTimeout(() => {
-      if (confirm(dl()['genAll.prompt'])) generateAllDocs();
+      pmConfirm(dl()['genAll.prompt'], () => generateAllDocs(), null, '🚀', 'OK', 'Cancel');
     }, 600);
   }
 
@@ -1572,54 +1628,72 @@ async function generateAllDocs() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'genall-banner';
-    banner.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:#1e3a8a;color:white;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:260px;';
     document.body.appendChild(banner);
   }
+  const setBanner = (docName, docIcon, count, total) => {
+    banner.innerHTML = `<div class="gen-banner-inner">
+      <div class="gen-spinner"></div>
+      <div class="gen-banner-text">
+        <div class="gen-banner-title">${t['genAll.generating'] || 'Генерую...'}</div>
+        <div class="gen-banner-doc">${docIcon} ${docName}</div>
+        <div class="gen-banner-count">${count} / ${total}</div>
+      </div>
+    </div>`;
+  };
   let done = 0;
   for (const key of keys) {
     const doc = DOCS.find(d => d.key === key);
-    banner.textContent = `${t['genAll.generating'] || '⏳ Generating...'} ${doc?.icon || ''} ${doc?.name || key} (${done+1}/${keys.length})`;
+    setBanner(doc?.name || key, doc?.icon || '📄', done + 1, keys.length);
     try {
       const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ key, project, lang: curLang() })
       });
-      const text = await r.text();
-      const data = JSON.parse(text);
+      const data = JSON.parse(await r.text());
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
         project.docContent[key] = data.content;
+        buildDocsGrid();
       }
-    } catch(e) { /* skip failed, continue */ }
+    } catch(e) {}
     done++;
   }
   updateStats();
-  buildDocsGrid();
   scheduleAutosave();
-  banner.style.background = '#166534';
-  banner.textContent = t['genAll.done'] || '✅ All documents generated!';
-  setTimeout(() => banner.remove(), 3000);
+  banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
+  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${done} документів згенеровано</div></div></div>`;
+  setTimeout(() => banner.remove(), 4000);
 }
 
 function editDocContent(key) {
   const content = project.docContent[key] || '';
   const t = dl();
   document.getElementById('modal-body').innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <button onclick="saveEditedDoc('${key}')" style="padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${t['modal.editSave'] || '💾 Save Changes'}</button>
-      <button onclick="openDoc('${key}','generated')" style="padding:7px 14px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;cursor:pointer;">${t['modal.editCancel'] || '✕ Cancel'}</button>
-      <span style="font-size:12px;color:#64748b;align-self:center;margin-left:4px;">Editing HTML source</span>
+    <div class="edit-toolbar">
+      <button class="edit-tb-btn" onclick="document.execCommand('bold')" title="Bold"><b>B</b></button>
+      <button class="edit-tb-btn" onclick="document.execCommand('italic')" title="Italic"><i>I</i></button>
+      <button class="edit-tb-btn" onclick="document.execCommand('underline')" title="Underline"><u>U</u></button>
+      <button class="edit-tb-btn" onclick="document.execCommand('insertUnorderedList')">• List</button>
+      <button class="edit-tb-btn" onclick="document.execCommand('insertOrderedList')">1. List</button>
+      <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','h2')">H2</button>
+      <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','h3')">H3</button>
+      <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','p')">¶ Text</button>
+      <div style="flex:1"></div>
+      <button onclick="saveEditedDoc('${key}')" style="padding:6px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${t['modal.editSave'] || '💾 Зберегти'}</button>
+      <button onclick="openDoc('${key}','generated')" style="padding:6px 12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;cursor:pointer;">${t['modal.editCancel'] || '✕'}</button>
     </div>
-    <textarea id="doc-edit-area" style="width:100%;height:calc(100% - 50px);min-height:420px;font-family:monospace;font-size:13px;border:1px solid #cbd5e1;border-radius:8px;padding:12px;resize:vertical;line-height:1.5;box-sizing:border-box;">${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>`;
+    <div id="doc-edit-area" contenteditable="true" spellcheck="true"
+      style="min-height:420px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;overflow-y:auto;font-size:14px;line-height:1.7;color:#1e293b;focus:outline:none;"
+    >${content}</div>`;
+  document.getElementById('doc-edit-area').focus();
 }
 
 function saveEditedDoc(key) {
-  const ta = document.getElementById('doc-edit-area');
-  if (!ta) return;
+  const area = document.getElementById('doc-edit-area');
+  if (!area) return;
   project.docContent = project.docContent || {};
-  project.docContent[key] = ta.value.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  project.docContent[key] = area.innerHTML;
   project.docStatus[key] = 'done';
   scheduleAutosave();
   openDoc(key, 'generated');
@@ -3660,9 +3734,9 @@ async function authGoogle() {
 }
 
 function openUserMenu() {
-  if (confirm('Sign out from PM Master?')) {
+  pmConfirm('Вийти з PM Master?', () => {
     sb.auth.signOut().then(() => window.location.reload());
-  }
+  }, null, '👤', 'Вийти', 'Скасувати');
 }
 
 // ══════════════════════════════════════════
@@ -3774,44 +3848,45 @@ async function saveCurrentProject(silent) {
   scheduleAutosave();
 }
 
-async function deleteProject(id, name) {
-  const confirmed = confirm(`⚠️ Видалити проєкт?\n\n"${name}"\n\nЦю дію неможливо скасувати. Ти впевнений???`);
-  if (!confirmed) return;
-  const confirmed2 = confirm(`🚨 Останній шанс!\n\nПроєкт "${name}" та всі його документи будуть НАЗАВЖДИ видалені.\n\nПродовжити?`);
-  if (!confirmed2) return;
-
-  await sb.from('project_documents').delete().eq('project_id', id);
-  const { error } = await sb.from('projects').delete().eq('id', id);
-  if (error) { alert('Помилка видалення: ' + error.message); return; }
-  loadProjects();
+function deleteProject(id, name) {
+  pmConfirm(
+    `Видалити проєкт "<strong>${name}</strong>"?\n\nЦю дію неможливо скасувати.`,
+    () => pmConfirm(
+      `🚨 Останній шанс!\n\nПроєкт та всі його документи будуть НАЗАВЖДИ видалені.`,
+      async () => {
+        await sb.from('project_documents').delete().eq('project_id', id);
+        const { error } = await sb.from('projects').delete().eq('id', id);
+        if (error) { pmAlert('Помилка видалення: ' + error.message, '❌'); return; }
+        loadProjects();
+      },
+      null, '⚠️', 'Так, видалити назавжди', 'Скасувати'
+    ),
+    null, '🗑️', 'Видалити', 'Скасувати'
+  );
 }
 
-async function archiveProject(id, name) {
-  const confirmed = confirm(`📦 Архівувати проєкт "${name}"?\n\nПроєкт буде збережено як JSON-файл на ваш комп'ютер і видалено з кабінету.\n\nПродовжити?`);
-  if (!confirmed) return;
+function archiveProject(id, name) {
+  pmConfirm(
+    `Архівувати проєкт "<strong>${name}</strong>"?\n\nПроєкт буде збережено як JSON-файл і видалено з кабінету.`,
+    async () => {
 
-  const { data: p } = await sb.from('projects').select('*').eq('id', id).single();
-  const { data: docs } = await sb.from('project_documents').select('*').eq('project_id', id);
-
-  const archive = {
-    archived_at: new Date().toISOString(),
-    project: p,
-    documents: docs || []
-  };
-
-  const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const safeName = (name || 'project').replace(/[^a-zA-Z0-9а-яА-ЯіїєІЇЄ\s]/g, '').replace(/\s+/g, '_');
-  a.href = url;
-  a.download = `PM_Archive_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  // Видаляємо з Supabase після збереження
-  await sb.from('project_documents').delete().eq('project_id', id);
-  await sb.from('projects').delete().eq('id', id);
-  loadProjects();
+      const { data: p } = await sb.from('projects').select('*').eq('id', id).single();
+      const { data: docs } = await sb.from('project_documents').select('*').eq('project_id', id);
+      const archive = { archived_at: new Date().toISOString(), project: p, documents: docs || [] };
+      const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (name || 'project').replace(/[^a-zA-Z0-9а-яА-ЯіїєІЇЄ\s]/g, '').replace(/\s+/g, '_');
+      a.href = url;
+      a.download = `PM_Archive_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      await sb.from('project_documents').delete().eq('project_id', id);
+      await sb.from('projects').delete().eq('id', id);
+      loadProjects();
+    },
+    null, '📦', 'Архівувати', 'Скасувати'
+  );
 }
 
 async function openProject(id) {
