@@ -1521,7 +1521,13 @@ function generateDoc(key) {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ key, project, lang: curLang() })
   })
-  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text().then(text => {
+      console.log('[PM Master] Generate raw:', text.slice(0, 500));
+      try { return JSON.parse(text); } catch(e) { throw new Error('Invalid JSON: ' + text.slice(0, 200)); }
+    });
+  })
   .then(data => {
     btn.innerHTML = orig;
     btn.disabled = false;
