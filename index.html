@@ -3561,6 +3561,7 @@ if (window.location.hash.includes('access_token')) {
 }
 
 function onSignIn(user) {
+  if (currentUser) return; // prevent double-call race
   currentUser = user;
   const btn = document.getElementById('btn-auth');
   const initial = (user.email || 'U')[0].toUpperCase();
