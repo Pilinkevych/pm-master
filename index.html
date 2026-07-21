@@ -1519,7 +1519,7 @@ function generateDoc(key) {
   fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ key, project })
+    body: JSON.stringify({ key, project, lang: curLang() })
   })
   .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
   .then(data => {
