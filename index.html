@@ -403,9 +403,21 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 /* ── Rich Text Edit ────────────────────── */
 #doc-edit-area[contenteditable]{outline:none;font-size:14px;line-height:1.7;color:#1e293b;}
 #doc-edit-area[contenteditable]:focus{outline:none;}
-.edit-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;}
+#doc-edit-area table{border-collapse:collapse;width:100%;margin:12px 0;}
+#doc-edit-area td,#doc-edit-area th{border:1px solid #cbd5e1;padding:6px 10px;text-align:left;vertical-align:top;}
+#doc-edit-area th{background:#f1f5f9;font-weight:700;font-size:12px;}
+#doc-edit-area td:hover{background:#f8fafc;}
+.generated-doc-content table{border-collapse:collapse;width:100%;margin:12px 0;}
+.generated-doc-content td,.generated-doc-content th{border:1px solid #cbd5e1;padding:6px 10px;text-align:left;vertical-align:top;}
+.generated-doc-content th{background:#f1f5f9;font-weight:700;font-size:12px;}
+.edit-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;align-items:center;}
+.edit-tb-sep{width:1px;height:20px;background:#e2e8f0;flex-shrink:0;}
 .edit-tb-btn{padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;font-size:12px;font-weight:700;cursor:pointer;color:#475569;}
 .edit-tb-btn:hover{background:#e2e8f0;}
+#table-toolbar{display:none;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;padding:6px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;}
+#table-toolbar .tbl-label{font-size:11px;color:#166534;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-right:2px;}
+.edit-tb-btn.tbl{background:#dcfce7;border-color:#86efac;color:#166534;}
+.edit-tb-btn.tbl:hover{background:#bbf7d0;}
 </style>
 </head>
 <body>
@@ -1674,8 +1686,10 @@ function editDocContent(key) {
       <button class="edit-tb-btn" onclick="document.execCommand('bold')" title="Bold"><b>B</b></button>
       <button class="edit-tb-btn" onclick="document.execCommand('italic')" title="Italic"><i>I</i></button>
       <button class="edit-tb-btn" onclick="document.execCommand('underline')" title="Underline"><u>U</u></button>
+      <div class="edit-tb-sep"></div>
       <button class="edit-tb-btn" onclick="document.execCommand('insertUnorderedList')">• List</button>
       <button class="edit-tb-btn" onclick="document.execCommand('insertOrderedList')">1. List</button>
+      <div class="edit-tb-sep"></div>
       <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','h2')">H2</button>
       <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','h3')">H3</button>
       <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','p')">¶ Text</button>
@@ -1683,20 +1697,164 @@ function editDocContent(key) {
       <button onclick="saveEditedDoc('${key}')" style="padding:6px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${t['modal.editSave'] || '💾 Зберегти'}</button>
       <button onclick="openDoc('${key}','generated')" style="padding:6px 12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;cursor:pointer;">${t['modal.editCancel'] || '✕'}</button>
     </div>
+    <div id="table-toolbar">
+      <span class="tbl-label">📊 Таблиця:</span>
+      <button class="edit-tb-btn tbl" onclick="tableAddRowBelow()" title="Add row below">+ Рядок ↓</button>
+      <button class="edit-tb-btn tbl" onclick="tableAddRowAbove()" title="Add row above">+ Рядок ↑</button>
+      <button class="edit-tb-btn tbl" onclick="tableDeleteRow()" title="Delete current row">− Рядок</button>
+      <div class="edit-tb-sep"></div>
+      <button class="edit-tb-btn tbl" onclick="tableAddColAfter()" title="Add column after">+ Колонка →</button>
+      <button class="edit-tb-btn tbl" onclick="tableAddColBefore()" title="Add column before">← + Колонка</button>
+      <button class="edit-tb-btn tbl" onclick="tableDeleteCol()" title="Delete current column">− Колонка</button>
+      <div class="edit-tb-sep"></div>
+      <button class="edit-tb-btn tbl" onclick="tableCellDropdown()" title="Convert cell to impact dropdown">🔽 Вибір</button>
+    </div>
     <div id="doc-edit-area" contenteditable="true" spellcheck="true"
-      style="min-height:420px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;overflow-y:auto;font-size:14px;line-height:1.7;color:#1e293b;focus:outline:none;"
+      style="min-height:420px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;overflow-y:auto;font-size:14px;line-height:1.7;color:#1e293b;"
     >${content}</div>`;
-  document.getElementById('doc-edit-area').focus();
+  const area = document.getElementById('doc-edit-area');
+  area.focus();
+  area.addEventListener('mouseup', _updateTableToolbar);
+  area.addEventListener('keyup', _updateTableToolbar);
+  document.addEventListener('selectionchange', _updateTableToolbar);
 }
 
 function saveEditedDoc(key) {
   const area = document.getElementById('doc-edit-area');
   if (!area) return;
+  document.removeEventListener('selectionchange', _updateTableToolbar);
   project.docContent = project.docContent || {};
   project.docContent[key] = area.innerHTML;
   project.docStatus[key] = 'done';
   scheduleAutosave();
   openDoc(key, 'generated');
+}
+
+/* ── Table editing helpers ─────────────────────────────── */
+function _getSelectedCell() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return null;
+  let node = sel.getRangeAt(0).commonAncestorContainer;
+  while (node && node.id !== 'doc-edit-area' && node !== document.body) {
+    if (node.tagName === 'TD' || node.tagName === 'TH') return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+
+function _updateTableToolbar() {
+  const tb = document.getElementById('table-toolbar');
+  if (!tb) return;
+  tb.style.display = _getSelectedCell() ? 'flex' : 'none';
+}
+
+function tableAddRowBelow() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const cols = row.querySelectorAll('td,th');
+  const newRow = document.createElement('tr');
+  cols.forEach(c => {
+    const td = document.createElement('td');
+    td.style.cssText = c.style.cssText;
+    td.innerHTML = '&nbsp;';
+    newRow.appendChild(td);
+  });
+  row.after(newRow);
+}
+
+function tableAddRowAbove() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const cols = row.querySelectorAll('td,th');
+  const newRow = document.createElement('tr');
+  cols.forEach(c => {
+    const td = document.createElement('td');
+    td.style.cssText = c.style.cssText;
+    td.innerHTML = '&nbsp;';
+    newRow.appendChild(td);
+  });
+  row.before(newRow);
+}
+
+function tableDeleteRow() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const table = row.closest('table');
+  if (table.querySelectorAll('tr').length <= 1) { pmAlert('Не можна видалити єдиний рядок.'); return; }
+  row.remove();
+  _updateTableToolbar();
+}
+
+function tableAddColAfter() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const table = row.closest('table');
+  const colIdx = Array.from(row.children).indexOf(cell);
+  table.querySelectorAll('tr').forEach(r => {
+    const cells = r.querySelectorAll('td,th');
+    const ref = cells[colIdx];
+    if (!ref) return;
+    const newCell = document.createElement(ref.tagName.toLowerCase());
+    newCell.style.cssText = ref.style.cssText;
+    newCell.innerHTML = '&nbsp;';
+    ref.after(newCell);
+  });
+}
+
+function tableAddColBefore() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const table = row.closest('table');
+  const colIdx = Array.from(row.children).indexOf(cell);
+  table.querySelectorAll('tr').forEach(r => {
+    const cells = r.querySelectorAll('td,th');
+    const ref = cells[colIdx];
+    if (!ref) return;
+    const newCell = document.createElement(ref.tagName.toLowerCase());
+    newCell.style.cssText = ref.style.cssText;
+    newCell.innerHTML = '&nbsp;';
+    ref.before(newCell);
+  });
+}
+
+function tableDeleteCol() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const row = cell.closest('tr');
+  const table = row.closest('table');
+  if (row.querySelectorAll('td,th').length <= 1) { pmAlert('Не можна видалити єдину колонку.'); return; }
+  const colIdx = Array.from(row.children).indexOf(cell);
+  table.querySelectorAll('tr').forEach(r => {
+    const cells = r.querySelectorAll('td,th');
+    if (cells[colIdx]) cells[colIdx].remove();
+  });
+  _updateTableToolbar();
+}
+
+function tableCellDropdown() {
+  const cell = _getSelectedCell();
+  if (!cell) return;
+  const current = (cell.innerText || '').trim();
+  const OPTIONS = ['High','Medium','Low','Critical','Very High','Very Low','N/A'];
+  const COLORS = { 'High':'#dc2626','Critical':'#7c3aed','Very High':'#991b1b','Medium':'#d97706','Low':'#16a34a','Very Low':'#15803d','N/A':'' };
+  const sel = document.createElement('select');
+  sel.style.cssText = 'width:100%;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;font-size:inherit;font-family:inherit;cursor:pointer;background:white;';
+  OPTIONS.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    if (o.toLowerCase() === current.toLowerCase()) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  const applyColor = val => { cell.style.color = COLORS[val] || ''; cell.style.fontWeight = (val === 'High' || val === 'Critical' || val === 'Very High') ? '700' : ''; };
+  sel.onchange = () => applyColor(sel.value);
+  cell.innerHTML = '';
+  cell.appendChild(sel);
+  applyColor(sel.value);
 }
 
 function editProjectName() {
