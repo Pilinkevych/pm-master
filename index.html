@@ -846,18 +846,18 @@ const DOCS = [
 ];
 
 const PMBOK_CONTENT = {
-  charter:      { section:'Section 4.1 — Develop Project Charter', ref:'PMBOK® 8 · Integration Management', text:`<h4>Project Charter</h4><p>Formally authorizes the existence of a project and provides the PM with authority to apply organizational resources. In PMBOK 8, the charter also includes initial assumptions and strategic alignment.</p><h4>Key Components</h4><ul><li>Project purpose and justification</li><li>Measurable objectives and success criteria</li><li>High-level requirements and risks</li><li>Summary milestone schedule and budget</li><li>Sponsor name and authority level</li><li>Strategic alignment (new in PMBOK 8)</li></ul>` },
-  assumptions:  { section:'Section — Assumption Log (PMBOK 8 New)', ref:'PMBOK® 8 · New Document', text:`<h4>Assumption Log</h4><p>A new explicit document in PMBOK 8. Previously assumptions were buried in the Project Charter. Now tracked separately throughout the project lifecycle.</p><h4>Purpose</h4><ul><li>Track all assumptions made during planning</li><li>Monitor assumptions as project progresses</li><li>Convert validated assumptions to facts</li><li>Escalate false assumptions as risks</li></ul>` },
-  stakeholders: { section:'Stakeholder Performance Domain', ref:'PMBOK® 8 · Stakeholder Domain', text:`<h4>Stakeholder Management</h4><p>In PMBOK 8, Stakeholder Management is elevated to a full Performance Domain — reflecting its critical importance. Goes beyond just identifying stakeholders to actively engaging them throughout the project.</p><h4>Stakeholder Engagement Assessment Matrix</h4><ul><li>Unaware → Resistant → Neutral → Supportive → Leading</li><li>Current vs Desired engagement level</li><li>Gap = engagement strategy needed</li></ul><h4>Power/Interest Grid</h4><ul><li>High Power + High Interest: Manage closely</li><li>High Power + Low Interest: Keep satisfied</li><li>Low Power + High Interest: Keep informed</li><li>Low Power + Low Interest: Monitor</li></ul>` },
-  approach:     { section:'Development Approach Domain (PMBOK 8 New)', ref:'PMBOK® 8 · Development Approach', text:`<h4>Development Approach</h4><p>A new Performance Domain in PMBOK 8. Teams must explicitly choose and document their delivery approach based on project characteristics.</p><h4>Options</h4><ul><li><b>Predictive:</b> Scope, schedule, cost defined upfront. Best for stable, well-understood projects.</li><li><b>Adaptive (Agile):</b> Iterative, incremental delivery. Best for uncertain, evolving requirements.</li><li><b>Hybrid:</b> Mix of predictive and adaptive. Most common in practice.</li></ul><h4>Factors Influencing Choice</h4><ul><li>Degree of uncertainty and risk</li><li>Stakeholder engagement level</li><li>Regulatory constraints</li><li>Team capabilities</li></ul>` },
-  scope:        { section:'Sections 5.3–5.4 — Scope + WBS', ref:'PMBOK® 8 · Delivery Domain', text:`<h4>Scope Statement</h4><p>Describes what the project will and will not deliver. In PMBOK 8, closely linked to the Delivery Performance Domain.</p><h4>WBS — Work Breakdown Structure</h4><p>Hierarchical decomposition of total project scope. The 100% Rule: WBS must include 100% of the work.</p><h4>Key Principle (PMBOK 8)</h4><p>Focus on <b>outcomes and value</b>, not just deliverables. Ask: what value does each WBS element deliver to the customer?</p>` },
-  schedule:     { section:'Schedule Management · Planning Domain', ref:'PMBOK® 8 · Planning Domain', text:`<h4>Schedule Management</h4><p>In PMBOK 8, schedule is part of the Planning Performance Domain. Key formulas remain from PMBOK 6.</p><h4>PERT Formula</h4><p>E = (O + 4M + P) / 6</p><h4>Critical Path Method (CPM)</h4><p>Identifies the longest path through the network — determines project duration. Float = 0 on critical path.</p><h4>Schedule Compression</h4><ul><li><b>Crashing:</b> Add resources to critical path</li><li><b>Fast-tracking:</b> Overlap sequential activities</li></ul>` },
-  budget:       { section:'Cost Management · Planning Domain', ref:'PMBOK® 8 · Planning Domain + EVM', text:`<h4>Cost Management + EVM</h4><p>PMBOK 8 strengthens EVM as the primary tool for tracking project performance.</p><h4>Key EVM Formulas</h4><ul><li>CV = EV − AC (positive = under budget)</li><li>SV = EV − PV (positive = ahead of schedule)</li><li>CPI = EV ÷ AC (>1 = efficient)</li><li>SPI = EV ÷ PV (>1 = ahead)</li><li>EAC = BAC ÷ CPI</li><li>TCPI = (BAC−EV) ÷ (BAC−AC)</li></ul>` },
-  risk:         { section:'Uncertainty Performance Domain (PMBOK 8)', ref:'PMBOK® 8 · Uncertainty Domain', text:`<h4>Uncertainty Domain</h4><p>In PMBOK 8, Risk Management is part of the broader Uncertainty Performance Domain — acknowledging that not all uncertainty can be identified as discrete risks.</p><h4>Risk Response Strategies — Threats</h4><ul><li>Avoid · Transfer · Mitigate · Accept · Escalate</li></ul><h4>Risk Response Strategies — Opportunities</h4><ul><li>Exploit · Share · Enhance · Accept · Escalate</li></ul><h4>Probability × Impact Matrix</h4><p>Score = P × I. Critical ≥20, High 10-16, Medium 5-9, Low 1-4.</p>` },
-  team:         { section:'Team Performance Domain (PMBOK 8)', ref:'PMBOK® 8 · Team Domain', text:`<h4>Team Management Plan</h4><p>Replaces the HR Plan from PMBOK 6. In PMBOK 8, the Team Domain emphasizes <b>servant leadership</b> and psychological safety.</p><h4>Key Components</h4><ul><li>Team Charter (working agreements)</li><li>Roles and responsibilities (RACI)</li><li>Staffing management plan</li><li>Skill development and training</li><li>Recognition and rewards</li></ul><h4>PMBOK 8 Emphasis</h4><p>Leaders serve the team. Create an environment where the team can do their best work.</p>` },
-  comms:        { section:'Communication Management', ref:'PMBOK® 8 · Stakeholder Domain', text:`<h4>Communication Plan</h4><p>In PMBOK 8, communication is part of the Stakeholder Performance Domain.</p><h4>Communication Channels Formula</h4><p>N = n(n−1) / 2</p><p>10 stakeholders = 45 channels. This is why structured communication planning matters.</p><h4>Communication Methods</h4><ul><li>Interactive: meetings, calls (best for complex)</li><li>Push: email, reports (information distribution)</li><li>Pull: portals, wikis (reference information)</li></ul>` },
-  quality:      { section:'Quality Management · Delivery Domain', ref:'PMBOK® 8 · Delivery Domain', text:`<h4>Quality Management Plan</h4><p>In PMBOK 8, quality is part of the Delivery Performance Domain. Core principle unchanged: prevention over inspection.</p><h4>Cost of Quality (COQ)</h4><ul><li>Cost of Conformance: Prevention + Appraisal</li><li>Cost of Non-Conformance: Internal failures + External failures</li></ul><h4>PMBOK 8 Addition</h4><p>Continuous improvement (Kaizen) is now explicitly required, not just recommended.</p>` },
-  lessons:      { section:'Section 4.6 — Close Project', ref:'PMBOK® 8 · Integration · Closing', text:`<h4>Lessons Learned</h4><p>In PMBOK 8, lessons learned is captured <b>throughout</b> the project, not just at closure. Part of continuous improvement.</p><h4>Key Categories</h4><ul><li>What went well (replicate)</li><li>What didn't go well (avoid)</li><li>What would we do differently</li><li>Recommendations for future projects</li></ul><h4>PMBOK 8 Emphasis</h4><p>Lessons learned must be added to the organizational process assets for future projects. Knowledge transfer is a PM responsibility.</p>` },
+  charter:      { section:'4.5.1 Initiating Focus Area', ref:'PMBOK® 8 · Focus Areas · Initiating', text:'' },
+  assumptions:  { section:'4.5.1 Initiating Focus Area — Assumption Log', ref:'PMBOK® 8 · Focus Areas · Initiating', text:'' },
+  stakeholders: { section:'2.5 Stakeholders Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.5', text:'' },
+  approach:     { section:'4.2 Project Development Approaches', ref:'PMBOK® 8 · Section 4 · Life Cycles', text:'' },
+  scope:        { section:'2.2 Scope Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.2', text:'' },
+  schedule:     { section:'2.3 Schedule Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.3', text:'' },
+  budget:       { section:'2.4 Finance Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.4', text:'' },
+  risk:         { section:'2.7 Risk Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.7', text:'' },
+  team:         { section:'2.6 Resources Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.6', text:'' },
+  comms:        { section:'2.5 Stakeholders Performance Domain — Communication', ref:'PMBOK® 8 · Performance Domain 2.5', text:'' },
+  quality:      { section:'Principle 3.5 — Embed Quality Into Processes and Deliverables', ref:'PMBOK® 8 · Principles · Section 3.5', text:'' },
+  lessons:      { section:'4.5.5 Closing Focus Area', ref:'PMBOK® 8 · Focus Areas · Closing', text:'' },
 };
 
 // ══════════════════════════════════════════
@@ -1881,14 +1881,59 @@ function exportPDF() { exportDocPDF(currentDocKey); }
 // ══════════════════════════════════════════
 // PMBOK DRAWER
 // ══════════════════════════════════════════
-function openPmbok(key) {
-  const ref = PMBOK_CONTENT[key];
-  if (!ref) return;
+// Terms searched in BOTH label AND text fields of pmbok_chunks
+// Performance Domains (2.x) → label search; document names → text search
+const PMBOK_SEARCH = {
+  charter:      ['Project Charter'],
+  assumptions:  ['Assumption Log'],
+  stakeholders: ['Stakeholders Performance Domain'],
+  approach:     ['Development Approach'],
+  scope:        ['Scope Performance Domain'],
+  schedule:     ['Schedule Performance Domain'],
+  budget:       ['Finance Performance Domain'],
+  risk:         ['Risk Performance Domain'],
+  team:         ['Resources Performance Domain'],
+  comms:        ['Stakeholders Performance Domain'],
+  quality:      ['Embed Quality'],
+  lessons:      ['Lessons learned register', 'Closing Focus Area']
+};
+
+async function openPmbok(key) {
+  const ref = PMBOK_CONTENT[key] || { section: key, ref: 'PMBOK® 8', text: '' };
   document.getElementById('pd-section').textContent = ref.section;
   document.getElementById('pd-ref').textContent = ref.ref;
-  document.getElementById('pd-text').innerHTML = ref.text;
+  document.getElementById('pd-text').innerHTML =
+    '<div style="text-align:center;padding:40px 20px;color:#94a3b8;font-size:14px;">📖 Завантаження з PMBOK® 8...</div>';
   document.getElementById('pmbokDrawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('active');
+
+  const terms = PMBOK_SEARCH[key] || [key];
+  let chunks = null;
+
+  for (const term of terms) {
+    const { data } = await sb
+      .from('pmbok_chunks')
+      .select('section, label, text, page_start')
+      .or(`label.ilike.%${term}%,text.ilike.%${term}%`)
+      .order('page_start', { ascending: true })
+      .limit(10);
+    if (data && data.length) { chunks = data; break; }
+  }
+
+  if (!chunks || !chunks.length) {
+    document.getElementById('pd-text').innerHTML = ref.text ||
+      '<p style="color:#94a3b8;font-size:13px;">Розділ не знайдено в базі PMBOK® 8.</p>';
+    return;
+  }
+
+  document.getElementById('pd-text').innerHTML = chunks.map(c => `
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
+      <div style="font-size:10px;color:#6366f1;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;">
+        ${c.label || c.section}${c.page_start ? ' · p. ' + c.page_start : ''}
+      </div>
+      <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${c.text}</p>
+    </div>
+  `).join('');
 }
 function closePmbok() {
   document.getElementById('pmbokDrawer').classList.remove('open');
