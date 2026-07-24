@@ -1932,44 +1932,69 @@ function exportDocPDF(key) {
   if (!content) { alert('No content to export. Generate the document first.'); return; }
 
   const filename = (doc?.name || key).replace(/[^a-zA-Z0-9а-яА-ЯїЇіІєЄ\s]/g, '').trim().replace(/\s+/g, '_') + '.pdf';
+  const dateStr = new Date().toLocaleDateString('uk-UA');
 
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;color:#1e293b;padding:20px 24px;max-width:800px;';
+  wrapper.style.cssText = 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.65;color:#1e293b;';
   wrapper.innerHTML = content;
 
-  // fix table styles for PDF
   wrapper.querySelectorAll('table').forEach(t => {
-    t.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;font-size:12px;';
+    t.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;font-size:11px;page-break-inside:auto;';
   });
+  wrapper.querySelectorAll('tr').forEach(r => { r.style.pageBreakInside = 'avoid'; });
   wrapper.querySelectorAll('td,th').forEach(c => {
-    c.style.cssText = 'border:1px solid #cbd5e1;padding:6px 10px;vertical-align:top;';
+    c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;';
   });
   wrapper.querySelectorAll('th').forEach(c => {
-    c.style.cssText += 'background:#f1f5f9;font-weight:700;';
+    c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;';
   });
-  wrapper.querySelectorAll('h1,h2,h3').forEach(h => {
-    h.style.cssText = 'color:#1e3a8a;margin-top:18px;margin-bottom:6px;';
-  });
+  wrapper.querySelectorAll('h1').forEach(h => { h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
+  wrapper.querySelectorAll('h2').forEach(h => { h.style.cssText = 'font-size:14px;color:#1e3a8a;margin:14px 0 5px;page-break-after:avoid;'; });
+  wrapper.querySelectorAll('h3').forEach(h => { h.style.cssText = 'font-size:12px;color:#2563eb;margin:10px 0 4px;page-break-after:avoid;'; });
+  wrapper.querySelectorAll('blockquote,div[style*="background"]').forEach(b => { b.style.pageBreakInside = 'avoid'; });
 
-  // branding footer
-  const footer = document.createElement('div');
-  footer.style.cssText = 'margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between;';
-  footer.innerHTML = `<span>pm-master.club · AI-powered Project Management · PMBOK® 8th Edition</span><span>${new Date().toLocaleDateString('uk-UA')}</span>`;
-  wrapper.appendChild(footer);
+  const HEADER_MM = 10;
+  const FOOTER_MM = 10;
 
   const opt = {
-    margin: [12, 14, 12, 14],
+    margin: [HEADER_MM + 4, 12, FOOTER_MM + 4, 12],
     filename,
-    image: { type: 'jpeg', quality: 0.97 },
+    image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    pagebreak: { mode: ['css', 'legacy'] }
   };
 
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating...'; }
 
-  html2pdf().set(opt).from(wrapper).save().then(() => {
+  html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
+    const total = pdf.internal.getNumberOfPages();
+    const W = pdf.internal.pageSize.getWidth();
+    const H = pdf.internal.pageSize.getHeight();
+
+    for (let i = 1; i <= total; i++) {
+      pdf.setPage(i);
+
+      // header line
+      pdf.setDrawColor(203, 213, 225);
+      pdf.setLineWidth(0.3);
+      pdf.line(12, HEADER_MM, W - 12, HEADER_MM);
+
+      // header text
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('PM Master · pm-master.club · PMBOK® 8th Edition', 12, HEADER_MM - 2);
+      const pageLabel = `${i} / ${total}`;
+      pdf.text(pageLabel, W - 12 - pdf.getTextWidth(pageLabel), HEADER_MM - 2);
+
+      // footer line
+      pdf.line(12, H - FOOTER_MM, W - 12, H - FOOTER_MM);
+
+      // footer text
+      pdf.text((doc?.name || key) + ' · ' + dateStr, 12, H - FOOTER_MM + 4);
+    }
+  }).save().then(() => {
     if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
   }).catch(err => {
     if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
