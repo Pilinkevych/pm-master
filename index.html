@@ -1964,13 +1964,26 @@ async function openPmbok(key) {
   let chunks = null;
 
   for (const term of terms) {
-    const { data } = await sb
+    // Try label-only first (precise — finds chunks FROM that section)
+    const { data: byLabel } = await sb
       .from('pmbok_chunks')
       .select('section, label, text, page_start')
-      .or(`label.ilike.%${term}%,text.ilike.%${term}%`)
+      .ilike('label', `%${term}%`)
       .order('page_start', { ascending: true })
-      .limit(10);
-    if (data && data.length) { chunks = data; break; }
+      .limit(8);
+    if (byLabel && byLabel.length) { chunks = byLabel; break; }
+
+    // Fallback: search in text but filter out TOC-like chunks
+    const { data: byText } = await sb
+      .from('pmbok_chunks')
+      .select('section, label, text, page_start')
+      .ilike('text', `%${term}%`)
+      .order('page_start', { ascending: true })
+      .limit(12);
+    if (byText && byText.length) {
+      const filtered = byText.filter(c => c.text && !c.text.includes('......') && c.text.length > 100);
+      if (filtered.length) { chunks = filtered.slice(0, 6); break; }
+    }
   }
 
   if (!chunks || !chunks.length) {
