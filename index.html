@@ -1661,14 +1661,17 @@ async function generateAllDocs() {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ key, project, lang: curLang() })
       });
-      const data = JSON.parse(await r.text());
+      const text = await r.text();
+      const data = text ? JSON.parse(text) : {};
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
         project.docContent[key] = data.content;
         buildDocsGrid();
+      } else if (!data.success && data.error) {
+        console.error('[PM Master] Doc generation error for', key, ':', data.error);
       }
-    } catch(e) {}
+    } catch(e) { console.error('[PM Master] Generate failed for', key, ':', e.message); }
     done++;
   }
   updateStats();
