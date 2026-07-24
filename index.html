@@ -1979,7 +1979,16 @@ async function openPmbok(key) {
     return;
   }
 
-  document.getElementById('pd-text').innerHTML = chunks.map(c => `
+  const readable = chunks.filter(c => {
+    const t = c.text || '';
+    if (t.includes('......')) return false;
+    if ((t.match(/\d+\s+\d+\.\d/g) || []).length > 2) return false;
+    if (t.length < 80) return false;
+    return true;
+  });
+  const display = readable.length ? readable : chunks;
+
+  document.getElementById('pd-text').innerHTML = display.map(c => `
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
       <div style="font-size:10px;color:#6366f1;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;">
         ${c.label || c.section}${c.page_start ? ' · p. ' + c.page_start : ''}
