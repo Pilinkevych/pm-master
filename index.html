@@ -1947,18 +1947,27 @@ function exportDocPDF(key) {
   wrapper.querySelectorAll('th').forEach(c => {
     c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;';
   });
-  // remove top spacing from first visible element
-  let firstEl = wrapper.firstElementChild;
-  while (firstEl) {
-    firstEl.style.marginTop = '0';
-    firstEl.style.paddingTop = '0';
-    const tag = firstEl.tagName.toLowerCase();
-    if (['h1','h2','h3','h4','p','table','ul','ol','div'].includes(tag) &&
-        firstEl.textContent.trim()) break;
-    firstEl = firstEl.firstElementChild || firstEl.nextElementSibling;
+  // remove empty leading elements and zero top spacing on first real content
+  let child = wrapper.firstElementChild;
+  while (child && !child.textContent.trim()) {
+    const next = child.nextElementSibling;
+    wrapper.removeChild(child);
+    child = next;
   }
+  if (child) { child.style.marginTop = '0'; child.style.paddingTop = '0'; }
 
-  wrapper.querySelectorAll('h1').forEach(h => { h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
+  // fix dark-background blocks: ensure text is white
+  wrapper.querySelectorAll('*').forEach(el => {
+    const bg = el.style.backgroundColor || el.style.background || '';
+    if (/^#([0-9a-f]{6})$/i.test(bg.trim())) {
+      const hex = bg.trim().slice(1);
+      const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+      const lum = 0.299*r + 0.587*g + 0.114*b;
+      if (lum < 100) { el.style.color = '#ffffff'; el.querySelectorAll('*').forEach(c => { c.style.color = '#ffffff'; }); }
+    }
+  });
+
+  wrapper.querySelectorAll('h1').forEach(h => { if (!h.closest('[style*="background"]')) h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
   wrapper.querySelectorAll('h2').forEach(h => { h.style.cssText = 'font-size:14px;color:#1e3a8a;margin:14px 0 5px;page-break-after:avoid;'; });
   wrapper.querySelectorAll('h3').forEach(h => { h.style.cssText = 'font-size:12px;color:#2563eb;margin:10px 0 4px;page-break-after:avoid;'; });
   wrapper.querySelectorAll('blockquote,div[style*="background"]').forEach(b => { b.style.pageBreakInside = 'avoid'; });
