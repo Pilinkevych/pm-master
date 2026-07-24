@@ -2154,6 +2154,8 @@ function showPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
   updateNavButtons(name);
+  const secBanner = document.getElementById('sec-banner');
+  if (secBanner) secBanner.style.display = (name === 'setup') ? '' : 'none';
 }
 
 function updateNavButtons(page) {
