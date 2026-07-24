@@ -2008,11 +2008,12 @@ async function openPmbok(key) {
   } catch(e) { console.warn('PMBOK summary fetch failed:', e.message); }
 
   if (summary) {
+    const t = dl();
     const refsHtml = (summary.refs || []).map((r, i) => `
       <div class="pmbok-ref-item" id="pmbok-ref-${i}">
         <button onclick="togglePmbokRef(${i})" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:8px 0;display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;">${r.label || ''}${r.page ? ' · p.' + r.page : ''}</span>
-          <span style="font-size:11px;color:#94a3b8;" id="pmbok-ref-arrow-${i}">▶ читати більше</span>
+          <span style="font-size:11px;color:#94a3b8;" id="pmbok-ref-arrow-${i}">${t['pmbok.readMore'] || '▶ read more'}</span>
         </button>
         <div id="pmbok-ref-body-${i}" style="display:none;font-size:12px;line-height:1.75;color:#475569;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;">${r.full || r.preview || ''}</div>
       </div>
@@ -2020,19 +2021,19 @@ async function openPmbok(key) {
 
     document.getElementById('pd-text').innerHTML = `
       <div style="margin-bottom:18px;">
-        <div style="font-size:10px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📌 Що це</div>
+        <div style="font-size:10px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">${t['pmbok.what'] || '📌 What it is'}</div>
         <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${summary.what || ''}</p>
       </div>
       <div style="margin-bottom:18px;">
-        <div style="font-size:10px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">🎯 Навіщо</div>
+        <div style="font-size:10px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">${t['pmbok.why'] || '🎯 Why it matters'}</div>
         <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${summary.why || ''}</p>
       </div>
       <div style="margin-bottom:20px;">
-        <div style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">⚙️ Як робиться</div>
+        <div style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">${t['pmbok.how'] || '⚙️ How to create it'}</div>
         <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;white-space:pre-line;">${summary.how || ''}</p>
       </div>
       <div style="border-top:1px solid #e2e8f0;padding-top:14px;">
-        <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">📖 Джерела PMBOK® 8</div>
+        <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">${t['pmbok.refs'] || '📖 PMBOK® 8 Sources'}</div>
         ${refsHtml}
       </div>`;
   } else {
@@ -2052,7 +2053,8 @@ function togglePmbokRef(i) {
   if (!body) return;
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
-  if (arrow) arrow.textContent = open ? '▶ читати більше' : '▼ згорнути';
+  const t = dl();
+  if (arrow) arrow.textContent = open ? (t['pmbok.readMore'] || '▶ read more') : (t['pmbok.collapse'] || '▼ collapse');
 }
 
 function closePmbok() {
@@ -2696,7 +2698,13 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'genInit.done': '✅ Initiation documents have been generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.',
   'modal.edit': '✏️ Edit',
   'modal.editSave': '💾 Save Changes',
-  'modal.editCancel': '✕ Cancel'
+  'modal.editCancel': '✕ Cancel',
+  'pmbok.what': '📌 What it is',
+  'pmbok.why': '🎯 Why it matters',
+  'pmbok.how': '⚙️ How to create it',
+  'pmbok.refs': '📖 PMBOK® 8 Sources',
+  'pmbok.readMore': '▶ read more',
+  'pmbok.collapse': '▼ collapse'
 },
 
 ua: {
@@ -3064,7 +3072,13 @@ VP of People, TechCorp Solutions`,
   'genInit.done': '✅ Документи Initiation згенеровано!\n\nТепер ви можете самостійно згенерувати решту документів на ваш вибір — натисніть кнопку Generate на картці відповідного документа.',
   'modal.edit': '✏️ Редагувати',
   'modal.editSave': '💾 Зберегти зміни',
-  'modal.editCancel': '✕ Скасувати'
+  'modal.editCancel': '✕ Скасувати',
+  'pmbok.what': '📌 Що це',
+  'pmbok.why': '🎯 Навіщо',
+  'pmbok.how': '⚙️ Як створити',
+  'pmbok.refs': '📖 Джерела PMBOK® 8',
+  'pmbok.readMore': '▶ читати більше',
+  'pmbok.collapse': '▼ згорнути'
 },
 
 de: {
@@ -3121,7 +3135,13 @@ de: {
   'genAll.done': '✅ Alle Dokumente generiert!',
   'modal.edit': '✏️ Bearbeiten',
   'modal.editSave': '💾 Änderungen speichern',
-  'modal.editCancel': '✕ Abbrechen'
+  'modal.editCancel': '✕ Abbrechen',
+  'pmbok.what': '📌 Was ist das',
+  'pmbok.why': '🎯 Warum wichtig',
+  'pmbok.how': '⚙️ Wie erstellen',
+  'pmbok.refs': '📖 PMBOK® 8 Quellen',
+  'pmbok.readMore': '▶ mehr lesen',
+  'pmbok.collapse': '▼ einklappen'
 },
 
 fr: {
@@ -3178,7 +3198,13 @@ fr: {
   'genAll.done': '✅ Tous les documents générés!',
   'modal.edit': '✏️ Modifier',
   'modal.editSave': '💾 Enregistrer',
-  'modal.editCancel': '✕ Annuler'
+  'modal.editCancel': '✕ Annuler',
+  'pmbok.what': "📌 Qu'est-ce que c'est",
+  'pmbok.why': '🎯 Pourquoi',
+  'pmbok.how': '⚙️ Comment créer',
+  'pmbok.refs': '📖 Sources PMBOK® 8',
+  'pmbok.readMore': '▶ lire plus',
+  'pmbok.collapse': '▼ réduire'
 },
 
 es: {
@@ -3235,7 +3261,13 @@ es: {
   'genAll.done': '✅ ¡Todos los documentos generados!',
   'modal.edit': '✏️ Editar',
   'modal.editSave': '💾 Guardar cambios',
-  'modal.editCancel': '✕ Cancelar'
+  'modal.editCancel': '✕ Cancelar',
+  'pmbok.what': '📌 Qué es',
+  'pmbok.why': '🎯 Por qué',
+  'pmbok.how': '⚙️ Cómo crear',
+  'pmbok.refs': '📖 Fuentes PMBOK® 8',
+  'pmbok.readMore': '▶ leer más',
+  'pmbok.collapse': '▼ colapsar'
 },
 
 pl: {
@@ -3292,7 +3324,13 @@ pl: {
   'genAll.done': '✅ Wszystkie dokumenty wygenerowane!',
   'modal.edit': '✏️ Edytuj',
   'modal.editSave': '💾 Zapisz zmiany',
-  'modal.editCancel': '✕ Anuluj'
+  'modal.editCancel': '✕ Anuluj',
+  'pmbok.what': '📌 Co to jest',
+  'pmbok.why': '🎯 Po co',
+  'pmbok.how': '⚙️ Jak tworzyć',
+  'pmbok.refs': '📖 Źródła PMBOK® 8',
+  'pmbok.readMore': '▶ czytaj więcej',
+  'pmbok.collapse': '▼ zwiń'
 },
 
 pt: {
@@ -3349,7 +3387,13 @@ pt: {
   'genAll.done': '✅ Todos os documentos gerados!',
   'modal.edit': '✏️ Editar',
   'modal.editSave': '💾 Salvar alterações',
-  'modal.editCancel': '✕ Cancelar'
+  'modal.editCancel': '✕ Cancelar',
+  'pmbok.what': '📌 O que é',
+  'pmbok.why': '🎯 Por que',
+  'pmbok.how': '⚙️ Como criar',
+  'pmbok.refs': '📖 Fontes PMBOK® 8',
+  'pmbok.readMore': '▶ ler mais',
+  'pmbok.collapse': '▼ recolher'
 },
 
 it: {
@@ -3406,7 +3450,13 @@ it: {
   'genAll.done': '✅ Tutti i documenti generati!',
   'modal.edit': '✏️ Modifica',
   'modal.editSave': '💾 Salva modifiche',
-  'modal.editCancel': '✕ Annulla'
+  'modal.editCancel': '✕ Annulla',
+  'pmbok.what': "📌 Cos'è",
+  'pmbok.why': '🎯 Perché',
+  'pmbok.how': '⚙️ Come creare',
+  'pmbok.refs': '📖 Fonti PMBOK® 8',
+  'pmbok.readMore': '▶ leggi di più',
+  'pmbok.collapse': '▼ comprimi'
 },
 
 tr: {
@@ -3463,7 +3513,13 @@ tr: {
   'genAll.done': '✅ Tüm belgeler oluşturuldu!',
   'modal.edit': '✏️ Düzenle',
   'modal.editSave': '💾 Değişiklikleri kaydet',
-  'modal.editCancel': '✕ İptal'
+  'modal.editCancel': '✕ İptal',
+  'pmbok.what': '📌 Nedir',
+  'pmbok.why': '🎯 Neden önemli',
+  'pmbok.how': '⚙️ Nasıl oluşturulur',
+  'pmbok.refs': '📖 PMBOK® 8 Kaynakları',
+  'pmbok.readMore': '▶ daha fazla oku',
+  'pmbok.collapse': '▼ daralt'
 },
 
 zh: {
@@ -3520,7 +3576,13 @@ zh: {
   'genAll.done': '✅ 所有文档已生成！',
   'modal.edit': '✏️ 编辑',
   'modal.editSave': '💾 保存更改',
-  'modal.editCancel': '✕ 取消'
+  'modal.editCancel': '✕ 取消',
+  'pmbok.what': '📌 是什么',
+  'pmbok.why': '🎯 为什么重要',
+  'pmbok.how': '⚙️ 如何创建',
+  'pmbok.refs': '📖 PMBOK® 8 来源',
+  'pmbok.readMore': '▶ 阅读更多',
+  'pmbok.collapse': '▼ 收起'
 },
 
 ja: {
@@ -3577,7 +3639,13 @@ ja: {
   'genAll.done': '✅ すべてのドキュメントが生成されました！',
   'modal.edit': '✏️ 編集',
   'modal.editSave': '💾 変更を保存',
-  'modal.editCancel': '✕ キャンセル'
+  'modal.editCancel': '✕ キャンセル',
+  'pmbok.what': '📌 これは何か',
+  'pmbok.why': '🎯 なぜ重要か',
+  'pmbok.how': '⚙️ 作成方法',
+  'pmbok.refs': '📖 PMBOK® 8 参照',
+  'pmbok.readMore': '▶ 詳細を読む',
+  'pmbok.collapse': '▼ 閉じる'
 },
 
 ko: {
@@ -3634,7 +3702,13 @@ ko: {
   'genAll.done': '✅ 모든 문서 생성 완료!',
   'modal.edit': '✏️ 편집',
   'modal.editSave': '💾 변경사항 저장',
-  'modal.editCancel': '✕ 취소'
+  'modal.editCancel': '✕ 취소',
+  'pmbok.what': '📌 무엇인가',
+  'pmbok.why': '🎯 왜 중요한가',
+  'pmbok.how': '⚙️ 작성 방법',
+  'pmbok.refs': '📖 PMBOK® 8 출처',
+  'pmbok.readMore': '▶ 더 읽기',
+  'pmbok.collapse': '▼ 접기'
 },
 
 hi: {
@@ -3691,7 +3765,13 @@ hi: {
   'genAll.done': '✅ सभी दस्तावेज़ बन गए!',
   'modal.edit': '✏️ संपादित करें',
   'modal.editSave': '💾 परिवर्तन सहेजें',
-  'modal.editCancel': '✕ रद्द करें'
+  'modal.editCancel': '✕ रद्द करें',
+  'pmbok.what': '📌 यह क्या है',
+  'pmbok.why': '🎯 यह क्यों महत्वपूर्ण है',
+  'pmbok.how': '⚙️ कैसे बनाएं',
+  'pmbok.refs': '📖 PMBOK® 8 स्रोत',
+  'pmbok.readMore': '▶ और पढ़ें',
+  'pmbok.collapse': '▼ संक्षिप्त करें'
 },
 
 ar: {
@@ -3748,7 +3828,13 @@ ar: {
   'genAll.done': '✅ تم إنشاء جميع المستندات!',
   'modal.edit': '✏️ تعديل',
   'modal.editSave': '💾 حفظ التغييرات',
-  'modal.editCancel': '✕ إلغاء'
+  'modal.editCancel': '✕ إلغاء',
+  'pmbok.what': '📌 ما هو',
+  'pmbok.why': '🎯 لماذا مهم',
+  'pmbok.how': '⚙️ كيفية الإنشاء',
+  'pmbok.refs': '📖 مصادر PMBOK® 8',
+  'pmbok.readMore': '▶ اقرأ المزيد',
+  'pmbok.collapse': '▼ طي'
 }
 }; // end DL
 
