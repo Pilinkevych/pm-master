@@ -1979,24 +1979,69 @@ async function openPmbok(key) {
     return;
   }
 
-  const readable = chunks.filter(c => {
-    const t = c.text || '';
-    if (t.includes('......')) return false;
-    if ((t.match(/\d+\s+\d+\.\d/g) || []).length > 2) return false;
-    if (t.length < 80) return false;
-    return true;
-  });
-  const display = readable.length ? readable : chunks;
+  const doc = DOCS.find(d => d.key === key);
+  document.getElementById('pd-text').innerHTML =
+    '<div style="text-align:center;padding:30px 20px;color:#94a3b8;font-size:13px;">✨ AI is preparing a summary...</div>';
 
-  document.getElementById('pd-text').innerHTML = display.map(c => `
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
-      <div style="font-size:10px;color:#6366f1;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;">
-        ${c.label || c.section}${c.page_start ? ' · p. ' + c.page_start : ''}
+  let summary = null;
+  try {
+    const res = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmbok-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: ref.section, docName: doc?.name || key, chunks })
+    });
+    const data = await res.json();
+    if (data.success) summary = data;
+  } catch(e) { console.warn('PMBOK summary fetch failed:', e.message); }
+
+  if (summary) {
+    const refsHtml = (summary.refs || []).map((r, i) => `
+      <div class="pmbok-ref-item" id="pmbok-ref-${i}">
+        <button onclick="togglePmbokRef(${i})" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:8px 0;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;">${r.label || ''}${r.page ? ' · p.' + r.page : ''}</span>
+          <span style="font-size:11px;color:#94a3b8;" id="pmbok-ref-arrow-${i}">▶ читати більше</span>
+        </button>
+        <div id="pmbok-ref-body-${i}" style="display:none;font-size:12px;line-height:1.75;color:#475569;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;">${r.full || r.preview || ''}</div>
       </div>
-      <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${c.text}</p>
-    </div>
-  `).join('');
+    `).join('');
+
+    document.getElementById('pd-text').innerHTML = `
+      <div style="margin-bottom:18px;">
+        <div style="font-size:10px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📌 Що це</div>
+        <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${summary.what || ''}</p>
+      </div>
+      <div style="margin-bottom:18px;">
+        <div style="font-size:10px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">🎯 Навіщо</div>
+        <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${summary.why || ''}</p>
+      </div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:10px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">⚙️ Як робиться</div>
+        <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;white-space:pre-line;">${summary.how || ''}</p>
+      </div>
+      <div style="border-top:1px solid #e2e8f0;padding-top:14px;">
+        <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">📖 Джерела PMBOK® 8</div>
+        ${refsHtml}
+      </div>`;
+  } else {
+    document.getElementById('pd-text').innerHTML = chunks.map(c => `
+      <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
+        <div style="font-size:10px;color:#6366f1;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;">
+          ${c.label || c.section}${c.page_start ? ' · p. ' + c.page_start : ''}
+        </div>
+        <p style="font-size:13px;line-height:1.75;color:#1e293b;margin:0;">${c.text}</p>
+      </div>
+    `).join('');
+  }
 }
+function togglePmbokRef(i) {
+  const body = document.getElementById('pmbok-ref-body-' + i);
+  const arrow = document.getElementById('pmbok-ref-arrow-' + i);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.textContent = open ? '▶ читати більше' : '▼ згорнути';
+}
+
 function closePmbok() {
   document.getElementById('pmbokDrawer').classList.remove('open');
   document.getElementById('drawerOverlay').classList.remove('active');
