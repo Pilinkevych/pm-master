@@ -1975,7 +1975,10 @@ function exportDocPDF(key) {
     const lum = parseLum(bg.trim());
     if (lum !== null && lum < 100) {
       el.style.color = '#ffffff';
-      el.querySelectorAll('*').forEach(c => { c.style.color = '#ffffff'; c.style.borderColor = 'rgba(255,255,255,0.3)'; });
+      el.querySelectorAll('*').forEach(c => {
+        const cBg = c.style.backgroundColor || c.style.background || '';
+        if (!cBg) { c.style.color = '#ffffff'; }
+      });
     }
   });
 
@@ -2323,7 +2326,7 @@ function showPage(name) {
   window.scrollTo({top:0,behavior:'smooth'});
   updateNavButtons(name);
   const secBanner = document.getElementById('sec-banner');
-  if (secBanner) secBanner.style.display = (name === 'setup') ? '' : 'none';
+  if (secBanner) secBanner.style.display = (name === 'setup') ? 'block' : 'none';
 }
 
 function updateNavButtons(page) {
