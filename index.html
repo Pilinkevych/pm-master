@@ -1247,7 +1247,7 @@ function createProject() {
   if (project._momAnalyzed) {
     delete project._momAnalyzed;
     setTimeout(() => {
-      pmConfirm(dl()['genAll.prompt'], () => generateAllDocs(), null, '🚀', 'OK', 'Cancel');
+      pmConfirm(dl()['genInit.prompt'] || dl()['genAll.prompt'], () => generateInitiationDocs(), null, '🚀', 'OK', 'Cancel');
     }, 600);
   }
 
@@ -1629,6 +1629,49 @@ function generateDoc(key) {
     btn.disabled = false;
     alert('⚠️ Generation failed: ' + err.message + '\n\nCheck that n8n workflow is active.');
   });
+}
+
+async function generateInitiationDocs() {
+  const INIT_KEYS = DOCS
+    .filter(d => d.phase && d.phase.startsWith('Initiation') && project.docStatus[d.key] && project.docStatus[d.key] !== 'excluded')
+    .map(d => d.key);
+  if (!INIT_KEYS.length) return;
+  const t = dl();
+
+  let banner = document.getElementById('genall-banner');
+  if (!banner) { banner = document.createElement('div'); banner.id = 'genall-banner'; document.body.appendChild(banner); }
+
+  let done = 0, succeeded = 0;
+  for (const key of INIT_KEYS) {
+    const doc = DOCS.find(d => d.key === key);
+    banner.innerHTML = `<div class="gen-banner-inner"><div class="gen-spinner"></div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.generating'] || 'Генерую...'}</div><div class="gen-banner-doc">${doc?.icon || '📄'} ${doc?.name || key}</div><div class="gen-banner-count">${done + 1} / ${INIT_KEYS.length}</div></div></div>`;
+    try {
+      const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ key, project, lang: curLang() })
+      });
+      const text = await r.text();
+      const data = text ? JSON.parse(text) : {};
+      if (data.success && data.content) {
+        project.docStatus[key] = 'done';
+        project.docContent = project.docContent || {};
+        project.docContent[key] = data.content;
+        succeeded++;
+        buildDocsGrid();
+      } else if (!data.success && data.error) {
+        console.error('[PM Master] Init doc error for', key, ':', data.error);
+      }
+    } catch(e) { console.error('[PM Master] Init generate failed for', key, ':', e.message); }
+    done++;
+  }
+  updateStats();
+  scheduleAutosave();
+  banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
+  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${succeeded} / ${INIT_KEYS.length} документів</div></div></div>`;
+  setTimeout(() => {
+    banner.remove();
+    pmAlert(t['genInit.done'] || '✅ Initiation documents generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.', '🚀');
+  }, 2000);
 }
 
 async function generateAllDocs() {
@@ -2573,6 +2616,8 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'genAll.prompt': '🚀 AI successfully extracted your project data!\n\nGenerate all selected documents now?\n\nThis will create all your project documents in English using the AI. It takes ~2 minutes.',
   'genAll.generating': '⏳ Generating documents...',
   'genAll.done': '✅ All documents generated!',
+  'genInit.prompt': '🚀 AI successfully extracted your project data!\n\nGenerate Initiation documents now?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nThe remaining documents can be generated manually at your own pace.',
+  'genInit.done': '✅ Initiation documents have been generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.',
   'modal.edit': '✏️ Edit',
   'modal.editSave': '💾 Save Changes',
   'modal.editCancel': '✕ Cancel'
@@ -2939,6 +2984,8 @@ VP of People, TechCorp Solutions`,
   'genAll.prompt': '🚀 ШІ успішно витягнув дані проєкту!\n\nСгенерувати всі обрані документи зараз?\n\nЦе створить усі документи проєкту українською. Займе ~2 хвилини.',
   'genAll.generating': '⏳ Генерація документів...',
   'genAll.done': '✅ Усі документи згенеровано!',
+  'genInit.prompt': '🚀 ШІ успішно витягнув дані проєкту!\n\nЗгенерувати документи Initiation?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nРешту документів ви зможете згенерувати самостійно в будь-який час.',
+  'genInit.done': '✅ Документи Initiation згенеровано!\n\nТепер ви можете самостійно згенерувати решту документів на ваш вибір — натисніть кнопку Generate на картці відповідного документа.',
   'modal.edit': '✏️ Редагувати',
   'modal.editSave': '💾 Зберегти зміни',
   'modal.editCancel': '✕ Скасувати'
