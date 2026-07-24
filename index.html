@@ -818,7 +818,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
     <div class="modal-footer">
       <button class="modal-btn btn modal-btn-pdf" onclick="exportPDF()">📥 Export PDF</button>
-      <button class="modal-btn btn modal-btn-save" onclick="saveDoc()">💾 Save</button>
+      <button class="modal-btn btn modal-btn-save" id="modal-save-btn" onclick="saveDoc()">💾 Save as Draft</button>
     </div>
   </div>
 </div>
@@ -1352,7 +1352,7 @@ function buildDocsGrid() {
         <div class="doc-card-phase">${d.phase}</div>
         <div class="doc-card-actions">
           <button class="doc-btn doc-btn-gen" onclick="openDoc('${d.key}')">✨ Generate</button>
-          <button class="doc-btn doc-btn-edit" onclick="openDoc('${d.key}')">✏️ Edit</button>
+          <button class="doc-btn doc-btn-edit" onclick="${status==='done'?`editDocContent('${d.key}')`:`openDoc('${d.key}')`}">✏️ Edit</button>
           ${status==='done' ? `<button class="doc-btn doc-btn-pdf" onclick="exportDocPDF('${d.key}')">📥 PDF</button>` : ''}
         </div>`;
       grid.appendChild(card);
@@ -1385,6 +1385,10 @@ function openDoc(key, mode) {
     document.getElementById('modal-body').innerHTML = (hasContent ? `<div style="margin-bottom:12px;"><button onclick="openDoc('${key}','generated')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#2563eb;cursor:pointer;font-size:13px;">✨ View Generated Document</button></div>` : '') + buildDocForm(key);
   }
   document.getElementById('docModal').classList.add('active');
+  const footer = document.querySelector('.modal-footer');
+  if (footer) footer.style.display = '';
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.style.display = showGenerated ? 'none' : '';
 }
 
 function copyDocContent(key) {
@@ -1763,16 +1767,18 @@ function editDocContent(key) {
   area.addEventListener('mouseup', _updateTableToolbar);
   area.addEventListener('keyup', _updateTableToolbar);
   document.addEventListener('selectionchange', _updateTableToolbar);
+  const footer = document.querySelector('.modal-footer');
+  if (footer) footer.style.display = 'none';
 }
 
-function saveEditedDoc(key) {
+async function saveEditedDoc(key) {
   const area = document.getElementById('doc-edit-area');
   if (!area) return;
   document.removeEventListener('selectionchange', _updateTableToolbar);
   project.docContent = project.docContent || {};
   project.docContent[key] = area.innerHTML;
   project.docStatus[key] = 'done';
-  scheduleAutosave();
+  await saveCurrentProject(true);
   openDoc(key, 'generated');
 }
 
