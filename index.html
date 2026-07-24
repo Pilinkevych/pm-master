@@ -1352,7 +1352,7 @@ function buildDocsGrid() {
         <div class="doc-card-phase">${d.phase}</div>
         <div class="doc-card-actions">
           <button class="doc-btn doc-btn-gen" onclick="openDoc('${d.key}')">✨ Generate</button>
-          <button class="doc-btn doc-btn-edit" onclick="${status==='done'?`editDocContent('${d.key}')`:`openDoc('${d.key}')`}">✏️ Edit</button>
+          <button class="doc-btn doc-btn-edit" onclick="openDoc('${d.key}','${status==='done'?'edit':'form'}')">✏️ Edit</button>
           ${status==='done' ? `<button class="doc-btn doc-btn-pdf" onclick="exportDocPDF('${d.key}')">📥 PDF</button>` : ''}
         </div>`;
       grid.appendChild(card);
@@ -1389,6 +1389,7 @@ function openDoc(key, mode) {
   if (footer) footer.style.display = '';
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.style.display = showGenerated ? 'none' : '';
+  if (mode === 'edit' && hasContent) { editDocContent(key); }
 }
 
 function copyDocContent(key) {
