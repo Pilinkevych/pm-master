@@ -4086,13 +4086,14 @@ async function saveCurrentProject(silent) {
   project.supabaseId = result.data.id;
 
   // Save documents
-  const docKeys = Object.keys(project.docData || {});
+  const docKeys = Object.keys(project.docContent || {});
   for (const key of docKeys) {
+    if (!project.docContent[key]) continue;
     await sb.from('project_documents').upsert({
       project_id: project.supabaseId,
       user_id: currentUser.id,
       doc_type: key,
-      content: project.docData[key],
+      content: project.docContent[key],
       version: 1
     }, { onConflict: 'project_id,doc_type,version' });
   }
@@ -4155,12 +4156,12 @@ async function openProject(id) {
   project.start   = p.start_date || '';
   project.end     = p.end_date_plan || '';
   project.budget  = p.budget ? '$' + p.budget : '';
-  project.docData = {};
+  project.docContent = {};
   project.docStatus = {};
 
   DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
   if (docs) docs.forEach(d => {
-    project.docData[d.doc_type] = d.content;
+    project.docContent[d.doc_type] = d.content;
     project.docStatus[d.doc_type] = 'done';
   });
 
