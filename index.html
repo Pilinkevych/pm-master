@@ -1626,7 +1626,7 @@ function generateDoc(key) {
     project.docContent[key] = data.content;
     updateStats();
     buildDocsGrid();
-    scheduleAutosave();
+    saveCurrentProject(true);
     openDoc(key);
   })
   .catch(err => {
@@ -1670,7 +1670,7 @@ async function generateInitiationDocs() {
     done++;
   }
   updateStats();
-  scheduleAutosave();
+  await saveCurrentProject(true);
   banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
   banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${succeeded} / ${INIT_KEYS.length} документів</div></div></div>`;
   setTimeout(() => {
@@ -1723,7 +1723,7 @@ async function generateAllDocs() {
     done++;
   }
   updateStats();
-  scheduleAutosave();
+  await saveCurrentProject(true);
   banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
   banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${done} документів згенеровано</div></div></div>`;
   setTimeout(() => banner.remove(), 4000);
