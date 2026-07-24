@@ -1939,18 +1939,24 @@ function exportDocPDF(key) {
   wrapper.innerHTML = content;
 
   wrapper.querySelectorAll('table').forEach(t => {
-    t.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;font-size:11px;page-break-inside:auto;';
+    t.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;font-size:11px;';
   });
-  wrapper.querySelectorAll('tr').forEach(r => { r.style.pageBreakInside = 'avoid'; });
   wrapper.querySelectorAll('td,th').forEach(c => {
     c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;';
   });
   wrapper.querySelectorAll('th').forEach(c => {
     c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;';
   });
-  // remove top margin from first element
-  const firstEl = wrapper.firstElementChild;
-  if (firstEl) firstEl.style.marginTop = '0';
+  // remove top spacing from first visible element
+  let firstEl = wrapper.firstElementChild;
+  while (firstEl) {
+    firstEl.style.marginTop = '0';
+    firstEl.style.paddingTop = '0';
+    const tag = firstEl.tagName.toLowerCase();
+    if (['h1','h2','h3','h4','p','table','ul','ol','div'].includes(tag) &&
+        firstEl.textContent.trim()) break;
+    firstEl = firstEl.firstElementChild || firstEl.nextElementSibling;
+  }
 
   wrapper.querySelectorAll('h1').forEach(h => { h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
   wrapper.querySelectorAll('h2').forEach(h => { h.style.cssText = 'font-size:14px;color:#1e3a8a;margin:14px 0 5px;page-break-after:avoid;'; });
