@@ -1948,6 +1948,10 @@ function exportDocPDF(key) {
   wrapper.querySelectorAll('th').forEach(c => {
     c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;';
   });
+  // remove top margin from first element
+  const firstEl = wrapper.firstElementChild;
+  if (firstEl) firstEl.style.marginTop = '0';
+
   wrapper.querySelectorAll('h1').forEach(h => { h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
   wrapper.querySelectorAll('h2').forEach(h => { h.style.cssText = 'font-size:14px;color:#1e3a8a;margin:14px 0 5px;page-break-after:avoid;'; });
   wrapper.querySelectorAll('h3').forEach(h => { h.style.cssText = 'font-size:12px;color:#2563eb;margin:10px 0 4px;page-break-after:avoid;'; });
