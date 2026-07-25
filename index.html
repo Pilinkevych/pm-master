@@ -1958,15 +1958,16 @@ function exportDocPDF(key) {
   }
   if (child) { child.style.marginTop = '0'; child.style.paddingTop = '0'; }
 
-  // Strip all backgrounds from non-table elements, apply clean PDF styling
+  // Strip ALL backgrounds (including CSS classes) from non-table elements
+  const skipBg = new Set(['table','thead','tbody','tr','td','th']);
   wrapper.querySelectorAll('*').forEach(el => {
     const tag = el.tagName.toLowerCase();
-    if (!['table','thead','tbody','tr','td','th'].includes(tag)) {
-      el.style.background = '';
-      el.style.backgroundColor = '';
-      el.style.backgroundImage = '';
-      el.style.color = '';
-      el.style.borderColor = '';
+    if (!skipBg.has(tag)) {
+      el.style.setProperty('background', 'transparent', 'important');
+      el.style.setProperty('background-image', 'none', 'important');
+      el.style.setProperty('background-color', 'transparent', 'important');
+      el.style.removeProperty('color');
+      el.style.removeProperty('border-color');
     }
   });
   wrapper.querySelectorAll('h1').forEach(h => {
