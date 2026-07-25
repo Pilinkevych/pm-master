@@ -1605,6 +1605,8 @@ function generateDoc(key) {
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
   btn.disabled = true;
+  const modalBody = document.getElementById('modal-body');
+  if (modalBody) modalBody.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px;"><div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;"></div><div style="font-size:15px;font-weight:700;color:#1e3a8a;">Generating document with AI...</div><div style="font-size:13px;color:#64748b;">This may take 20–40 seconds</div></div>`;
 
   fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
     method: 'POST',
@@ -1956,14 +1958,14 @@ function exportDocPDF(key) {
   }
   if (child) { child.style.marginTop = '0'; child.style.paddingTop = '0'; }
 
-  wrapper.querySelectorAll('h1').forEach(h => { h.style.cssText = 'font-size:18px;color:#1e3a8a;margin:0 0 8px;'; });
-  wrapper.querySelectorAll('h2').forEach(h => { h.style.cssText = 'font-size:14px;color:#1e3a8a;margin:14px 0 5px;page-break-after:avoid;'; });
-  wrapper.querySelectorAll('h3').forEach(h => { h.style.cssText = 'font-size:12px;color:#2563eb;margin:10px 0 4px;page-break-after:avoid;'; });
+  wrapper.querySelectorAll('h1').forEach(h => { const c=h.style.color; h.style.fontSize='18px'; h.style.margin='0 0 8px'; if(!c) h.style.color='#1e3a8a'; });
+  wrapper.querySelectorAll('h2').forEach(h => { const c=h.style.color; h.style.fontSize='14px'; h.style.margin='14px 0 5px'; h.style.pageBreakAfter='avoid'; if(!c) h.style.color='#1e3a8a'; });
+  wrapper.querySelectorAll('h3').forEach(h => { const c=h.style.color; h.style.fontSize='12px'; h.style.margin='10px 0 4px'; h.style.pageBreakAfter='avoid'; if(!c) h.style.color='#2563eb'; });
   wrapper.querySelectorAll('blockquote,div[style*="background"]').forEach(b => { b.style.pageBreakInside = 'avoid'; });
 
   // fix dark-background blocks: ensure text is white (runs last so it overrides h1/h2/h3 color)
   function parseLum(colorStr) {
-    const rgb = colorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    const rgb = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
     if (rgb) return 0.299*parseInt(rgb[1]) + 0.587*parseInt(rgb[2]) + 0.114*parseInt(rgb[3]);
     const hex = colorStr.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
     if (hex) return 0.299*parseInt(hex[1],16) + 0.587*parseInt(hex[2],16) + 0.114*parseInt(hex[3],16);
