@@ -1958,42 +1958,34 @@ function exportDocPDF(key) {
   }
   if (child) { child.style.marginTop = '0'; child.style.paddingTop = '0'; }
 
-  wrapper.querySelectorAll('h1').forEach(h => { h.style.fontSize='18px'; h.style.margin='0 0 8px'; });
-  wrapper.querySelectorAll('h2').forEach(h => { h.style.fontSize='14px'; h.style.margin='14px 0 5px'; h.style.pageBreakAfter='avoid'; });
-  wrapper.querySelectorAll('h3').forEach(h => { h.style.fontSize='12px'; h.style.margin='10px 0 4px'; h.style.pageBreakAfter='avoid'; });
-  wrapper.querySelectorAll('blockquote').forEach(b => { b.style.pageBreakInside = 'avoid'; });
-
-  // Use getComputedStyle to detect dark backgrounds (works for classes + gradients)
-  wrapper.style.cssText += ';position:fixed;left:-9999px;top:0;width:794px;';
-  document.body.appendChild(wrapper);
-  function parseLum(c) {
-    const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (m) return 0.299*+m[1] + 0.587*+m[2] + 0.114*+m[3];
-    const h = c.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    if (h) return 0.299*parseInt(h[1],16) + 0.587*parseInt(h[2],16) + 0.114*parseInt(h[3],16);
-    return null;
-  }
+  // Strip all backgrounds from non-table elements, apply clean PDF styling
   wrapper.querySelectorAll('*').forEach(el => {
-    const cs = window.getComputedStyle(el);
-    let lum = parseLum(cs.backgroundColor);
-    // Also check gradient backgrounds
-    if ((lum === null || lum > 200) && cs.backgroundImage && cs.backgroundImage !== 'none') {
-      const fc = cs.backgroundImage.match(/rgba?\([^)]+\)|#[0-9a-f]{6}/i)?.[0];
-      if (fc) lum = parseLum(fc);
-    }
-    if (lum !== null && lum < 100) {
-      el.style.color = '#ffffff';
-      el.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,span,strong,em,td,a').forEach(c => {
-        const cLum = parseLum(window.getComputedStyle(c).backgroundColor);
-        if (cLum === null || cLum > 200) c.style.color = '#ffffff';
-      });
+    const tag = el.tagName.toLowerCase();
+    if (!['table','thead','tbody','tr','td','th'].includes(tag)) {
+      el.style.background = '';
+      el.style.backgroundColor = '';
+      el.style.backgroundImage = '';
+      el.style.color = '';
+      el.style.borderColor = '';
     }
   });
-  document.body.removeChild(wrapper);
-  wrapper.style.position = '';
-  wrapper.style.left = '';
-  wrapper.style.top = '';
-  wrapper.style.width = '';
+  wrapper.querySelectorAll('h1').forEach(h => {
+    h.style.cssText = 'font-size:20px;font-weight:900;color:#1e3a8a;margin:0 0 12px;padding-bottom:8px;border-bottom:2px solid #1e3a8a;';
+  });
+  wrapper.querySelectorAll('h2').forEach(h => {
+    h.style.cssText = 'font-size:14px;font-weight:800;color:#1e40af;margin:18px 0 6px;padding:6px 10px;border-left:4px solid #2563eb;background:#eff6ff;page-break-after:avoid;';
+  });
+  wrapper.querySelectorAll('h3').forEach(h => {
+    h.style.cssText = 'font-size:12px;font-weight:700;color:#2563eb;margin:12px 0 4px;page-break-after:avoid;';
+  });
+  wrapper.querySelectorAll('h4,h5').forEach(h => {
+    h.style.cssText = 'font-size:11px;font-weight:700;color:#334155;margin:8px 0 3px;';
+  });
+  wrapper.querySelectorAll('p,li').forEach(el => { el.style.color = '#1e293b'; });
+  wrapper.querySelectorAll('strong,b').forEach(el => { el.style.color = '#0f172a'; });
+  wrapper.querySelectorAll('blockquote').forEach(b => {
+    b.style.cssText = 'border-left:3px solid #94a3b8;padding:6px 12px;margin:8px 0;color:#475569;page-break-inside:avoid;';
+  });
 
   const HEADER_MM = 10;
   const FOOTER_MM = 10;
