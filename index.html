@@ -1990,6 +1990,10 @@ function exportDocPDF(key) {
     }
   });
   document.body.removeChild(wrapper);
+  wrapper.style.position = '';
+  wrapper.style.left = '';
+  wrapper.style.top = '';
+  wrapper.style.width = '';
 
   const HEADER_MM = 10;
   const FOOTER_MM = 10;
