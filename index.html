@@ -1945,7 +1945,7 @@ function exportDocPDF(key) {
     c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;';
   });
   wrapper.querySelectorAll('th').forEach(c => {
-    c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;';
+    c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;color:#1e293b;';
   });
   // remove empty leading elements and zero top spacing on first real content
   let child = wrapper.firstElementChild;
@@ -1963,11 +1963,11 @@ function exportDocPDF(key) {
 
   // fix dark-background blocks: ensure text is white (runs last so it overrides h1/h2/h3 color)
   function parseLum(colorStr) {
-    const m = colorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/) ||
-              colorStr.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    if (!m) return null;
-    const r = parseInt(m[1] || m[1], 16) || parseInt(m[1]), g = parseInt(m[2] || m[2], 16) || parseInt(m[2]), b2 = parseInt(m[3] || m[3], 16) || parseInt(m[3]);
-    return 0.299*r + 0.587*g + 0.114*b2;
+    const rgb = colorStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (rgb) return 0.299*parseInt(rgb[1]) + 0.587*parseInt(rgb[2]) + 0.114*parseInt(rgb[3]);
+    const hex = colorStr.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (hex) return 0.299*parseInt(hex[1],16) + 0.587*parseInt(hex[2],16) + 0.114*parseInt(hex[3],16);
+    return null;
   }
   wrapper.querySelectorAll('*').forEach(el => {
     const bg = el.style.backgroundColor || el.style.background || '';
