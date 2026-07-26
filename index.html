@@ -216,6 +216,76 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .btn-secondary{background:white;border:2px solid var(--blue-200);color:var(--blue);padding:10px 18px;font-size:13px;}
 .spinner-inline{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+/* ── PMP QUIZ ── */
+.quiz-wrap{max-width:860px;margin:0 auto;padding:28px 16px 80px;}
+.quiz-hero{text-align:center;padding:40px 20px 32px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:20px;color:white;margin-bottom:28px;}
+.quiz-hero h2{font-size:26px;font-weight:900;margin-bottom:6px;}
+.quiz-hero p{font-size:14px;opacity:.85;}
+.quiz-mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.quiz-mode-card{background:white;border-radius:16px;padding:22px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);border:2px solid transparent;cursor:pointer;transition:.2s;text-align:center;}
+.quiz-mode-card:hover{border-color:#7c3aed;transform:translateY(-2px);}
+.quiz-mode-card .qm-icon{font-size:32px;margin-bottom:8px;}
+.quiz-mode-card h3{font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px;}
+.quiz-mode-card p{font-size:12px;color:#64748b;line-height:1.4;}
+.quiz-domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.quiz-domain-btn{padding:10px 8px;border:2px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-size:12px;font-weight:700;color:#475569;transition:.15s;text-align:center;}
+.quiz-domain-btn.active,.quiz-domain-btn:hover{border-color:#7c3aed;color:#7c3aed;background:#f5f3ff;}
+.quiz-area-select{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;margin-bottom:16px;background:white;}
+.quiz-area-select:focus{outline:none;border-color:#7c3aed;}
+.quiz-count-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.quiz-count-btn{width:36px;height:36px;border-radius:8px;border:2px solid #e2e8f0;background:white;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#475569;transition:.15s;}
+.quiz-count-btn:hover{border-color:#7c3aed;color:#7c3aed;}
+.quiz-count-val{font-size:22px;font-weight:900;color:#1e3a8a;min-width:40px;text-align:center;}
+/* quiz session */
+#quiz-session{display:none;position:fixed;inset:0;background:#f8fafc;z-index:800;overflow-y:auto;}
+.qs-header{background:white;border-bottom:1px solid #e2e8f0;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2;}
+.qs-progress-bar{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#7c3aed,#4f46e5);transition:width .4s;}
+.qs-progress-wrap{position:relative;background:#e2e8f0;border-radius:99px;height:6px;width:200px;overflow:hidden;}
+.qs-timer{font-size:15px;font-weight:800;color:#1e3a8a;font-variant-numeric:tabular-nums;}
+.qs-timer.warn{color:#dc2626;}
+.qs-body{max-width:780px;margin:0 auto;padding:28px 16px 120px;}
+.qs-num{font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.qs-domain-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:8px;}
+.qs-domain-people{background:#dbeafe;color:#1d4ed8;}
+.qs-domain-process{background:#dcfce7;color:#15803d;}
+.qs-domain-business{background:#fef9c3;color:#a16207;}
+.qs-stem{font-size:16px;font-weight:600;color:#0f172a;line-height:1.6;margin-bottom:20px;}
+.qs-options{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.qs-option{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:.15s;background:white;}
+.qs-option:hover:not(.disabled){border-color:#7c3aed;background:#f5f3ff;}
+.qs-option.selected{border-color:#7c3aed;background:#f5f3ff;}
+.qs-option.correct{border-color:#22c55e;background:#f0fdf4;}
+.qs-option.wrong{border-color:#ef4444;background:#fef2f2;}
+.qs-option.disabled{cursor:default;}
+.qs-opt-label{width:28px;height:28px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#475569;flex-shrink:0;margin-top:1px;}
+.qs-option.selected .qs-opt-label{background:#7c3aed;color:white;}
+.qs-option.correct .qs-opt-label{background:#22c55e;color:white;}
+.qs-option.wrong .qs-opt-label{background:#ef4444;color:white;}
+.qs-opt-text{font-size:14px;color:#334155;line-height:1.5;}
+.qs-multi-hint{font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:12px;}
+.qs-reveal{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-top:12px;display:none;}
+.qs-reveal.show{display:block;}
+.qs-reveal-title{font-size:12px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.qs-reveal-text{font-size:13px;color:#1e293b;line-height:1.6;}
+.qs-reveal-ref{font-size:11px;color:#64748b;margin-top:6px;font-style:italic;}
+.qs-footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e2e8f0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;z-index:2;}
+.btn-quiz-next{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;}
+.btn-quiz-check{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;}
+.btn-quiz-exit{background:none;border:1px solid #e2e8f0;color:#64748b;padding:10px 18px;border-radius:10px;font-size:13px;cursor:pointer;}
+/* results */
+.qs-results{max-width:680px;margin:0 auto;padding:40px 16px 80px;text-align:center;}
+.qs-score-ring{width:140px;height:140px;border-radius:50%;background:conic-gradient(#7c3aed var(--pct),#e2e8f0 0);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.qs-score-inner{width:110px;height:110px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.qs-score-pct{font-size:30px;font-weight:900;color:#1e3a8a;}
+.qs-score-lbl{font-size:11px;color:#64748b;font-weight:700;}
+.qs-domain-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0;}
+.qs-ds-card{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.qs-ds-name{font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;text-transform:uppercase;}
+.qs-ds-val{font-size:20px;font-weight:900;color:#1e3a8a;}
+.qs-verdict{font-size:18px;font-weight:800;margin:8px 0 4px;}
+.qs-verdict.pass{color:#16a34a;}
+.qs-verdict.fail{color:#dc2626;}
+.qs-verdict.ok{color:#d97706;}
 
 /* ══════════════════════════════════════════
    DASHBOARD PAGE
@@ -450,6 +520,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <button class="btn-demo" onclick="startTour()">▶ Demo</button>
     <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
     <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
+    <button class="btn-new-project" id="btn-quiz" onclick="showPage('quiz')" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
     <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
   </div>
 </header>
@@ -634,6 +705,133 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 <!-- ══════════════════════════════════════════
      DASHBOARD PAGE
 ══════════════════════════════════════════ -->
+<div id="page-quiz" class="page">
+<div class="quiz-wrap">
+  <div class="quiz-hero">
+    <div style="font-size:48px;margin-bottom:10px;">🎓</div>
+    <h2>PMP® Exam Trainer</h2>
+    <p>PMBOK® 8th Edition · PMI ECO 2023 · 180 questions · 230 min</p>
+  </div>
+
+  <!-- Mode selection -->
+  <div id="quiz-setup">
+    <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Choose mode</div>
+    <div class="quiz-mode-grid">
+      <div class="quiz-mode-card" onclick="selectQuizMode('full')">
+        <div class="qm-icon">🏆</div>
+        <h3>Full Exam</h3>
+        <p>180 questions · 230 min · 3 sections with breaks</p>
+      </div>
+      <div class="quiz-mode-card" onclick="selectQuizMode('domain')">
+        <div class="qm-icon">🎯</div>
+        <h3>By Domain</h3>
+        <p>Practice one domain · choose count · no time pressure</p>
+      </div>
+      <div class="quiz-mode-card" onclick="selectQuizMode('area')">
+        <div class="qm-icon">📚</div>
+        <h3>By Knowledge Area</h3>
+        <p>Deep dive into Integration, Risk, Schedule and more</p>
+      </div>
+    </div>
+
+    <!-- Domain config -->
+    <div id="quiz-cfg-domain" style="display:none;background:white;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Select domain</div>
+      <div class="quiz-domain-grid">
+        <div class="quiz-domain-btn active" data-d="all" onclick="setQuizDomain('all',this)">🌐 All domains</div>
+        <div class="quiz-domain-btn" data-d="people" onclick="setQuizDomain('people',this)">👥 People (42%)</div>
+        <div class="quiz-domain-btn" data-d="process" onclick="setQuizDomain('process',this)">⚙️ Process (50%)</div>
+        <div class="quiz-domain-btn" data-d="business" onclick="setQuizDomain('business',this)">🏢 Business Env. (8%)</div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px;">Number of questions</div>
+      <div class="quiz-count-row">
+        <button class="quiz-count-btn" onclick="changeQuizCount(-5)">−</button>
+        <div class="quiz-count-val" id="quiz-count-display">20</div>
+        <button class="quiz-count-btn" onclick="changeQuizCount(5)">+</button>
+        <span style="font-size:13px;color:#64748b;">questions</span>
+      </div>
+      <button onclick="startQuiz()" class="btn-primary" style="margin-top:8px;max-width:280px;">▶ Start Practice</button>
+    </div>
+
+    <!-- Area config -->
+    <div id="quiz-cfg-area" style="display:none;background:white;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Select knowledge area</div>
+      <select class="quiz-area-select" id="quiz-area-select">
+        <option value="">All knowledge areas</option>
+        <option value="Integration">Integration Management</option>
+        <option value="Scope">Scope Management</option>
+        <option value="Schedule">Schedule Management</option>
+        <option value="Cost">Cost Management</option>
+        <option value="Quality">Quality Management</option>
+        <option value="Resource">Resource Management</option>
+        <option value="Communications">Communications Management</option>
+        <option value="Risk">Risk Management</option>
+        <option value="Procurement">Procurement Management</option>
+        <option value="Stakeholder">Stakeholder Engagement</option>
+        <option value="Agile/Hybrid">Agile / Hybrid</option>
+      </select>
+      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 10px;">Number of questions</div>
+      <div class="quiz-count-row">
+        <button class="quiz-count-btn" onclick="changeQuizCount(-5)">−</button>
+        <div class="quiz-count-val" id="quiz-count-display2">20</div>
+        <button class="quiz-count-btn" onclick="changeQuizCount(5)">+</button>
+        <span style="font-size:13px;color:#64748b;">questions</span>
+      </div>
+      <button onclick="startQuiz()" class="btn-primary" style="margin-top:8px;max-width:280px;">▶ Start Practice</button>
+    </div>
+
+    <!-- Full exam info -->
+    <div id="quiz-cfg-full" style="display:none;background:white;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="text-align:center;padding:14px;background:#f5f3ff;border-radius:12px;"><div style="font-size:22px;font-weight:900;color:#7c3aed;">180</div><div style="font-size:11px;color:#64748b;font-weight:700;margin-top:2px;">QUESTIONS</div></div>
+        <div style="text-align:center;padding:14px;background:#f5f3ff;border-radius:12px;"><div style="font-size:22px;font-weight:900;color:#7c3aed;">230</div><div style="font-size:11px;color:#64748b;font-weight:700;margin-top:2px;">MINUTES</div></div>
+        <div style="text-align:center;padding:14px;background:#f5f3ff;border-radius:12px;"><div style="font-size:22px;font-weight:900;color:#7c3aed;">3</div><div style="font-size:11px;color:#64748b;font-weight:700;margin-top:2px;">SECTIONS</div></div>
+      </div>
+      <div style="font-size:13px;color:#475569;line-height:1.7;margin-bottom:20px;">
+        <strong>Section 1</strong>: Q1–60 &nbsp;·&nbsp; <strong>Break 10 min</strong> &nbsp;·&nbsp; <strong>Section 2</strong>: Q61–120 &nbsp;·&nbsp; <strong>Break 10 min</strong> &nbsp;·&nbsp; <strong>Section 3</strong>: Q121–180<br>
+        Domain mix: 42% People · 50% Process · 8% Business Environment
+      </div>
+      <button onclick="startQuiz()" class="btn-primary" style="max-width:280px;">▶ Start Full Exam (180 Q)</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- QUIZ SESSION OVERLAY -->
+<div id="quiz-session">
+  <div class="qs-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="qs-progress-wrap" style="width:160px;">
+        <div class="qs-progress-bar" id="qs-progress-bar" style="width:0%"></div>
+      </div>
+      <span style="font-size:13px;color:#64748b;" id="qs-progress-text">0 / 0</span>
+    </div>
+    <div id="qs-timer" class="qs-timer" style="display:none;"></div>
+    <button class="btn-quiz-exit" onclick="confirmExitQuiz()">✕ Exit</button>
+  </div>
+
+  <div class="qs-body" id="qs-body">
+    <!-- Question rendered here -->
+  </div>
+
+  <div class="qs-footer">
+    <div style="font-size:12px;color:#94a3b8;" id="qs-footer-left"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-quiz-check" id="btn-check" onclick="checkAnswer()" style="display:none;">✓ Check</button>
+      <button class="btn-quiz-next" id="btn-next" onclick="nextQuestion()" style="display:none;">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAK SCREEN -->
+<div id="quiz-break" style="display:none;position:fixed;inset:0;background:#f5f3ff;z-index:900;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <div style="font-size:56px;">☕</div>
+  <div style="font-size:24px;font-weight:900;color:#4f46e5;">Break Time!</div>
+  <div style="font-size:15px;color:#64748b;" id="break-msg">You've completed Section 1. Take a 10-minute break.</div>
+  <div style="font-size:40px;font-weight:900;color:#7c3aed;font-variant-numeric:tabular-nums;" id="break-timer">10:00</div>
+  <button onclick="resumeFromBreak()" class="btn-primary" style="max-width:220px;">Continue →</button>
+</div>
+
 <div id="page-dashboard" class="page">
 <div class="dashboard-wrap">
 
@@ -2031,6 +2229,302 @@ function exportDocPDF(key) {
 }
 
 function exportPDF() { exportDocPDF(currentDocKey); }
+
+// ══════════════════════════════════════════
+// PMP QUIZ
+// ══════════════════════════════════════════
+const QUIZ_AREAS = {
+  people:   ['Leadership','Team Management','Conflict Resolution','Negotiation','Stakeholder Engagement','Servant Leadership','Emotional Intelligence'],
+  process:  ['Integration','Scope','Schedule','Cost','Quality','Resource','Communications','Risk','Procurement','Agile/Hybrid'],
+  business: ['Benefits Realization','Compliance','Organizational Change','Strategy Alignment','Governance']
+};
+
+let quizState = {
+  mode: 'domain',   // 'full' | 'domain' | 'area'
+  domain: 'all',
+  area: '',
+  count: 20,
+  questions: [],
+  current: 0,
+  selected: [],
+  answered: false,
+  score: { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 },
+  timerInterval: null,
+  secondsLeft: 0,
+  breakTimer: null,
+  section: 1       // for full exam: 1,2,3
+};
+
+function selectQuizMode(mode) {
+  quizState.mode = mode;
+  document.getElementById('quiz-cfg-domain').style.display = 'none';
+  document.getElementById('quiz-cfg-area').style.display   = 'none';
+  document.getElementById('quiz-cfg-full').style.display   = 'none';
+  document.getElementById('quiz-cfg-' + (mode === 'area' ? 'area' : mode === 'full' ? 'full' : 'domain')).style.display = 'block';
+}
+
+function setQuizDomain(d, el) {
+  quizState.domain = d;
+  document.querySelectorAll('.quiz-domain-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function changeQuizCount(delta) {
+  quizState.count = Math.max(5, Math.min(30, quizState.count + delta));
+  const d = document.getElementById('quiz-count-display');
+  const d2 = document.getElementById('quiz-count-display2');
+  if (d) d.textContent = quizState.count;
+  if (d2) d2.textContent = quizState.count;
+}
+
+async function startQuiz() {
+  const t = dl();
+  if (quizState.mode === 'area') {
+    quizState.area = document.getElementById('quiz-area-select').value;
+    quizState.domain = 'all';
+  }
+  const count = quizState.mode === 'full' ? 180 : quizState.count;
+  quizState.count = count;
+
+  // Show session overlay with loading state
+  const session = document.getElementById('quiz-session');
+  session.style.display = 'block';
+  document.getElementById('qs-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:20px;">
+      <div style="width:52px;height:52px;border:4px solid #e2e8f0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite;"></div>
+      <div style="font-size:16px;font-weight:700;color:#4f46e5;">Generating ${count} questions with AI...</div>
+      <div style="font-size:13px;color:#64748b;">This may take 20–40 seconds</div>
+    </div>`;
+  document.getElementById('btn-check').style.display = 'none';
+  document.getElementById('btn-next').style.display  = 'none';
+  document.getElementById('qs-timer').style.display  = 'none';
+
+  try {
+    const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        domain: quizState.domain,
+        area:   quizState.area,
+        count,
+        lang:   curLang(),
+        mode:   quizState.mode
+      })
+    });
+    const data = await resp.json();
+    if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions');
+
+    quizState.questions = data.questions;
+    quizState.current   = 0;
+    quizState.selected  = [];
+    quizState.answered  = false;
+    quizState.score     = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
+    quizState.section   = 1;
+
+    if (quizState.mode === 'full') {
+      quizState.secondsLeft = 230 * 60;
+      startQuizTimer();
+    }
+    renderQuestion();
+  } catch(err) {
+    document.getElementById('quiz-session').style.display = 'none';
+    alert('⚠️ Failed to generate questions: ' + err.message + '\n\nMake sure n8n workflow is active.');
+  }
+}
+
+function startQuizTimer() {
+  const timerEl = document.getElementById('qs-timer');
+  timerEl.style.display = 'block';
+  clearInterval(quizState.timerInterval);
+  quizState.timerInterval = setInterval(() => {
+    quizState.secondsLeft--;
+    const m = Math.floor(quizState.secondsLeft / 60);
+    const s = quizState.secondsLeft % 60;
+    timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    timerEl.className = 'qs-timer' + (quizState.secondsLeft < 600 ? ' warn' : '');
+    if (quizState.secondsLeft <= 0) { clearInterval(quizState.timerInterval); finishQuiz(); }
+  }, 1000);
+}
+
+function renderQuestion() {
+  const q   = quizState.questions[quizState.current];
+  const idx = quizState.current;
+  const total = quizState.questions.length;
+  const pct = Math.round(idx / total * 100);
+
+  document.getElementById('qs-progress-bar').style.width = pct + '%';
+  document.getElementById('qs-progress-text').textContent = `${idx + 1} / ${total}`;
+
+  const domainClass = q.domain === 'People' ? 'qs-domain-people' : q.domain === 'Process' ? 'qs-domain-process' : 'qs-domain-business';
+  const isMulti = q.type === 'multi' || (q.correct && q.correct.length > 1);
+
+  document.getElementById('qs-body').innerHTML = `
+    <div class="qs-num">
+      Question ${idx + 1}
+      <span class="qs-domain-tag ${domainClass}">${q.domain}</span>
+      ${q.area ? `<span style="font-size:11px;color:#94a3b8;margin-left:4px;">${q.area}</span>` : ''}
+    </div>
+    ${isMulti ? `<div class="qs-multi-hint">★ Select ${q.correct.length} answers</div>` : ''}
+    <div class="qs-stem">${q.stem}</div>
+    <div class="qs-options" id="qs-options">
+      ${q.options.map(o => `
+        <div class="qs-option" id="opt-${o.label}" onclick="toggleOption('${o.label}')">
+          <div class="qs-opt-label">${o.label}</div>
+          <div class="qs-opt-text">${o.text}</div>
+        </div>`).join('')}
+    </div>
+    <div class="qs-reveal" id="qs-reveal">
+      <div class="qs-reveal-title">📖 Explanation</div>
+      <div class="qs-reveal-text" id="qs-reveal-text"></div>
+      <div class="qs-reveal-ref" id="qs-reveal-ref"></div>
+    </div>`;
+
+  quizState.selected = [];
+  quizState.answered = false;
+  document.getElementById('btn-check').style.display = 'block';
+  document.getElementById('btn-next').style.display  = 'none';
+  document.getElementById('qs-footer-left').textContent = '';
+}
+
+function toggleOption(label) {
+  if (quizState.answered) return;
+  const q = quizState.questions[quizState.current];
+  const isMulti = q.type === 'multi' || (q.correct && q.correct.length > 1);
+  const el = document.getElementById('opt-' + label);
+
+  if (isMulti) {
+    const idx = quizState.selected.indexOf(label);
+    if (idx === -1) { quizState.selected.push(label); el.classList.add('selected'); }
+    else            { quizState.selected.splice(idx,1); el.classList.remove('selected'); }
+  } else {
+    quizState.selected = [label];
+    document.querySelectorAll('.qs-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+}
+
+function checkAnswer() {
+  if (!quizState.selected.length) return;
+  const q = quizState.questions[quizState.current];
+  const correct = q.correct.map(c => c.toUpperCase());
+  const selected = quizState.selected.map(s => s.toUpperCase());
+  const isCorrect = correct.length === selected.length && correct.every(c => selected.includes(c));
+
+  quizState.answered = true;
+
+  // track score
+  const domain = q.domain;
+  quizState.score.total++;
+  if (isCorrect) quizState.score.correct++;
+  if (domain === 'People')             { quizState.score.peopleTotal++;   if(isCorrect) quizState.score.people++; }
+  else if (domain === 'Process')       { quizState.score.processTotal++;  if(isCorrect) quizState.score.process++; }
+  else if (domain === 'Business Environment') { quizState.score.businessTotal++; if(isCorrect) quizState.score.business++; }
+
+  // highlight
+  document.querySelectorAll('.qs-option').forEach(el => el.classList.add('disabled'));
+  correct.forEach(c => { const el=document.getElementById('opt-'+c); if(el) el.classList.add('correct'); });
+  selected.forEach(s => {
+    const el = document.getElementById('opt-'+s);
+    if (el && !correct.includes(s)) el.classList.add('wrong');
+  });
+
+  // show explanation
+  const rev = document.getElementById('qs-reveal');
+  document.getElementById('qs-reveal-text').textContent = q.explanation || '';
+  document.getElementById('qs-reveal-ref').textContent  = q.pmbok_ref ? '📌 ' + q.pmbok_ref : '';
+  rev.classList.add('show');
+
+  document.getElementById('qs-footer-left').innerHTML = isCorrect
+    ? '<span style="color:#16a34a;font-weight:800;">✓ Correct!</span>'
+    : '<span style="color:#dc2626;font-weight:800;">✗ Incorrect</span>';
+
+  document.getElementById('btn-check').style.display = 'none';
+  document.getElementById('btn-next').style.display  = 'block';
+  document.getElementById('btn-next').textContent = quizState.current < quizState.questions.length - 1 ? 'Next →' : 'See Results';
+}
+
+function nextQuestion() {
+  // Check if we need a break (full exam: after Q60 and Q120)
+  if (quizState.mode === 'full') {
+    const next = quizState.current + 1;
+    if (next === 60 || next === 120) { triggerBreak(next); return; }
+  }
+  quizState.current++;
+  if (quizState.current >= quizState.questions.length) { finishQuiz(); return; }
+  renderQuestion();
+}
+
+function triggerBreak(nextQ) {
+  clearInterval(quizState.timerInterval);
+  const breakEl = document.getElementById('quiz-break');
+  const section = nextQ === 60 ? 1 : 2;
+  document.getElementById('break-msg').textContent = `You've completed Section ${section}. Take a 10-minute break.`;
+  breakEl.style.display = 'flex';
+  let secs = 600;
+  document.getElementById('break-timer').textContent = '10:00';
+  quizState.breakTimer = setInterval(() => {
+    secs--;
+    const m = Math.floor(secs/60), s = secs%60;
+    document.getElementById('break-timer').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (secs <= 0) { clearInterval(quizState.breakTimer); resumeFromBreak(); }
+  }, 1000);
+}
+
+function resumeFromBreak() {
+  clearInterval(quizState.breakTimer);
+  document.getElementById('quiz-break').style.display = 'none';
+  quizState.current++;
+  startQuizTimer();
+  renderQuestion();
+}
+
+function finishQuiz() {
+  clearInterval(quizState.timerInterval);
+  document.getElementById('quiz-session').style.display = 'none';
+
+  const s = quizState.score;
+  const pct = s.total ? Math.round(s.correct/s.total*100) : 0;
+  const verdict = pct >= 70 ? ['pass','🎉 Likely Pass!'] : pct >= 55 ? ['ok','👍 Almost There'] : ['fail','📚 Keep Studying'];
+  const peoplePct   = s.peopleTotal   ? Math.round(s.people/s.peopleTotal*100)     : '-';
+  const processPct  = s.processTotal  ? Math.round(s.process/s.processTotal*100)   : '-';
+  const businessPct = s.businessTotal ? Math.round(s.business/s.businessTotal*100) : '-';
+
+  showPage('quiz');
+  document.getElementById('quiz-setup').innerHTML = `
+    <div class="qs-results">
+      <div class="qs-score-ring" style="--pct:${pct*3.6}deg;">
+        <div class="qs-score-inner">
+          <div class="qs-score-pct">${pct}%</div>
+          <div class="qs-score-lbl">${s.correct}/${s.total}</div>
+        </div>
+      </div>
+      <div class="qs-verdict ${verdict[0]}">${verdict[1]}</div>
+      <div style="font-size:14px;color:#64748b;margin-bottom:24px;">PMP benchmark: ~70% correct</div>
+      <div class="qs-domain-scores">
+        <div class="qs-ds-card"><div class="qs-ds-name">👥 People</div><div class="qs-ds-val">${peoplePct}${peoplePct!=='-'?'%':''}</div></div>
+        <div class="qs-ds-card"><div class="qs-ds-name">⚙️ Process</div><div class="qs-ds-val">${processPct}${processPct!=='-'?'%':''}</div></div>
+        <div class="qs-ds-card"><div class="qs-ds-name">🏢 Business</div><div class="qs-ds-val">${businessPct}${businessPct!=='-'?'%':''}</div></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+        <button onclick="restartQuizSetup()" class="btn-primary" style="max-width:220px;">🔄 Try Again</button>
+      </div>
+    </div>`;
+}
+
+function restartQuizSetup() {
+  document.getElementById('quiz-setup').innerHTML = '';
+  location.reload();  // simplest — reload page preserves auth
+}
+
+function confirmExitQuiz() {
+  if (confirm('Exit quiz? Your progress will be lost.')) {
+    clearInterval(quizState.timerInterval);
+    clearInterval(quizState.breakTimer);
+    document.getElementById('quiz-session').style.display = 'none';
+    document.getElementById('quiz-break').style.display   = 'none';
+    showPage('quiz');
+  }
+}
 
 // ══════════════════════════════════════════
 // PMBOK DRAWER
