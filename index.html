@@ -2315,7 +2315,6 @@ async function prefetchNextBatch() {
     const q = await fetchQuizBatch(Math.min(QUIZ_BATCH, remaining));
     quizState.questions.push(...q);
     quizState.prefetching = false;
-    updateProgressBar();
     // keep prefetching until we have all questions
     if (quizState.questions.length < target) prefetchNextBatch();
     else quizState.done = true;
