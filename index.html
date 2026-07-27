@@ -2306,12 +2306,18 @@ async function fetchQuizBatch(count) {
 
 async function prefetchNextBatch() {
   if (quizState.prefetching || quizState.done) return;
+  const target = quizState.totalTarget || quizState.count;
+  if (quizState.questions.length >= target) { quizState.done = true; return; }
   quizState.prefetching = true;
   try {
-    const q = await fetchQuizBatch(QUIZ_BATCH);
+    const remaining = target - quizState.questions.length;
+    const q = await fetchQuizBatch(Math.min(QUIZ_BATCH, remaining));
     quizState.questions.push(...q);
     quizState.prefetching = false;
     updateProgressBar();
+    // keep prefetching until we have all questions
+    if (quizState.questions.length < target) prefetchNextBatch();
+    else quizState.done = true;
   } catch(e) {
     quizState.prefetching = false;
   }
