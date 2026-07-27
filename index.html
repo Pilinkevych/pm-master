@@ -2311,8 +2311,12 @@ async function startQuiz() {
         mode:   quizState.mode
       })
     });
-    const data = await resp.json();
-    if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} — make sure the n8n workflow is imported and active`);
+    const text = await resp.text();
+    if (!text || !text.trim()) throw new Error('Empty response from n8n — activate the workflow');
+    let data;
+    try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON from n8n: ' + text.slice(0, 100)); }
+    if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions returned');
 
     quizState.questions = data.questions;
     quizState.current   = 0;
