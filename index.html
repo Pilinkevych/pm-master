@@ -736,12 +736,16 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
     <!-- Domain config -->
     <div id="quiz-cfg-domain" style="display:none;background:white;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Select domain</div>
+      <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Select PMBOK 8 domain</div>
       <div class="quiz-domain-grid">
         <div class="quiz-domain-btn active" data-d="all" onclick="setQuizDomain('all',this)">🌐 All domains</div>
-        <div class="quiz-domain-btn" data-d="people" onclick="setQuizDomain('people',this)">👥 People (42%)</div>
-        <div class="quiz-domain-btn" data-d="process" onclick="setQuizDomain('process',this)">⚙️ Process (50%)</div>
-        <div class="quiz-domain-btn" data-d="business" onclick="setQuizDomain('business',this)">🏢 Business Env. (8%)</div>
+        <div class="quiz-domain-btn" data-d="Stakeholders" onclick="setQuizDomain('Stakeholders',this)">👥 Stakeholders</div>
+        <div class="quiz-domain-btn" data-d="Scope" onclick="setQuizDomain('Scope',this)">📋 Scope</div>
+        <div class="quiz-domain-btn" data-d="Schedule" onclick="setQuizDomain('Schedule',this)">📅 Schedule</div>
+        <div class="quiz-domain-btn" data-d="Finance" onclick="setQuizDomain('Finance',this)">💰 Finance</div>
+        <div class="quiz-domain-btn" data-d="Resources" onclick="setQuizDomain('Resources',this)">👷 Resources</div>
+        <div class="quiz-domain-btn" data-d="Risk" onclick="setQuizDomain('Risk',this)">⚠️ Risk</div>
+        <div class="quiz-domain-btn" data-d="Governance" onclick="setQuizDomain('Governance',this)">🏛️ Governance</div>
       </div>
       <div style="font-size:13px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px;">Number of questions</div>
       <div class="quiz-count-row">
