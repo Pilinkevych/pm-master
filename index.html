@@ -2277,61 +2277,82 @@ function changeQuizCount(delta) {
   if (d2) d2.textContent = quizState.count;
 }
 
+const QUIZ_BATCH = 5; // questions per API call
+
+async function fetchQuizBatch(count) {
+  const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      domain: quizState.domain,
+      area:   quizState.area,
+      count,
+      lang:   curLang(),
+      mode:   quizState.mode
+    })
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const text = await resp.text();
+  if (!text || !text.trim()) throw new Error('Empty response from n8n — activate the workflow');
+  let data;
+  try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON: ' + text.slice(0, 80)); }
+  if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions');
+  return data.questions;
+}
+
+async function prefetchNextBatch() {
+  if (quizState.prefetching || quizState.done) return;
+  quizState.prefetching = true;
+  try {
+    const q = await fetchQuizBatch(QUIZ_BATCH);
+    quizState.questions.push(...q);
+    quizState.prefetching = false;
+    updateProgressBar();
+  } catch(e) {
+    quizState.prefetching = false;
+  }
+}
+
 async function startQuiz() {
-  const t = dl();
   if (quizState.mode === 'area') {
     quizState.area = document.getElementById('quiz-area-select').value;
     quizState.domain = 'all';
   }
-  const count = quizState.mode === 'full' ? 180 : quizState.count;
-  quizState.count = count;
+  const totalTarget = quizState.mode === 'full' ? 180 : quizState.count;
+  quizState.totalTarget = totalTarget;
 
-  // Show session overlay with loading state
   const session = document.getElementById('quiz-session');
   session.style.display = 'block';
   document.getElementById('qs-body').innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:20px;">
       <div style="width:52px;height:52px;border:4px solid #e2e8f0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite;"></div>
-      <div style="font-size:16px;font-weight:700;color:#4f46e5;">Generating ${count} questions with AI...</div>
-      <div style="font-size:13px;color:#64748b;">This may take 20–40 seconds</div>
+      <div style="font-size:16px;font-weight:700;color:#4f46e5;">Generating first questions...</div>
+      <div style="font-size:13px;color:#64748b;">Usually 10–20 seconds</div>
     </div>`;
   document.getElementById('btn-check').style.display = 'none';
   document.getElementById('btn-next').style.display  = 'none';
   document.getElementById('qs-timer').style.display  = 'none';
 
   try {
-    const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        domain: quizState.domain,
-        area:   quizState.area,
-        count,
-        lang:   curLang(),
-        mode:   quizState.mode
-      })
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} — make sure the n8n workflow is imported and active`);
-    const text = await resp.text();
-    if (!text || !text.trim()) throw new Error('Empty response from n8n — activate the workflow');
-    let data;
-    try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON from n8n: ' + text.slice(0, 100)); }
-    if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions returned');
-
-    quizState.questions = data.questions;
-    quizState.current   = 0;
-    quizState.selected  = [];
-    quizState.answered  = false;
-    quizState.score     = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
-    quizState.section   = 1;
+    const firstBatch = await fetchQuizBatch(Math.min(QUIZ_BATCH, totalTarget));
+    quizState.questions  = firstBatch;
+    quizState.current    = 0;
+    quizState.selected   = [];
+    quizState.answered   = false;
+    quizState.prefetching = false;
+    quizState.done       = false;
+    quizState.score      = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
+    quizState.section    = 1;
 
     if (quizState.mode === 'full') {
       quizState.secondsLeft = 230 * 60;
       startQuizTimer();
     }
     renderQuestion();
+    // prefetch next batch in background
+    if (quizState.questions.length < totalTarget) prefetchNextBatch();
   } catch(err) {
-    document.getElementById('quiz-session').style.display = 'none';
+    session.style.display = 'none';
     alert('⚠️ Failed to generate questions: ' + err.message + '\n\nMake sure n8n workflow is active.');
   }
 }
@@ -2448,13 +2469,40 @@ function checkAnswer() {
 }
 
 function nextQuestion() {
-  // Check if we need a break (full exam: after Q60 and Q120)
   if (quizState.mode === 'full') {
     const next = quizState.current + 1;
     if (next === 60 || next === 120) { triggerBreak(next); return; }
   }
   quizState.current++;
-  if (quizState.current >= quizState.questions.length) { finishQuiz(); return; }
+  const loaded = quizState.questions.length;
+  const target = quizState.totalTarget || loaded;
+
+  // Reached end of loaded questions
+  if (quizState.current >= loaded) {
+    if (quizState.current >= target || loaded >= target) { finishQuiz(); return; }
+    // Still waiting for prefetch — show spinner
+    document.getElementById('qs-body').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;padding:80px 20px;gap:16px;">
+        <div style="width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite;"></div>
+        <div style="font-size:15px;color:#4f46e5;font-weight:700;">Loading next questions...</div>
+      </div>`;
+    document.getElementById('btn-check').style.display = 'none';
+    document.getElementById('btn-next').style.display  = 'none';
+    // Poll until prefetch finishes
+    const wait = setInterval(() => {
+      if (!quizState.prefetching && quizState.questions.length > quizState.current) {
+        clearInterval(wait);
+        renderQuestion();
+      }
+    }, 500);
+    return;
+  }
+
+  // Prefetch next batch when 2 questions from end
+  if (!quizState.prefetching && loaded - quizState.current <= 2 && loaded < target) {
+    prefetchNextBatch();
+  }
+
   renderQuestion();
 }
 
