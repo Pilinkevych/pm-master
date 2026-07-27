@@ -2320,6 +2320,10 @@ async function prefetchNextBatch() {
     else quizState.done = true;
   } catch(e) {
     quizState.prefetching = false;
+    // retry after 3s on failure so the chain never silently breaks
+    if (quizState.questions.length < (quizState.totalTarget || quizState.count)) {
+      setTimeout(prefetchNextBatch, 3000);
+    }
   }
 }
 
