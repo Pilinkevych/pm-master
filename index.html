@@ -2281,7 +2281,8 @@ function changeQuizCount(delta) {
   if (d2) d2.textContent = quizState.count;
 }
 
-const QUIZ_BATCH = 5; // questions per API call
+const QUIZ_BATCH_INIT = 10; // first load
+const QUIZ_BATCH = 5;      // subsequent prefetch batches
 
 async function fetchQuizBatch(count) {
   const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
@@ -2344,7 +2345,7 @@ async function startQuiz() {
   document.getElementById('qs-timer').style.display  = 'none';
 
   try {
-    const firstBatch = await fetchQuizBatch(Math.min(QUIZ_BATCH, totalTarget));
+    const firstBatch = await fetchQuizBatch(Math.min(QUIZ_BATCH_INIT, totalTarget));
     quizState.questions  = firstBatch;
     quizState.current    = 0;
     quizState.selected   = [];
@@ -2487,30 +2488,22 @@ function nextQuestion() {
   const loaded = quizState.questions.length;
   const target = quizState.totalTarget || loaded;
 
-  // Reached end of loaded questions
+  // Reached end of loaded questions — wait silently for prefetch
   if (quizState.current >= loaded) {
     if (quizState.current >= target || loaded >= target) { finishQuiz(); return; }
-    // Still waiting for prefetch — show spinner
-    document.getElementById('qs-body').innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;padding:80px 20px;gap:16px;">
-        <div style="width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite;"></div>
-        <div style="font-size:15px;color:#4f46e5;font-weight:700;">Loading next questions...</div>
-      </div>`;
-    document.getElementById('btn-check').style.display = 'none';
-    document.getElementById('btn-next').style.display  = 'none';
-    // Poll until prefetch finishes
     const wait = setInterval(() => {
-      if (!quizState.prefetching && quizState.questions.length > quizState.current) {
+      if (quizState.questions.length > quizState.current) {
         clearInterval(wait);
         renderQuestion();
       }
-    }, 500);
+    }, 300);
     return;
   }
 
-  // Prefetch next batch when 2 questions from end
-  if (!quizState.prefetching && loaded - quizState.current <= 2 && loaded < target) {
-    prefetchNextBatch();
+  // Prefetch next batch when user is halfway through current loaded set
+  if (!quizState.prefetching && !quizState.done && loaded < target) {
+    const halfway = loaded - Math.floor(QUIZ_BATCH_INIT / 2);
+    if (quizState.current >= halfway) prefetchNextBatch();
   }
 
   renderQuestion();
