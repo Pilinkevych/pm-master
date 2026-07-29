@@ -2542,10 +2542,26 @@ function finishQuiz() {
 
   const s = quizState.score;
   const pct = s.total ? Math.round(s.correct/s.total*100) : 0;
-  const verdict = pct >= 70 ? ['pass','🎉 Likely Pass!'] : pct >= 55 ? ['ok','👍 Almost There'] : ['fail','📚 Keep Studying'];
-  const peoplePct   = s.peopleTotal   ? Math.round(s.people/s.peopleTotal*100)     : '-';
-  const processPct  = s.processTotal  ? Math.round(s.process/s.processTotal*100)   : '-';
-  const businessPct = s.businessTotal ? Math.round(s.business/s.businessTotal*100) : '-';
+  const verdict = pct >= 70 ? ['pass','🎉 Great Result!'] : pct >= 55 ? ['ok','👍 Almost There'] : ['fail','📚 Keep Studying'];
+
+  let detailsHtml = '';
+  if (quizState.mode === 'full') {
+    const peoplePct   = s.peopleTotal   ? Math.round(s.people/s.peopleTotal*100)     : '-';
+    const processPct  = s.processTotal  ? Math.round(s.process/s.processTotal*100)   : '-';
+    const businessPct = s.businessTotal ? Math.round(s.business/s.businessTotal*100) : '-';
+    detailsHtml = `
+      <div style="font-size:14px;color:#64748b;margin-bottom:16px;">PMP benchmark: ~70% correct</div>
+      <div class="qs-domain-scores">
+        <div class="qs-ds-card"><div class="qs-ds-name">👥 People</div><div class="qs-ds-val">${peoplePct}${peoplePct!=='-'?'%':''}</div></div>
+        <div class="qs-ds-card"><div class="qs-ds-name">⚙️ Process</div><div class="qs-ds-val">${processPct}${processPct!=='-'?'%':''}</div></div>
+        <div class="qs-ds-card"><div class="qs-ds-name">🏢 Business</div><div class="qs-ds-val">${businessPct}${businessPct!=='-'?'%':''}</div></div>
+      </div>`;
+  } else {
+    const focusLabel = quizState.mode === 'area'
+      ? `Knowledge Area: <strong>${quizState.area || 'All'}</strong>`
+      : (quizState.domain === 'all' ? 'All PMBOK 8 Domains' : `Domain: <strong>${quizState.domain}</strong>`);
+    detailsHtml = `<div style="font-size:14px;color:#64748b;margin-bottom:24px;">${focusLabel} · ${s.total} questions</div>`;
+  }
 
   showPage('quiz');
   document.getElementById('quiz-setup').innerHTML = `
@@ -2557,12 +2573,7 @@ function finishQuiz() {
         </div>
       </div>
       <div class="qs-verdict ${verdict[0]}">${verdict[1]}</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:24px;">PMP benchmark: ~70% correct</div>
-      <div class="qs-domain-scores">
-        <div class="qs-ds-card"><div class="qs-ds-name">👥 People</div><div class="qs-ds-val">${peoplePct}${peoplePct!=='-'?'%':''}</div></div>
-        <div class="qs-ds-card"><div class="qs-ds-name">⚙️ Process</div><div class="qs-ds-val">${processPct}${processPct!=='-'?'%':''}</div></div>
-        <div class="qs-ds-card"><div class="qs-ds-name">🏢 Business</div><div class="qs-ds-val">${businessPct}${businessPct!=='-'?'%':''}</div></div>
-      </div>
+      ${detailsHtml}
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
         <button onclick="restartQuizSetup()" class="btn-primary" style="max-width:220px;">🔄 Try Again</button>
       </div>
