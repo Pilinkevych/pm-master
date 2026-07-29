@@ -2494,12 +2494,15 @@ function nextQuestion() {
   const loaded = quizState.questions.length;
   const target = quizState.totalTarget;
 
-  // Reached end of loaded questions — wait silently for prefetch
+  // Reached end of loaded questions — check if truly done or wait for prefetch
   if (quizState.current >= loaded) {
-    if (quizState.current >= target || loaded >= target) { finishQuiz(); return; }
-    const wait = setInterval(() => {
+    if (quizState.current >= target) { finishQuiz(); return; }
+    // Not done yet — wait for prefetch (kick it off if somehow stopped)
+    if (!quizState.prefetching) prefetchNextBatch();
+    quizState._waitInterval = setInterval(() => {
       if (quizState.questions.length > quizState.current) {
-        clearInterval(wait);
+        clearInterval(quizState._waitInterval);
+        quizState._waitInterval = null;
         renderQuestion();
       }
     }, 300);
@@ -2541,6 +2544,9 @@ function resumeFromBreak() {
 
 function finishQuiz() {
   clearInterval(quizState.timerInterval);
+  clearInterval(quizState._waitInterval);
+  quizState._waitInterval = null;
+  quizState.done = true;
   document.getElementById('quiz-session').style.display = 'none';
 
   const s = quizState.score;
