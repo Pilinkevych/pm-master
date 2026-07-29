@@ -2248,15 +2248,18 @@ let quizState = {
   domain: 'all',
   area: '',
   count: 20,
+  totalTarget: 20,
   questions: [],
   current: 0,
   selected: [],
   answered: false,
+  prefetching: false,
+  done: false,
   score: { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 },
   timerInterval: null,
   secondsLeft: 0,
   breakTimer: null,
-  section: 1       // for full exam: 1,2,3
+  section: 1
 };
 
 function selectQuizMode(mode) {
@@ -2349,14 +2352,14 @@ async function startQuiz() {
 
   try {
     const firstBatch = await fetchQuizBatch(Math.min(QUIZ_BATCH_INIT, totalTarget));
-    quizState.questions  = firstBatch;
-    quizState.current    = 0;
-    quizState.selected   = [];
-    quizState.answered   = false;
+    quizState.questions   = firstBatch;
+    quizState.current     = 0;
+    quizState.selected    = [];
+    quizState.answered    = false;
     quizState.prefetching = false;
-    quizState.done       = false;
-    quizState.score      = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
-    quizState.section    = 1;
+    quizState.done        = false;
+    quizState.section     = 1;
+    quizState.score       = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
 
     if (quizState.mode === 'full') {
       quizState.secondsLeft = 230 * 60;
@@ -2489,7 +2492,7 @@ function nextQuestion() {
   }
   quizState.current++;
   const loaded = quizState.questions.length;
-  const target = quizState.totalTarget || loaded;
+  const target = quizState.totalTarget;
 
   // Reached end of loaded questions — wait silently for prefetch
   if (quizState.current >= loaded) {
