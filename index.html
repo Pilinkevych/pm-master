@@ -2498,8 +2498,10 @@ function nextQuestion() {
   // Reached end of loaded questions — check if truly done or wait for prefetch
   if (quizState.current >= loaded) {
     if (quizState.current >= target) { finishQuiz(); return; }
-    // Not done yet — wait for prefetch (kick it off if somehow stopped)
+    // Not done yet — show loading hint and wait for prefetch
     if (!quizState.prefetching) prefetchNextBatch();
+    document.getElementById('btn-next').disabled = true;
+    document.getElementById('btn-next').textContent = '⏳ Loading...';
     quizState._waitInterval = setInterval(() => {
       if (quizState.questions.length > quizState.current) {
         clearInterval(quizState._waitInterval);
