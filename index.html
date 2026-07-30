@@ -2288,6 +2288,7 @@ const QUIZ_BATCH_INIT = 5; // first load
 const QUIZ_BATCH = 5;     // subsequent prefetch batches
 
 async function fetchQuizBatch(count) {
+  // 1. POST to n8n — get jobId immediately (async pattern)
   const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -2299,13 +2300,24 @@ async function fetchQuizBatch(count) {
       mode:   quizState.mode
     })
   });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  if (!resp.ok) throw new Error(`n8n HTTP ${resp.status} — check workflow is active`);
   const text = await resp.text();
   if (!text || !text.trim()) throw new Error('Empty response from n8n — activate the workflow');
-  let data;
-  try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON: ' + text.slice(0, 80)); }
-  if (!data.success || !data.questions?.length) throw new Error(data.error || 'No questions');
-  return data.questions;
+  let init;
+  try { init = JSON.parse(text); } catch(e) { throw new Error('Bad response: ' + text.slice(0, 80)); }
+  const jobId = init.jobId;
+  if (!jobId) throw new Error('No jobId from n8n: ' + text.slice(0, 80));
+
+  // 2. Poll Supabase until done (max 90s)
+  const deadline = Date.now() + 90000;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 2000));
+    const { data, error } = await sb.from('quiz_jobs').select('status,questions,error_msg').eq('id', jobId).single();
+    if (error) continue;
+    if (data.status === 'done' && data.questions?.length) return data.questions;
+    if (data.status === 'error') throw new Error('Generation failed: ' + (data.error_msg || 'unknown'));
+  }
+  throw new Error('Timeout: questions took too long to generate');
 }
 
 async function prefetchNextBatch() {
