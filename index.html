@@ -520,7 +520,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <button class="btn-demo" onclick="startTour()">▶ Demo</button>
     <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
     <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
-    <button class="btn-new-project" id="btn-quiz" onclick="showPage('quiz')" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
+    <button class="btn-new-project" id="btn-quiz" onclick="showQuizOrLogin()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
     <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
   </div>
 </header>
@@ -2261,6 +2261,11 @@ let quizState = {
   breakTimer: null,
   section: 1
 };
+
+function showQuizOrLogin() {
+  if (!currentUser) { localStorage.setItem('_pmPendingAction', 'quiz'); openAuth(); return; }
+  showPage('quiz');
+}
 
 function selectQuizMode(mode) {
   quizState.mode = mode;
@@ -4757,6 +4762,7 @@ function onSignIn(user) {
   console.log('[PM] onSignIn pending action:', pending);
   if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 300); }
   else if (pending === 'create') { showPage('setup'); }
+  else if (pending === 'quiz') { showPage('quiz'); }
   else { showPage('projects'); }
 }
 
