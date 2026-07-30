@@ -2284,8 +2284,8 @@ function changeQuizCount(delta) {
   if (d2) d2.textContent = quizState.count;
 }
 
-const QUIZ_BATCH_INIT = 10; // first load
-const QUIZ_BATCH = 5;      // subsequent prefetch batches
+const QUIZ_BATCH_INIT = 5; // first load
+const QUIZ_BATCH = 5;     // subsequent prefetch batches
 
 async function fetchQuizBatch(count) {
   const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
