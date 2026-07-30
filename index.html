@@ -2482,7 +2482,8 @@ function checkAnswer() {
 
   document.getElementById('btn-check').style.display = 'none';
   document.getElementById('btn-next').style.display  = 'block';
-  document.getElementById('btn-next').textContent = quizState.current < quizState.questions.length - 1 ? 'Next →' : 'See Results';
+  const isLastQ = quizState.current >= quizState.totalTarget - 1;
+  document.getElementById('btn-next').textContent = isLastQ ? 'See Results' : 'Next →';
 }
 
 function nextQuestion() {
