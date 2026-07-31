@@ -398,7 +398,7 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
 
   const fields = {
     merchantAccount:    MERCHANT_LOGIN,
-    merchantDomainName: 'https://pm-master.club/',
+    merchantDomainName: 'pm-master.club',
     orderReference:     orderRef,
     orderDate:          orderDate,
     amount:             amount,
@@ -409,9 +409,9 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
     productPrice:       amount,
     clientEmail:        email,
     language:           'EN',
-    returnUrl:          'https://pm-master.club/payment-success.html?plan=' + planKey + '&seats=' + seats,
+    returnUrl:          'pm-master.clubpayment-success.html?plan=' + planKey + '&seats=' + seats,
     serviceUrl:         'https://aikinomaker.app.n8n.cloud/webhook/pm-master-payment',
-    merchantSignature:  md5([MERCHANT_LOGIN,'https://pm-master.club/',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET)
+    merchantSignature:  md5([MERCHANT_LOGIN,'pm-master.club',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET)
   };
 
   for (const [k, v] of Object.entries(fields)) {
