@@ -154,41 +154,94 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
 
   <!-- INDIVIDUAL PLANS -->
   <div class="section-label"><span>👤 Individual</span></div>
-  <div class="plans-grid plans-grid-2" style="max-width:680px;margin:0 auto 40px;">
+  <div class="plans-grid plans-grid-3" style="margin-bottom:16px;">
 
     <!-- TRIAL -->
     <div class="plan-card">
       <div class="plan-icon">🎁</div>
       <div class="plan-name">Trial</div>
       <div class="plan-price"><sup>$</sup>0</div>
-      <div class="plan-period">7 days free</div>
+      <div class="plan-period">7 days · no card</div>
       <div class="plan-divider"></div>
       <div class="plan-features">
-        <div class="plan-feature"><span class="check">✓</span> All AI tools (Charter, Risk, WBS…)</div>
-        <div class="plan-feature"><span class="check">✓</span> PMP Quiz — unlimited</div>
-        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 questions)</div>
+        <div class="plan-feature"><span class="check">✓</span> 1 project</div>
+        <div class="plan-feature"><span class="check">✓</span> All AI tools</div>
+        <div class="plan-feature"><span class="check">✓</span> PMP Quiz — 20 Q/day</div>
         <div class="plan-feature"><span class="check">✓</span> PDF export</div>
-        <div class="plan-feature"><span class="check">✓</span> No credit card</div>
       </div>
       <button class="btn-pay outline" onclick="window.location.href='/'">Start Free Trial</button>
     </div>
 
-    <!-- PERSONAL -->
+    <!-- QUIZ ONLY -->
+    <div class="plan-card">
+      <div class="plan-icon">🎓</div>
+      <div class="plan-name">Quiz Only</div>
+      <div class="plan-price"><sup>$</sup>5</div>
+      <div class="plan-period">per month</div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="plan-feature"><span class="cross">✗</span> AI project tools</div>
+        <div class="plan-feature"><span class="check">✓</span> PMP Quiz — unlimited</div>
+        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
+        <div class="plan-feature"><span class="check">✓</span> All domains & areas</div>
+      </div>
+      <button class="btn-pay outline" onclick="pay('quiz_only', 5, 'PM Master Quiz Only')">Get Quiz Only</button>
+    </div>
+
+    <!-- STARTER -->
     <div class="plan-card popular">
       <div class="popular-tag">⭐ MOST POPULAR</div>
       <div class="plan-icon">🚀</div>
-      <div class="plan-name">Personal</div>
+      <div class="plan-name">Starter</div>
       <div class="plan-price"><sup>$</sup>9</div>
-      <div class="plan-period">per month · 1 user</div>
+      <div class="plan-period">per month</div>
       <div class="plan-divider"></div>
       <div class="plan-features">
+        <div class="plan-feature"><span class="check">✓</span> Up to 3 projects</div>
         <div class="plan-feature"><span class="check">✓</span> All AI tools — unlimited</div>
         <div class="plan-feature"><span class="check">✓</span> PMP Quiz — unlimited</div>
-        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 questions)</div>
+        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> PDF export</div>
+      </div>
+      <button class="btn-pay" onclick="pay('starter', 9, 'PM Master Starter — 3 projects')">Get Starter</button>
+    </div>
+
+  </div>
+
+  <div class="plans-grid plans-grid-2" style="max-width:680px;margin:0 auto 40px;">
+
+    <!-- PRO -->
+    <div class="plan-card">
+      <div class="plan-icon">💎</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price"><sup>$</sup>19</div>
+      <div class="plan-period">per month</div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="plan-feature"><span class="check">✓</span> Up to 10 projects</div>
+        <div class="plan-feature"><span class="check">✓</span> All AI tools — unlimited</div>
+        <div class="plan-feature"><span class="check">✓</span> PMP Quiz — unlimited</div>
+        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> Priority generation</div>
       </div>
-      <button class="btn-pay" onclick="pay('personal', 9, 'PM Master Personal — 1 user/month')">Get Personal</button>
+      <button class="btn-pay" onclick="pay('pro', 19, 'PM Master Pro — 10 projects')">Get Pro</button>
+    </div>
+
+    <!-- UNLIMITED -->
+    <div class="plan-card">
+      <div class="plan-icon">♾️</div>
+      <div class="plan-name">Unlimited</div>
+      <div class="plan-price"><sup>$</sup>29</div>
+      <div class="plan-period">per month</div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="plan-feature"><span class="check">✓</span> Unlimited projects</div>
+        <div class="plan-feature"><span class="check">✓</span> All AI tools — unlimited</div>
+        <div class="plan-feature"><span class="check">✓</span> PMP Quiz — unlimited</div>
+        <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
+        <div class="plan-feature"><span class="check">✓</span> Priority generation</div>
+      </div>
+      <button class="btn-pay outline" onclick="pay('unlimited', 29, 'PM Master Unlimited')">Get Unlimited</button>
     </div>
 
   </div>
