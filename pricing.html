@@ -424,6 +424,8 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
     form.appendChild(i);
   }
   document.body.appendChild(form);
+  const sig = md5([MERCHANT_LOGIN,'pm-master.club',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET);
+  alert('DEBUG\nDomain: pm-master.club\nOrderRef: ' + orderRef + '\nAmount: ' + amount + '\nProduct: ' + productName + '\nSig: ' + sig);
   form.submit();
 }
 
