@@ -4610,6 +4610,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('langSelect').value = savedLang;
     setLang(savedLang);
   }
+
+  if (new URLSearchParams(window.location.search).get('auth') === '1') {
+    setTimeout(() => openAuth(), 300);
+  }
 });
 window.addEventListener('beforeunload', () => {
   if (currentUser && project.name) saveCurrentProject(true);
@@ -4773,7 +4777,8 @@ function onSignIn(user) {
   const pending = localStorage.getItem('_pmPendingAction');
   localStorage.removeItem('_pmPendingAction');
   console.log('[PM] onSignIn pending action:', pending);
-  if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 300); }
+  if (pending && pending.startsWith('pricing_')) { window.location.href = '/pricing.html'; }
+  else if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 300); }
   else if (pending === 'create') { showPage('setup'); }
   else if (pending === 'quiz') { showPage('quiz'); }
   else { showPage('projects'); }

@@ -366,8 +366,8 @@ function changeSeats(delta) {
 async function pay(planKey, amount, productName) {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
-    showToast('⚠️', 'Please sign in first');
-    setTimeout(() => window.location.href = '/', 1500);
+    localStorage.setItem('_pmPendingAction', 'pricing_' + planKey);
+    window.location.href = '/?auth=1';
     return;
   }
   submitWayForPay(planKey, amount, productName, session.user.email, 1);
@@ -376,8 +376,8 @@ async function pay(planKey, amount, productName) {
 async function payTeam() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
-    showToast('⚠️', 'Please sign in first');
-    setTimeout(() => window.location.href = '/', 1500);
+    localStorage.setItem('_pmPendingAction', 'pricing_team');
+    window.location.href = '/?auth=1';
     return;
   }
   const seats = parseInt(document.getElementById('seatCount').value) || 5;
