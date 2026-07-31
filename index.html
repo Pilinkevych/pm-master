@@ -503,27 +503,32 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <p>AI-powered Project Management · PMBOK® 8th Edition</p>
   </div>
   <div class="header-actions">
-    <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
-      <option value="en">🌐 English</option>
-      <option value="ua">🇺🇦 Українська</option>
-      <option value="de">🇩🇪 Deutsch</option>
-      <option value="fr">🇫🇷 Français</option>
-      <option value="es">🇪🇸 Español</option>
-      <option value="pl">🇵🇱 Polski</option>
-      <option value="pt">🇧🇷 Português</option>
-      <option value="it">🇮🇹 Italiano</option>
-      <option value="tr">🇹🇷 Türkçe</option>
-      <option value="ar">🇸🇦 العربية</option>
-      <option value="zh">🇨🇳 中文</option>
-      <option value="ja">🇯🇵 日本語</option>
-      <option value="ko">🇰🇷 한국어</option>
-      <option value="hi">🇮🇳 हिन्दी</option>
-    </select>
-    <button class="btn-demo" onclick="startTour()">▶ Demo</button>
-    <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
-    <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
-    <button class="btn-new-project" id="btn-quiz" onclick="showQuizOrLogin()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
-    <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-demo" onclick="startTour()">▶ Demo</button>
+      <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
+      <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
+      <button class="btn-new-project" id="btn-quiz" onclick="showQuizOrLogin()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:24px;padding-left:24px;border-left:1px solid rgba(255,255,255,.2);">
+      <a href="/pricing.html" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;text-decoration:none;">💳 Pricing</a>
+      <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+        <option value="en">🌐 English</option>
+        <option value="ua">🇺🇦 Українська</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="pl">🇵🇱 Polski</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="it">🇮🇹 Italiano</option>
+        <option value="tr">🇹🇷 Türkçe</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+      </select>
+      <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
+    </div>
   </div>
 </header>
 
