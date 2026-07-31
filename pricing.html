@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PM Master — Pricing</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -396,13 +397,13 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
   form.action = 'https://secure.wayforpay.com/pay';
   form.style.display = 'none';
 
-  const sigStr = [MERCHANT_LOGIN,'https://pm-master.club/',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET;
-  console.log('[WFP] signature string:', sigStr);
-  console.log('[WFP] signature md5:', md5(sigStr));
+  const domain = 'pm-master.club';
+  const sigData = [MERCHANT_LOGIN, domain, orderRef, orderDate, amount, 'USD', productName, 1, amount].join(';');
+  const signature = CryptoJS.HmacMD5(sigData, MERCHANT_SECRET).toString();
 
   const fields = {
     merchantAccount:    MERCHANT_LOGIN,
-    merchantDomainName: 'https://pm-master.club/',
+    merchantDomainName: domain,
     orderReference:     orderRef,
     orderDate:          orderDate,
     amount:             amount,
@@ -415,7 +416,7 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
     language:           'EN',
     returnUrl:          'https://pm-master.club/payment-success.html?plan=' + planKey + '&seats=' + seats,
     serviceUrl:         'https://aikinomaker.app.n8n.cloud/webhook/pm-master-payment',
-    merchantSignature:  md5([MERCHANT_LOGIN,'https://pm-master.club/',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET)
+    merchantSignature:  signature
   };
 
   for (const [k, v] of Object.entries(fields)) {
@@ -424,8 +425,6 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
     form.appendChild(i);
   }
   document.body.appendChild(form);
-  const sig = md5([MERCHANT_LOGIN,'https://pm-master.club/',orderRef,orderDate,amount,'USD',productName,1,amount].join(';') + ';' + MERCHANT_SECRET);
-  alert('DEBUG\nDomain: https://pm-master.club/\nOrderRef: ' + orderRef + '\nAmount: ' + amount + '\nProduct: ' + productName + '\nSig: ' + sig);
   form.submit();
 }
 
