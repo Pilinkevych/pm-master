@@ -185,7 +185,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> All domains & areas</div>
       </div>
-      <button class="btn-pay outline" onclick="pay('quiz_only', 5, 'PM Master Quiz Only')">Get Quiz Only</button>
+      <button class="btn-pay outline" onclick="pay('quiz_only', 5, 'PM Master Quiz Only - PMP Trainer')">Get Quiz Only</button>
     </div>
 
     <!-- STARTER -->
@@ -203,7 +203,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> PDF export</div>
       </div>
-      <button class="btn-pay" onclick="pay('starter', 9, 'PM Master Starter — 3 projects')">Get Starter</button>
+      <button class="btn-pay" onclick="pay('starter', 9, 'PM Master Starter - 3 projects')">Get Starter</button>
     </div>
 
   </div>
@@ -224,7 +224,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> Priority generation</div>
       </div>
-      <button class="btn-pay" onclick="pay('pro', 19, 'PM Master Pro — 10 projects')">Get Pro</button>
+      <button class="btn-pay" onclick="pay('pro', 19, 'PM Master Pro - 10 projects')">Get Pro</button>
     </div>
 
     <!-- UNLIMITED -->
@@ -383,7 +383,7 @@ async function payTeam() {
   const seats = parseInt(document.getElementById('seatCount').value) || 5;
   const perSeat = getPricePerSeat(seats);
   const total = Math.round(seats * perSeat);
-  const productName = `PM Master Team — ${seats} seats/month`;
+  const productName = `PM Master Team - ${seats} seats/month`;
   submitWayForPay('team_' + seats, total, productName, session.user.email, seats);
 }
 
