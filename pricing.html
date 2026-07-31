@@ -414,7 +414,7 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
     productPrice:       amount,
     clientEmail:        email,
     language:           'EN',
-    returnUrl:          'https://pm-master.club/',
+    returnUrl:          'https://pm-master.club/payment-success.html?plan=' + planKey + '&seats=' + seats,
     serviceUrl:         'https://aikinomaker.app.n8n.cloud/webhook/pm-master-payment',
     merchantSignature:  signature
   };
