@@ -4789,36 +4789,39 @@ function onSignIn(user) {
 }
 
 async function loadSubscription(userId) {
-  const { data } = await sb.from('subscriptions')
-    .select('plan, seats, expires_at, status')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('expires_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   const badge = document.getElementById('plan-badge');
   if (!badge) return;
 
-  if (!data) {
-    // Trial or no plan
+  try {
+    const { data, error } = await sb.from('subscriptions')
+      .select('plan, seats, expires_at, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('expires_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      badge.textContent = '🆓 Trial';
+      badge.style.display = 'inline-block';
+      return;
+    }
+
+    const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
+    const label = planNames[data.plan] || data.plan;
+    const daysLeft = Math.max(0, Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000));
+
+    badge.textContent = '✦ ' + label + (data.plan === 'team' ? ' ×' + data.seats : '') + ' · ' + daysLeft + 'd';
+    badge.style.display = 'inline-block';
+
+    if (daysLeft <= 5) {
+      badge.style.background = 'rgba(220,38,38,.25)';
+      badge.style.borderColor = 'rgba(220,38,38,.5)';
+      badge.style.color = '#fca5a5';
+    }
+  } catch (e) {
     badge.textContent = '🆓 Trial';
     badge.style.display = 'inline-block';
-    return;
-  }
-
-  const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
-  const label = planNames[data.plan] || data.plan;
-  const daysLeft = Math.max(0, Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000));
-
-  badge.textContent = '✦ ' + label + (data.plan === 'team' ? ' ×' + data.seats : '') + ' · ' + daysLeft + 'd';
-  badge.style.display = 'inline-block';
-
-  // Warn if expiring soon
-  if (daysLeft <= 5) {
-    badge.style.background = 'rgba(220,38,38,.25)';
-    badge.style.borderColor = 'rgba(220,38,38,.5)';
-    badge.style.color = '#fca5a5';
   }
 }
 
