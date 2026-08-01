@@ -4792,6 +4792,10 @@ async function loadSubscription(userId) {
   const badge = document.getElementById('plan-badge');
   if (!badge) return;
 
+  // Show immediately, update after query
+  badge.textContent = '🆓 Trial';
+  badge.style.display = 'inline-block';
+
   try {
     const { data, error } = await sb.from('subscriptions')
       .select('plan, seats, expires_at, status')
