@@ -511,6 +511,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-left:24px;padding-left:24px;border-left:1px solid rgba(255,255,255,.2);">
       <a href="/pricing.html" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;text-decoration:none;">💳 Pricing</a>
+      <span id="plan-badge" style="display:none;background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.5);color:#c4b5fd;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;white-space:nowrap;"></span>
       <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
         <option value="en">🌐 English</option>
         <option value="ua">🇺🇦 Українська</option>
@@ -4783,7 +4784,42 @@ function onSignIn(user) {
   else if (pending === 'quiz') { showPage('quiz'); }
   else { showPage('projects'); }
 
+  loadSubscription(user.id);
   checkPaymentReturn(user);
+}
+
+async function loadSubscription(userId) {
+  const { data } = await sb.from('subscriptions')
+    .select('plan, seats, expires_at, status')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('expires_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const badge = document.getElementById('plan-badge');
+  if (!badge) return;
+
+  if (!data) {
+    // Trial or no plan
+    badge.textContent = '🆓 Trial';
+    badge.style.display = 'inline-block';
+    return;
+  }
+
+  const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
+  const label = planNames[data.plan] || data.plan;
+  const daysLeft = Math.max(0, Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000));
+
+  badge.textContent = '✦ ' + label + (data.plan === 'team' ? ' ×' + data.seats : '') + ' · ' + daysLeft + 'd';
+  badge.style.display = 'inline-block';
+
+  // Warn if expiring soon
+  if (daysLeft <= 5) {
+    badge.style.background = 'rgba(220,38,38,.25)';
+    badge.style.borderColor = 'rgba(220,38,38,.5)';
+    badge.style.color = '#fca5a5';
+  }
 }
 
 function checkPaymentReturn(user) {
