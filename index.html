@@ -493,7 +493,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .edit-tb-btn.tbl:hover{background:#bbf7d0;}
 
 /* ── LANDING ── */
-#landing-section { display:none; }
+#landing-section { display:block; }
 .landing-hero { text-align:center; padding:80px 24px 64px; background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%); }
 .landing-hero h1 { font-size:48px; font-weight:900; color:#fff; line-height:1.1; margin-bottom:16px; }
 .landing-hero h1 span { background:linear-gradient(135deg,#7c3aed,#4f46e5); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -1224,7 +1224,6 @@ let uploadedFilesList = [];
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  showLanding();
   buildDocSelector();
   buildRiskMatrix();
 });
