@@ -4854,6 +4854,7 @@ function checkPaymentReturn(user) {
     if (data) {
       clearInterval(check);
       showPaymentPopup('success', data.plan, data.seats);
+      loadSubscription(user.id);
     } else if (attempts >= 20) {
       clearInterval(check);
       showPaymentPopup('timeout');
