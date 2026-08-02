@@ -1568,6 +1568,7 @@ function applyExtractedData(data) {
 
 function createProject() {
   if (!currentUser) { localStorage.setItem('_pmPendingAction', 'create'); openAuth(); return; }
+  if (_subscriptionExpired) { showRenewalPopup(); return; }
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
@@ -2408,6 +2409,7 @@ let quizState = {
 
 function showQuizOrLogin() {
   if (!currentUser) { localStorage.setItem('_pmPendingAction', 'quiz'); openAuth(); return; }
+  if (_subscriptionExpired) { showRenewalPopup(); return; }
   showPage('quiz');
 }
 
@@ -4943,45 +4945,75 @@ function onSignIn(user) {
   checkPaymentReturn(user);
 }
 
+let _subscriptionExpired = false;
+
 async function loadSubscription(userId) {
   const badge = document.getElementById('plan-badge');
   if (!badge) return;
 
-  // Show immediately, update after query
   badge.textContent = '🆓 Trial';
   badge.style.display = 'inline-block';
+  badge.style.background = '';
+  badge.style.borderColor = '';
+  badge.style.color = '#a78bfa';
+  _subscriptionExpired = false;
 
   try {
-    const { data, error } = await sb.from('subscriptions')
+    // Check active first
+    const { data: active } = await sb.from('subscriptions')
       .select('plan, seats, expires_at, status')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .order('expires_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq('user_id', userId).eq('status', 'active')
+      .order('expires_at', { ascending: false }).limit(1).maybeSingle();
 
-    if (error || !data) {
-      badge.textContent = '🆓 Trial';
-      badge.style.display = 'inline-block';
+    if (active) {
+      const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
+      const label = planNames[active.plan] || active.plan;
+      const daysLeft = Math.max(0, Math.ceil((new Date(active.expires_at) - Date.now()) / 86400000));
+      badge.textContent = '✦ ' + label + (active.plan === 'team' ? ' ×' + active.seats : '') + ' · ' + daysLeft + 'd';
+      if (daysLeft <= 5) {
+        badge.style.background = 'rgba(220,38,38,.25)';
+        badge.style.borderColor = 'rgba(220,38,38,.5)';
+        badge.style.color = '#fca5a5';
+      }
       return;
     }
 
-    const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
-    const label = planNames[data.plan] || data.plan;
-    const daysLeft = Math.max(0, Math.ceil((new Date(data.expires_at) - Date.now()) / 86400000));
+    // Check if there's an expired subscription (not just trial)
+    const { data: expired } = await sb.from('subscriptions')
+      .select('plan, expires_at')
+      .eq('user_id', userId).eq('status', 'expired')
+      .order('expires_at', { ascending: false }).limit(1).maybeSingle();
 
-    badge.textContent = '✦ ' + label + (data.plan === 'team' ? ' ×' + data.seats : '') + ' · ' + daysLeft + 'd';
-    badge.style.display = 'inline-block';
-
-    if (daysLeft <= 5) {
+    if (expired) {
+      _subscriptionExpired = true;
+      badge.textContent = '⚠️ Expired';
       badge.style.background = 'rgba(220,38,38,.25)';
       badge.style.borderColor = 'rgba(220,38,38,.5)';
       badge.style.color = '#fca5a5';
     }
   } catch (e) {
     badge.textContent = '🆓 Trial';
-    badge.style.display = 'inline-block';
   }
+}
+
+function showRenewalPopup() {
+  let el = document.getElementById('renewal-popup');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'renewal-popup';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    el.innerHTML = `<div style="background:#1e293b;border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.1);">
+      <div style="font-size:40px;margin-bottom:16px;">⚠️</div>
+      <h3 style="font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 12px;">Subscription Expired</h3>
+      <p style="font-size:14px;color:#94a3b8;line-height:1.6;margin:0 0 28px;">Your plan has expired. Your data is safe — renew to continue creating projects and taking quizzes.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button onclick="window.location.href='/pricing.html'" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">Renew Plan →</button>
+        <button onclick="document.getElementById('renewal-popup').remove()" style="background:none;border:1px solid rgba(255,255,255,.2);color:#94a3b8;padding:12px 20px;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
 }
 
 function checkPaymentReturn(user) {
