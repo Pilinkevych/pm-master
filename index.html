@@ -491,6 +491,47 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 #table-toolbar .tbl-label{font-size:11px;color:#166534;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-right:2px;}
 .edit-tb-btn.tbl{background:#dcfce7;border-color:#86efac;color:#166534;}
 .edit-tb-btn.tbl:hover{background:#bbf7d0;}
+
+/* ── LANDING ── */
+#landing-section { display:none; }
+.landing-hero { text-align:center; padding:80px 24px 64px; background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%); }
+.landing-hero h1 { font-size:48px; font-weight:900; color:#fff; line-height:1.1; margin-bottom:16px; }
+.landing-hero h1 span { background:linear-gradient(135deg,#7c3aed,#4f46e5); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.landing-hero p { font-size:18px; color:#94a3b8; max-width:520px; margin:0 auto 36px; line-height:1.6; font-weight:500; }
+.landing-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.btn-cta-primary { padding:14px 32px; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:white; border:none; border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; }
+.btn-cta-secondary { padding:14px 32px; background:rgba(255,255,255,.08); color:white; border:1px solid rgba(255,255,255,.2); border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; text-decoration:none; display:inline-block; }
+.btn-cta-primary:hover,.btn-cta-secondary:hover { opacity:.9; }
+
+.landing-features { padding:64px 24px; background:#f8fafc; }
+.landing-features h2 { text-align:center; font-size:28px; font-weight:900; color:#0f172a; margin-bottom:40px; }
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; max-width:960px; margin:0 auto; }
+.feature-card { background:white; border-radius:16px; padding:28px 24px; box-shadow:0 2px 12px rgba(15,23,42,.07); }
+.feature-card .icon { font-size:36px; margin-bottom:14px; }
+.feature-card h3 { font-size:17px; font-weight:800; color:#0f172a; margin-bottom:8px; }
+.feature-card p { font-size:14px; color:#64748b; line-height:1.6; }
+
+.landing-pricing-cta { text-align:center; padding:56px 24px; background:#0f172a; }
+.landing-pricing-cta h2 { font-size:26px; font-weight:900; color:white; margin-bottom:12px; }
+.landing-pricing-cta p { color:#94a3b8; font-size:15px; margin-bottom:28px; }
+
+/* ── FOOTER ── */
+.pm-footer { background:#0a0f1e; padding:48px 24px 24px; }
+.pm-footer-inner { max-width:960px; margin:0 auto; }
+.pm-footer-top { display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:40px; margin-bottom:40px; }
+.pm-footer-brand p { color:#64748b; font-size:13px; font-weight:600; line-height:1.6; margin-top:12px; max-width:200px; }
+.pm-footer-col h4 { color:#94a3b8; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; }
+.pm-footer-col a { display:block; color:#64748b; font-size:13px; font-weight:600; text-decoration:none; margin-bottom:8px; transition:color .15s; }
+.pm-footer-col a:hover { color:#a78bfa; }
+.pm-footer-bottom { border-top:1px solid rgba(255,255,255,.06); padding-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.pm-footer-bottom span { color:#475569; font-size:12px; font-weight:600; }
+.pm-footer-bottom a { color:#475569; font-size:12px; font-weight:600; text-decoration:none; }
+.pm-footer-bottom a:hover { color:#a78bfa; }
+.pm-footer-logo { display:flex; align-items:center; gap:10px; }
+.pm-footer-logo-box { width:36px; height:36px; background:linear-gradient(135deg,#7c3aed,#4f46e5); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.pm-footer-logo-name { font-size:16px; font-weight:900; color:white; }
+.pm-footer-logo-name span { color:#a78bfa; }
+@media(max-width:700px){.pm-footer-top{grid-template-columns:1fr 1fr;}.landing-hero h1{font-size:32px;}}
 </style>
 </head>
 <body>
@@ -504,7 +545,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
   <div class="header-actions">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="btn-demo" onclick="startTour()">▶ Demo</button>
+      <button class="btn-demo" id="btn-demo" onclick="startTour()">▶ Demo</button>
       <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
       <button class="btn-new-project" id="btn-home" onclick="showPage('setup')">+ New Project</button>
       <button class="btn-new-project" id="btn-quiz" onclick="showQuizOrLogin()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;">🎓 PMP Quiz</button>
@@ -532,6 +573,99 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
   </div>
 </header>
+
+<!-- LANDING PAGE -->
+<div id="landing-section">
+  <section class="landing-hero">
+    <h1>AI-Powered Tools for<br><span>Project Managers</span></h1>
+    <p>Generate PMBOK-aligned project documents in seconds. Prepare for PMP certification. Built for real PMs.</p>
+    <div class="landing-cta">
+      <button class="btn-cta-primary" onclick="openAuth()">Get Started Free</button>
+      <a href="/pricing.html" class="btn-cta-secondary">💳 See Pricing</a>
+    </div>
+  </section>
+
+  <section class="landing-features">
+    <h2>Everything a PM needs</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">📋</div>
+        <h3>AI Project Documents</h3>
+        <p>Charter, WBS, Risk Register, Stakeholder Analysis and 9 more PMBOK documents generated from your project description in seconds.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎓</div>
+        <h3>PMP Quiz</h3>
+        <p>Practice 200+ situational PMP exam questions by Knowledge Area or in random mode. Track your progress and weak spots.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>EVM & Risk Matrix</h3>
+        <p>Built-in Earned Value Management tracking and visual Risk Matrix. Keep all project data in one place.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🌐</div>
+        <h3>10+ Languages</h3>
+        <p>Generate documents in English, Ukrainian, German, French, Spanish and more. Perfect for international teams.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h3>Private & Secure</h3>
+        <p>All your projects are stored privately. Only you can access your data — protected by Supabase Row Level Security.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚡</div>
+        <h3>PMBOK 8th Edition</h3>
+        <p>Updated for the latest PMBOK standards. AI trained on the full PMBOK knowledge base for accurate, professional output.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-pricing-cta">
+    <h2>Start free. Upgrade when ready.</h2>
+    <p>Trial plan included. No credit card required to get started.</p>
+    <a href="/pricing.html" class="btn-cta-primary" style="text-decoration:none;display:inline-block;">View Pricing →</a>
+  </section>
+
+  <footer class="pm-footer">
+    <div class="pm-footer-inner">
+      <div class="pm-footer-top">
+        <div class="pm-footer-brand">
+          <div class="pm-footer-logo">
+            <div class="pm-footer-logo-box">📋</div>
+            <div class="pm-footer-logo-name">PM<span>Master</span></div>
+          </div>
+          <p>AI-powered project management tools for certified and aspiring Project Managers.</p>
+        </div>
+        <div class="pm-footer-col">
+          <h4>Tools</h4>
+          <a href="#" onclick="openAuth();return false;">📋 New Project</a>
+          <a href="#" onclick="openAuth();return false;">🎓 PMP Quiz</a>
+          <a href="/pricing.html">💳 Pricing</a>
+        </div>
+        <div class="pm-footer-col">
+          <h4>Our Projects</h4>
+          <a href="https://ai-metodyst.in.ua" target="_blank">🍎 AI Методист</a>
+          <a href="https://t.me/AIKinomaker" target="_blank">🎬 AI Kinomaker</a>
+          <a href="https://t.me/ukraine_world_view" target="_blank">🇺🇦 Ukraine World View</a>
+        </div>
+        <div class="pm-footer-col">
+          <h4>Info</h4>
+          <a href="/terms.html">Terms & Conditions</a>
+          <a href="/refund.html">Refund Policy</a>
+          <a href="mailto:yuriy.pilinkevych@gmail.com">📧 Contact Us</a>
+        </div>
+      </div>
+      <div class="pm-footer-bottom">
+        <span>© 2026 PM Master · ФОП Пілінкевич Ю.В. · ІПН 2377118750</span>
+        <div style="display:flex;gap:16px;">
+          <a href="/terms.html">Terms</a>
+          <a href="/refund.html">Refund</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
 
 <!-- AUTH MODAL -->
 <div id="auth-overlay">
@@ -561,6 +695,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <div class="auth-msg" id="auth-msg"></div>
   </div>
 </div>
+<div id="app-section" style="display:none;">
 <div class="sec-banner" id="sec-banner">
   🔒 <strong>Your data is 100% private.</strong> All documents are stored securely in your personal account — only you can access them.<span class="sec-banner-detail"> Protected by Supabase Row Level Security · No one else can see your data</span>
 </div>
@@ -1089,6 +1224,7 @@ let uploadedFilesList = [];
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  showLanding();
   buildDocSelector();
   buildRiskMatrix();
 });
@@ -4765,6 +4901,24 @@ if (window.location.hash.includes('access_token')) {
   }, 1000);
 }
 
+function showLanding() {
+  document.getElementById('landing-section').style.display = 'block';
+  document.getElementById('app-section').style.display = 'none';
+  document.getElementById('btn-demo').style.display = 'none';
+  document.getElementById('btn-my-projects').style.display = 'none';
+  document.getElementById('btn-home').style.display = 'none';
+  document.getElementById('btn-quiz').style.display = 'none';
+  document.getElementById('plan-badge').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('landing-section').style.display = 'none';
+  document.getElementById('app-section').style.display = 'block';
+  document.getElementById('btn-demo').style.display = '';
+  document.getElementById('btn-home').style.display = '';
+  document.getElementById('btn-quiz').style.display = '';
+}
+
 function onSignIn(user) {
   if (currentUser) return; // prevent double-call race
   currentUser = user;
@@ -4773,6 +4927,7 @@ function onSignIn(user) {
   btn.innerHTML = `<div class="user-avatar">${initial}</div> ${user.email.split('@')[0]}`;
   btn.onclick = openUserMenu;
   document.getElementById('btn-my-projects').style.display = 'flex';
+  showApp();
   closeAuth();
   loadProjects();
   const pending = localStorage.getItem('_pmPendingAction');
@@ -4934,8 +5089,7 @@ function onSignOut() {
   const btn = document.getElementById('btn-auth');
   btn.innerHTML = '🔑 Sign In';
   btn.onclick = openAuth;
-  document.getElementById('btn-my-projects').style.display = 'none';
-  showPage('setup');
+  showLanding();
 }
 
 function goMyProjects() {
@@ -5202,5 +5356,6 @@ function showSaveToast() {
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 </script>
+</div><!-- /app-section -->
 </body>
 </html>
