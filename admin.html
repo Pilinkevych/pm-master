@@ -335,6 +335,7 @@ sb.auth.onAuthStateChange((_, session) => {
 
 function checkAdmin(user) {
   if (user.email !== ADMIN_EMAIL) {
+    document.getElementById('auth-error').textContent = 'Доступ заборонено. Email: ' + user.email;
     document.getElementById('auth-error').style.display = 'block';
     sb.auth.signOut();
     return;
