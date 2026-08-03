@@ -129,8 +129,9 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
   <div style="font-size:36px;margin-bottom:8px;">📋</div>
   <h2>PM Master Admin</h2>
   <p>Вхід тільки для адміністратора</p>
-  <button class="btn" onclick="signIn()">Увійти через Google</button>
-  <p id="auth-error" style="color:#f87171;font-size:13px;display:none;">Доступ заборонено</p>
+  <a class="btn" href="/">Увійти на pm-master.club →</a>
+  <p style="font-size:12px;color:#475569;">Після входу поверніться на цю сторінку</p>
+  <p id="auth-error" style="color:#f87171;font-size:13px;display:none;"></p>
 </div>
 
 <!-- ADMIN WRAP -->
@@ -318,9 +319,6 @@ let allUsers = [], allSubs = [], nlUsers = [], nlHistory = [];
 let currentUser = null;
 
 // ── AUTH ──────────────────────────────────
-async function signIn() {
-  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-}
 async function signOut() {
   await sb.auth.signOut();
   location.reload();
