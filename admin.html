@@ -356,13 +356,11 @@ async function loadAll() {
 }
 
 async function loadUsers() {
-  const { data } = await sb.rpc('admin_get_users').catch(() => ({ data: null }));
-  allUsers = data || [];
+  try { const { data } = await sb.rpc('admin_get_users'); allUsers = data || []; } catch { allUsers = []; }
 }
 
 async function loadSubs() {
-  const { data } = await sb.rpc('admin_get_subscriptions').catch(() => ({ data: null }));
-  allSubs = data || [];
+  try { const { data } = await sb.rpc('admin_get_subscriptions'); allSubs = data || []; } catch { allSubs = []; }
 }
 
 // ── STATS ─────────────────────────────────
