@@ -50,7 +50,8 @@ exports.handler = async (event) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'api-key': BREVO_KEY },
     body: JSON.stringify({
-      sender: { name: 'PM Master', email: 'yuriy.pilinkevych@gmail.com' },
+      sender: { name: 'PM Master', email: 'noreply@pm-master.club' },
+      replyTo: { name: 'Yuriy from PM Master', email: 'yuriy.pilinkevych@gmail.com' },
       to: [{ email: to }],
       subject,
       htmlContent

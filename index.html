@@ -627,6 +627,29 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <a href="/pricing.html" class="btn-cta-primary" style="text-decoration:none;display:inline-block;">View Pricing →</a>
   </section>
 
+  <section id="contact" style="background:#0d1117;padding:64px 24px;">
+    <div style="max-width:560px;margin:0 auto;text-align:center;">
+      <div style="font-size:13px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Get in touch</div>
+      <h2 style="font-size:28px;font-weight:900;color:#f1f5f9;margin-bottom:8px;">Have a question?</h2>
+      <p style="font-size:15px;color:#64748b;font-weight:600;margin-bottom:32px;">We usually reply within a few hours.</p>
+      <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" style="text-align:left;" onsubmit="handleContactSubmit(event)">
+        <input type="hidden" name="form-name" value="contact">
+        <p style="display:none;"><input name="bot-field"></p>
+        <div style="margin-bottom:16px;">
+          <input name="name" type="text" required placeholder="Your name" style="width:100%;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div style="margin-bottom:16px;">
+          <input name="email" type="email" required placeholder="Your email" style="width:100%;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div style="margin-bottom:20px;">
+          <textarea name="message" required placeholder="Your message..." rows="4" style="width:100%;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;resize:vertical;line-height:1.6;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"></textarea>
+        </div>
+        <button type="submit" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">Send Message →</button>
+        <div id="contact-success" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);border-radius:10px;color:#34d399;font-size:14px;font-weight:700;text-align:center;">✅ Message sent! We'll get back to you soon.</div>
+      </form>
+    </div>
+  </section>
+
   <footer class="pm-footer">
     <div class="pm-footer-inner">
       <div class="pm-footer-top">
@@ -653,7 +676,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
           <h4>Info</h4>
           <a href="/terms.html">Terms & Conditions</a>
           <a href="/refund.html">Refund Policy</a>
-          <a href="mailto:yuriy.pilinkevych@gmail.com">📧 Contact Us</a>
+          <a href="#contact" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});return false;">📧 Contact Us</a>
         </div>
       </div>
       <div class="pm-footer-bottom">
@@ -5533,6 +5556,25 @@ function showSaveToast() {
   toast.style.opacity = '1';
   clearTimeout(toast._t);
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+async function handleContactSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  const data = new FormData(form);
+  try {
+    await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() });
+    form.reset();
+    document.getElementById('contact-success').style.display = 'block';
+    btn.style.display = 'none';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Send Message →';
+    alert('Something went wrong. Please try again.');
+  }
 }
 </script>
 </div><!-- /app-section -->
