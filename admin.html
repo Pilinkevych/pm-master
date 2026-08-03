@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — PM Master</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh;}
+
+/* AUTH GATE */
+#auth-gate{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;}
+#auth-gate h2{font-size:22px;font-weight:800;color:#f1f5f9;}
+#auth-gate p{font-size:14px;color:#64748b;}
+#auth-gate .btn{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+
+/* LAYOUT */
+#admin-wrap{display:none;min-height:100vh;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:#111827;border-right:1px solid rgba(255,255,255,.07);padding:24px 0;display:flex;flex-direction:column;}
+.logo{padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:16px;}
+.logo-title{font-size:17px;font-weight:900;color:#f1f5f9;}
+.logo-title span{color:#a78bfa;}
+.logo-sub{font-size:11px;color:#475569;font-weight:600;margin-top:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;border-radius:0;transition:all .15s;}
+.nav-item:hover{color:#f1f5f9;background:rgba(255,255,255,.05);}
+.nav-item.active{color:#a78bfa;background:rgba(124,58,237,.12);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,.07);}
+.admin-email{font-size:11px;font-weight:700;color:#475569;margin-bottom:8px;}
+.btn-logout{font-size:12px;font-weight:700;color:#64748b;cursor:pointer;background:none;border:none;}
+.btn-logout:hover{color:#f87171;}
+
+.main{margin-left:220px;padding:32px;}
+.section{display:none;}
+.section.active{display:block;}
+.page-title{font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:4px;}
+.page-sub{font-size:13px;color:#475569;margin-bottom:28px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:#1e293b;border-radius:14px;padding:20px 24px;border:1px solid rgba(255,255,255,.06);}
+.stat-label{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.stat-value{font-size:28px;font-weight:900;color:#f1f5f9;}
+.stat-sub{font-size:12px;color:#64748b;margin-top:4px;font-weight:600;}
+
+.plans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px;}
+.plan-card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,.06);text-align:center;}
+.plan-name{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:6px;}
+.plan-count{font-size:24px;font-weight:900;color:#a78bfa;}
+.plan-rev{font-size:11px;color:#475569;margin-top:4px;}
+
+/* USERS TABLE */
+.table-controls{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.table-search{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-size:13px;color:#f1f5f9;font-family:'Inter',sans-serif;width:280px;outline:none;}
+.table-search::placeholder{color:#475569;}
+.table-search:focus{border-color:#7c3aed;}
+.badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;}
+.badge-active{background:rgba(16,185,129,.15);color:#34d399;}
+.badge-trial{background:rgba(148,163,184,.1);color:#94a3b8;}
+.badge-expired{background:rgba(220,38,38,.15);color:#f87171;}
+
+.data-table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.06);}
+.data-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;background:#162032;border-bottom:1px solid rgba(255,255,255,.06);}
+.data-table td{padding:12px 16px;font-size:13px;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,.04);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,.02);}
+.td-email{color:#f1f5f9;font-weight:700;}
+.btn-action{background:none;border:1px solid rgba(255,255,255,.1);color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;}
+.btn-action:hover{border-color:#7c3aed;color:#a78bfa;}
+
+/* NEWSLETTER */
+.nl-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.nl-card{background:#1e293b;border-radius:14px;padding:24px;border:1px solid rgba(255,255,255,.06);}
+.nl-card-title{font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:20px;}
+.nl-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;margin-top:16px;}
+.nl-label:first-of-type{margin-top:0;}
+.nl-input,.nl-select,.nl-textarea{width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;font-size:13px;color:#f1f5f9;font-family:'Inter',sans-serif;outline:none;}
+.nl-input:focus,.nl-select:focus,.nl-textarea:focus{border-color:#7c3aed;}
+.nl-select option{background:#1e293b;}
+.nl-textarea{resize:vertical;min-height:140px;line-height:1.6;}
+.nl-counter{font-size:12px;font-weight:700;color:#64748b;margin-top:12px;}
+.nl-counter strong{color:#a78bfa;}
+.nl-send-btn{width:100%;margin-top:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:14px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:opacity .2s;}
+.nl-send-btn:disabled{opacity:.5;cursor:not-allowed;}
+.nl-send-btn:hover:not(:disabled){opacity:.9;}
+
+/* progress bar */
+.nl-progress{display:none;margin-top:14px;}
+.nl-progress-bar-wrap{background:rgba(255,255,255,.08);border-radius:999px;height:8px;margin-bottom:6px;overflow:hidden;}
+.nl-progress-bar{height:8px;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:999px;transition:width .3s;}
+.nl-progress-text{font-size:12px;font-weight:700;color:#64748b;}
+
+.nl-preview{background:#0f172a;border-radius:10px;padding:16px;min-height:200px;}
+.nl-preview-subject{font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:12px;}
+.nl-preview-body{font-size:13px;color:#94a3b8;line-height:1.7;white-space:pre-wrap;}
+
+.nl-history{background:#1e293b;border-radius:14px;border:1px solid rgba(255,255,255,.06);overflow:hidden;}
+.nl-history-header{padding:16px 20px;font-size:13px;font-weight:800;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,.06);}
+.nl-history-item{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:#64748b;}
+.nl-history-item:last-child{border-bottom:none;}
+.nl-history-item strong{color:#f1f5f9;font-weight:700;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#1e293b;border-radius:16px;padding:28px;width:380px;border:1px solid rgba(255,255,255,.1);}
+.modal-title{font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:#64748b;margin-bottom:20px;}
+.modal-field{margin-bottom:14px;}
+.modal-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+.modal-input,.modal-select{width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;font-size:13px;color:#f1f5f9;font-family:'Inter',sans-serif;outline:none;}
+.modal-select option{background:#1e293b;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.btn-save{flex:1;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;}
+.btn-cancel{background:none;border:1px solid rgba(255,255,255,.15);color:#64748b;padding:11px 16px;border-radius:10px;font-size:13px;cursor:pointer;}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#059669;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.toast.error{background:#dc2626;}
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div id="auth-gate">
+  <div style="font-size:36px;margin-bottom:8px;">📋</div>
+  <h2>PM Master Admin</h2>
+  <p>Вхід тільки для адміністратора</p>
+  <button class="btn" onclick="signIn()">Увійти через Google</button>
+  <p id="auth-error" style="color:#f87171;font-size:13px;display:none;">Доступ заборонено</p>
+</div>
+
+<!-- ADMIN WRAP -->
+<div id="admin-wrap">
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-title">PM<span>Master</span></div>
+      <div class="logo-sub">Admin Panel</div>
+    </div>
+    <div class="nav-item active" onclick="showSection('stats')"><span class="nav-icon">📊</span> Статистика</div>
+    <div class="nav-item" onclick="showSection('users')"><span class="nav-icon">👥</span> Користувачі</div>
+    <div class="nav-item" onclick="showSection('subscriptions')"><span class="nav-icon">💳</span> Підписки</div>
+    <div class="nav-item" onclick="showSection('newsletter')"><span class="nav-icon">📧</span> Розсилка</div>
+    <div class="sidebar-footer">
+      <div class="admin-email" id="adminEmail">—</div>
+      <button class="btn-logout" onclick="signOut()">← Вийти</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="section active" id="section-stats">
+      <div class="page-title">📊 Статистика</div>
+      <div class="page-sub">Загальний огляд платформи</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Всього юзерів</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub">зареєстровано</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Активні підписки</div>
+          <div class="stat-value" id="stat-active">—</div>
+          <div class="stat-sub">зараз платять</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">MRR</div>
+          <div class="stat-value" id="stat-mrr">—</div>
+          <div class="stat-sub">щомісячний дохід</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Прострочено</div>
+          <div class="stat-value" id="stat-expired">—</div>
+          <div class="stat-sub">expired підписок</div>
+        </div>
+      </div>
+
+      <div class="page-title" style="font-size:16px;margin-bottom:16px;">Підписки по планах</div>
+      <div class="plans-grid">
+        <div class="plan-card"><div class="plan-name">Trial</div><div class="plan-count" id="pc-trial">—</div><div class="plan-rev">безкоштовно</div></div>
+        <div class="plan-card"><div class="plan-name">Quiz Only</div><div class="plan-count" id="pc-quiz">—</div><div class="plan-rev">$5/мiс</div></div>
+        <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-count" id="pc-starter">—</div><div class="plan-rev">$9/мiс</div></div>
+        <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-count" id="pc-pro">—</div><div class="plan-rev">$19/мiс</div></div>
+        <div class="plan-card"><div class="plan-name">Unlimited</div><div class="plan-count" id="pc-unlimited">—</div><div class="plan-rev">$29/мiс</div></div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="section" id="section-users">
+      <div class="page-title">👥 Користувачі</div>
+      <div class="page-sub">Всі зареєстровані акаунти</div>
+      <div class="table-controls">
+        <input class="table-search" type="text" id="usersSearch" placeholder="🔍 Пошук по email..." oninput="filterUsers(this.value)">
+        <span id="users-count" style="font-size:13px;font-weight:700;color:#475569;"></span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Email</th><th>Зареєстрований</th><th>Підписка</th><th>До</th><th></th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Завантаження...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- SUBSCRIPTIONS -->
+    <div class="section" id="section-subscriptions">
+      <div class="page-title">💳 Підписки</div>
+      <div class="page-sub">Всі транзакції</div>
+      <div class="table-controls">
+        <input class="table-search" type="text" id="subsSearch" placeholder="🔍 Пошук по email або плану..." oninput="filterSubs(this.value)">
+        <span id="subs-count" style="font-size:13px;font-weight:700;color:#475569;"></span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Email</th><th>План</th><th>Статус</th><th>Сума</th><th>Активовано</th><th>До</th><th>Order Ref</th></tr></thead>
+        <tbody id="subs-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Завантаження...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- NEWSLETTER -->
+    <div class="section" id="section-newsletter">
+      <div class="page-title">📧 Розсилка</div>
+      <div class="page-sub">Надсилайте листи зареєстрованим користувачам</div>
+      <div class="nl-grid">
+        <div>
+          <div class="nl-card">
+            <div class="nl-card-title">✍️ Новий лист</div>
+            <label class="nl-label">Тема листа</label>
+            <input class="nl-input" type="text" id="nlSubject" placeholder="Наприклад: Нова функція PM Master!" oninput="updatePreview()">
+            <label class="nl-label">Текст листа</label>
+            <textarea class="nl-textarea" id="nlBody" rows="8" placeholder="Hi {{name}},&#10;&#10;Write your message here...&#10;&#10;Tip: {{name}} will be replaced with the user's name." oninput="updatePreview()"></textarea>
+            <div style="font-size:11px;color:#475569;margin-top:4px;font-weight:600;">💡 <strong style="color:#a78bfa;">{{name}}</strong> → ім'я юзера автоматично</div>
+            <label class="nl-label" style="margin-top:16px;">Отримувачі</label>
+            <select class="nl-select" id="nlFilter" onchange="filterRecipients()">
+              <option value="all">👥 Всі користувачі</option>
+              <option value="active">💳 Активна підписка</option>
+              <option value="expired">⚠️ Прострочена підписка</option>
+              <option value="nosub">🆓 Без підписки (Trial)</option>
+            </select>
+            <div class="nl-counter" style="margin-top:12px;">👥 Буде надіслано: <strong id="nlCountNum">0</strong> листів</div>
+            <div class="nl-progress" id="nlProgress">
+              <div class="nl-progress-bar-wrap"><div class="nl-progress-bar" id="nlProgressBar" style="width:0%"></div></div>
+              <div class="nl-progress-text" id="nlProgressText">0 / 0</div>
+            </div>
+            <button class="nl-send-btn" id="nlSendBtn" onclick="sendNewsletter()">📤 Надіслати розсилку</button>
+          </div>
+        </div>
+        <div>
+          <div class="nl-card">
+            <div class="nl-card-title">👁️ Прев'ю листа</div>
+            <div class="nl-preview">
+              <div class="nl-preview-subject" id="previewSubject" style="color:#475569;">Введіть тему листа...</div>
+              <div class="nl-preview-body" id="previewBody" style="color:#475569;">Введіть текст листа...</div>
+            </div>
+            <div style="margin-top:16px;padding:12px;background:rgba(124,58,237,.08);border-radius:8px;border:1px solid rgba(124,58,237,.2);">
+              <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:4px;">📬 ВІДПРАВНИК</div>
+              <div style="font-size:13px;font-weight:700;color:#f1f5f9;">PM Master &lt;yuriy.pilinkevych@gmail.com&gt;</div>
+            </div>
+          </div>
+          <div class="nl-history" style="margin-top:16px;">
+            <div class="nl-history-header">📋 Історія розсилок</div>
+            <div id="nlHistory"><div style="padding:24px;text-align:center;color:#475569;font-size:13px;font-weight:700;">Розсилок ще не було</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Редагувати підписку</div>
+    <div class="modal-sub" id="editModalEmail">—</div>
+    <input type="hidden" id="editUserId">
+    <div class="modal-field">
+      <label class="modal-label">План</label>
+      <select class="modal-select" id="editPlan">
+        <option value="">— без підписки —</option>
+        <option value="quiz_only">Quiz Only ($5)</option>
+        <option value="starter">Starter ($9)</option>
+        <option value="pro">Pro ($19)</option>
+        <option value="unlimited">Unlimited ($29)</option>
+        <option value="team">Team</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Статус</label>
+      <select class="modal-select" id="editStatus">
+        <option value="active">active</option>
+        <option value="expired">expired</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Дійсна до</label>
+      <input class="modal-input" type="date" id="editExpires">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveUserSub()">💾 Зберегти</button>
+      <button class="btn-cancel" onclick="closeModal()">Скасувати</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://ijfawcrcmmvjhilpytsg.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZmF3Y3JjbW12amhpbHB5dHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDY0NjQsImV4cCI6MjA5ODQ4MjQ2NH0.bcjSxVd5UNeaoM1yiK7NQoma2HEZepmTrDaz7A_p5CQ';
+const ADMIN_EMAIL = 'ai.kinomaker@gmail.com';
+const PLAN_PRICE = { quiz_only: 5, starter: 9, pro: 19, unlimited: 29, team: 49 };
+
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { detectSessionInUrl: true, flowType: 'implicit' } });
+
+let allUsers = [], allSubs = [], nlUsers = [], nlHistory = [];
+let currentUser = null;
+
+// ── AUTH ──────────────────────────────────
+async function signIn() {
+  await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+}
+async function signOut() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) checkAdmin(session.user);
+});
+sb.auth.onAuthStateChange((_, session) => {
+  if (session) checkAdmin(session.user);
+});
+
+function checkAdmin(user) {
+  if (user.email !== ADMIN_EMAIL) {
+    document.getElementById('auth-error').style.display = 'block';
+    sb.auth.signOut();
+    return;
+  }
+  currentUser = user;
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('admin-wrap').style.display = 'block';
+  document.getElementById('adminEmail').textContent = user.email;
+  loadAll();
+}
+
+// ── LOAD DATA ─────────────────────────────
+async function loadAll() {
+  await Promise.all([loadUsers(), loadSubs()]);
+  renderStats();
+  renderUsers();
+  renderSubs();
+  loadNlHistory();
+  filterRecipients();
+}
+
+async function loadUsers() {
+  // Use RPC to get users (needs service role or RPC)
+  const { data } = await sb.rpc('admin_get_users').catch(() => ({ data: null }));
+  if (data) { allUsers = data; return; }
+  // Fallback: get from projects (users who created projects)
+  const { data: projects } = await sb.from('projects').select('user_id, created_at').order('created_at', { ascending: false });
+  // Get unique user_ids
+  const seen = new Set();
+  allUsers = (projects || []).filter(p => { if (seen.has(p.user_id)) return false; seen.add(p.user_id); return true; })
+    .map(p => ({ id: p.user_id, email: '', created_at: p.created_at }));
+}
+
+async function loadSubs() {
+  const { data } = await sb.from('subscriptions').select('*').order('created_at', { ascending: false });
+  allSubs = data || [];
+}
+
+// ── STATS ─────────────────────────────────
+function renderStats() {
+  const active = allSubs.filter(s => s.status === 'active');
+  const expired = allSubs.filter(s => s.status === 'expired');
+  const mrr = active.reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
+
+  // Get unique users from subs
+  const subUserIds = new Set(allSubs.map(s => s.user_id));
+  document.getElementById('stat-total').textContent = subUserIds.size || allUsers.length || '—';
+  document.getElementById('stat-active').textContent = active.length;
+  document.getElementById('stat-mrr').textContent = '$' + mrr;
+  document.getElementById('stat-expired').textContent = expired.length;
+
+  const plans = ['quiz_only','starter','pro','unlimited'];
+  const ids = ['quiz','starter','pro','unlimited'];
+  plans.forEach((p, i) => {
+    const count = active.filter(s => s.plan === p).length;
+    document.getElementById('pc-' + ids[i]).textContent = count;
+  });
+  // Trial = users without any subscription
+  const paidUsers = new Set(allSubs.map(s => s.user_id));
+  document.getElementById('pc-trial').textContent = Math.max(0, (subUserIds.size || allUsers.length) - paidUsers.size);
+}
+
+// ── USERS TABLE ───────────────────────────
+let filteredUsers = [];
+function renderUsers() {
+  // Build user list from subscriptions
+  const userMap = {};
+  allSubs.forEach(s => {
+    if (!userMap[s.user_id]) userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
+    if (s.status === 'active' && (!userMap[s.user_id].sub || new Date(s.expires_at) > new Date(userMap[s.user_id].sub.expires_at))) {
+      userMap[s.user_id].sub = s;
+    }
+  });
+  filteredUsers = Object.values(userMap);
+  document.getElementById('users-count').textContent = filteredUsers.length + ' юзерів';
+  renderUsersTable(filteredUsers);
+}
+
+function renderUsersTable(list) {
+  const tbody = document.getElementById('users-tbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
+  tbody.innerHTML = list.map(u => {
+    const sub = u.sub;
+    const badge = sub ? `<span class="badge badge-active">✦ ${planLabel(sub.plan)}</span>` : `<span class="badge badge-trial">🆓 Trial</span>`;
+    const expires = sub ? fmtDate(sub.expires_at) : '—';
+    const reg = fmtDate(u.created_at);
+    return `<tr>
+      <td class="td-email">${u.email}</td>
+      <td>${reg}</td>
+      <td>${badge}</td>
+      <td>${expires}</td>
+      <td><button class="btn-action" onclick="openEditUser('${u.id}','${u.email}')">✏️ Редагувати</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers(q) {
+  const list = q ? filteredUsers.filter(u => u.email.toLowerCase().includes(q.toLowerCase())) : filteredUsers;
+  renderUsersTable(list);
+}
+
+// ── SUBSCRIPTIONS TABLE ───────────────────
+function renderSubs() {
+  document.getElementById('subs-count').textContent = allSubs.length + ' записів';
+  renderSubsTable(allSubs);
+}
+
+function renderSubsTable(list) {
+  const tbody = document.getElementById('subs-tbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
+  tbody.innerHTML = list.map(s => {
+    const badge = s.status === 'active' ? `<span class="badge badge-active">active</span>` : `<span class="badge badge-expired">expired</span>`;
+    return `<tr>
+      <td class="td-email">${s.email || '—'}</td>
+      <td>${planLabel(s.plan)}</td>
+      <td>${badge}</td>
+      <td>$${s.amount || '—'}</td>
+      <td>${fmtDate(s.activated_at)}</td>
+      <td>${fmtDate(s.expires_at)}</td>
+      <td style="font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${s.order_reference || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterSubs(q) {
+  const list = q ? allSubs.filter(s => (s.email||'').toLowerCase().includes(q.toLowerCase()) || (s.plan||'').includes(q.toLowerCase())) : allSubs;
+  renderSubsTable(list);
+}
+
+// ── EDIT USER MODAL ───────────────────────
+function openEditUser(userId, email) {
+  document.getElementById('editUserId').value = userId;
+  document.getElementById('editModalEmail').textContent = email;
+  const sub = allSubs.find(s => s.user_id === userId && s.status === 'active');
+  document.getElementById('editPlan').value = sub?.plan || '';
+  document.getElementById('editStatus').value = sub?.status || 'active';
+  document.getElementById('editExpires').value = sub?.expires_at ? sub.expires_at.slice(0,10) : '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveUserSub() {
+  const userId = document.getElementById('editUserId').value;
+  const plan = document.getElementById('editPlan').value;
+  const status = document.getElementById('editStatus').value;
+  const expires = document.getElementById('editExpires').value;
+  if (!plan) { showToast('⚠️ Оберіть план', true); return; }
+  const { error } = await sb.from('subscriptions').upsert({
+    user_id: userId, plan, status,
+    expires_at: expires ? new Date(expires).toISOString() : null,
+    activated_at: new Date().toISOString(),
+    amount: PLAN_PRICE[plan] || 0,
+    currency: 'USD',
+    order_reference: 'admin_manual_' + Date.now()
+  }, { onConflict: 'user_id,status' });
+  if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
+  showToast('✅ Збережено!');
+  closeModal();
+  await loadSubs();
+  renderSubs();
+  renderUsers();
+  renderStats();
+}
+
+// ── NEWSLETTER ────────────────────────────
+function filterRecipients() {
+  const filter = document.getElementById('nlFilter').value;
+  const subUserIds = new Set(allSubs.filter(s => s.status === 'active').map(s => s.user_id));
+  const expiredUserIds = new Set(allSubs.filter(s => s.status === 'expired').map(s => s.user_id));
+  const allSubUserIds = new Set(allSubs.map(s => s.user_id));
+
+  // Build email list from subscriptions
+  const emailMap = {};
+  allSubs.forEach(s => { if (s.email) emailMap[s.user_id] = { id: s.user_id, email: s.email, name: s.email.split('@')[0] }; });
+  const allWithEmail = Object.values(emailMap);
+
+  if (filter === 'all') nlUsers = allWithEmail;
+  else if (filter === 'active') nlUsers = allWithEmail.filter(u => subUserIds.has(u.id));
+  else if (filter === 'expired') nlUsers = allWithEmail.filter(u => expiredUserIds.has(u.id));
+  else if (filter === 'nosub') nlUsers = allWithEmail.filter(u => !allSubUserIds.has(u.id));
+
+  document.getElementById('nlCountNum').textContent = nlUsers.length;
+}
+
+function updatePreview() {
+  const subj = document.getElementById('nlSubject').value;
+  const body = document.getElementById('nlBody').value;
+  document.getElementById('previewSubject').textContent = subj || 'Введіть тему листа...';
+  document.getElementById('previewSubject').style.color = subj ? '#f1f5f9' : '#475569';
+  document.getElementById('previewBody').textContent = body.replace(/{{name}}/g, 'John') || 'Введіть текст листа...';
+  document.getElementById('previewBody').style.color = body ? '#94a3b8' : '#475569';
+}
+
+async function sendNewsletter() {
+  const subject = document.getElementById('nlSubject').value.trim();
+  const body = document.getElementById('nlBody').value.trim();
+  if (!subject) { showToast('⚠️ Введіть тему листа', true); return; }
+  if (!body) { showToast('⚠️ Введіть текст листа', true); return; }
+  if (!nlUsers.length) { showToast('⚠️ Немає отримувачів', true); return; }
+  if (!confirm(`Надіслати "${subject}" для ${nlUsers.length} користувачів?`)) return;
+
+  const btn = document.getElementById('nlSendBtn');
+  const progress = document.getElementById('nlProgress');
+  btn.disabled = true;
+  btn.textContent = '⏳ Надсилаємо...';
+  progress.style.display = 'block';
+
+  let sent = 0, failed = 0;
+  const total = nlUsers.length;
+  const BATCH = 10;
+  const DELAY = 3000; // 3s between batches → ~200/min, safe for Brevo
+
+  for (let i = 0; i < total; i += BATCH) {
+    const batch = nlUsers.slice(i, i + BATCH);
+    await Promise.all(batch.map(async user => {
+      const personalBody = body.replace(/{{name}}/g, user.name || 'there');
+      const htmlContent = `
+        <div style="font-family:'Inter',Arial,sans-serif;max-width:560px;margin:0 auto;background:#0f172a;border-radius:16px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);padding:28px 32px;">
+            <div style="font-size:22px;font-weight:900;color:#fff;">📋 PM<span style="color:#c4b5fd;">Master</span></div>
+          </div>
+          <div style="padding:28px 32px;font-size:15px;line-height:1.7;color:#94a3b8;">
+            ${personalBody.split('\n').map(l => `<p style="margin:0 0 12px;">${l || '&nbsp;'}</p>`).join('')}
+          </div>
+          <div style="padding:16px 32px;background:#1e293b;font-size:12px;color:#475569;text-align:center;">
+            PM Master · <a href="https://pm-master.club" style="color:#7c3aed;">pm-master.club</a>
+          </div>
+        </div>`;
+      try {
+        const res = await fetch('/.netlify/functions/send-newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: user.email, subject, htmlContent })
+        });
+        if (res.ok) sent++; else failed++;
+      } catch { failed++; }
+    }));
+
+    // Update progress
+    const done = Math.min(i + BATCH, total);
+    document.getElementById('nlProgressBar').style.width = Math.round(done / total * 100) + '%';
+    document.getElementById('nlProgressText').textContent = `${done} / ${total} · ✅ ${sent} · ❌ ${failed}`;
+
+    // Delay between batches (skip after last batch)
+    if (i + BATCH < total) await new Promise(r => setTimeout(r, DELAY));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📤 Надіслати розсилку';
+
+  // Save to history
+  const record = { subject, sent, failed, date: new Date().toISOString(), filter: document.getElementById('nlFilter').value };
+  nlHistory.unshift(record);
+  localStorage.setItem('pmadmin_nl_history', JSON.stringify(nlHistory.slice(0, 20)));
+  renderNlHistory();
+  showToast(failed === 0 ? `✅ Надіслано ${sent} листів!` : `⚠️ ${sent} ок, ${failed} помилок`, failed > 0);
+}
+
+function loadNlHistory() {
+  nlHistory = JSON.parse(localStorage.getItem('pmadmin_nl_history') || '[]');
+  renderNlHistory();
+}
+
+function renderNlHistory() {
+  const el = document.getElementById('nlHistory');
+  if (!nlHistory.length) { el.innerHTML = '<div style="padding:24px;text-align:center;color:#475569;font-size:13px;font-weight:700;">Розсилок ще не було</div>'; return; }
+  el.innerHTML = nlHistory.map(r => `
+    <div class="nl-history-item">
+      <strong>${r.subject}</strong><br>
+      ✅ ${r.sent} надіслано · ❌ ${r.failed} помилок · ${fmtDate(r.date)}
+    </div>`).join('');
+}
+
+// ── NAVIGATION ────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'newsletter') filterRecipients();
+}
+
+// ── HELPERS ───────────────────────────────
+function planLabel(p) {
+  return { starter:'Starter', pro:'Pro', unlimited:'Unlimited', quiz_only:'Quiz Only', team:'Team' }[p] || p || '—';
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('uk-UA', { day:'2-digit', month:'short', year:'numeric' });
+}
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
