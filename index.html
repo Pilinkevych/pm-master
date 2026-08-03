@@ -3052,7 +3052,84 @@ function buildRiskMatrix() {
 // JIRA + UPDATES
 // ══════════════════════════════════════════
 function generateJira() {
-  alert('🔗 Jira Task Generation\n\nWill connect to your Jira instance via API and create:\n• Epics from WBS Level 2\n• Stories from WBS Level 3\n• Subtasks from activity list\n\nRequires: Jira URL + API token (setup in Settings)');
+  const wbsText = (project.docData['scope'] || {}).wbs || '';
+  if (!wbsText.trim()) {
+    alert('No WBS found.\n\nPlease generate the Scope Statement + WBS document first, then come back here.');
+    return;
+  }
+
+  // Parse WBS outline into structured items
+  const lines = wbsText.split('\n');
+  const items = [];
+  let lastL1 = '', lastL2 = '';
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const indent = line.search(/\S/);
+    const text = line.trim();
+    const m = text.match(/^([\d.]+)\s+(.+)/);
+    const code = m ? m[1] : '';
+    const name = m ? m[2] : text;
+    let type, parent;
+    if (indent === 0)      { type = 'Epic';    parent = '';      lastL1 = name; }
+    else if (indent <= 3)  { type = 'Story';   parent = lastL1; lastL2 = name; }
+    else                   { type = 'Sub-task'; parent = lastL2; }
+    items.push({ type, summary: name, code, parent });
+  }
+
+  // Build CSV
+  const csvRows = [['Issue Type','Summary','WBS Code','Parent','Priority','Labels']];
+  for (const it of items) csvRows.push([it.type, it.summary, it.code, it.parent, 'Medium', 'WBS']);
+  const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+
+  // Build JSON (Jira-compatible structure)
+  const json = JSON.stringify({ issues: items.map(it => ({
+    fields: {
+      issuetype: { name: it.type },
+      summary: (it.code ? it.code + ' ' : '') + it.summary,
+      labels: ['WBS'],
+      priority: { name: 'Medium' },
+      ...(it.parent ? { parent_summary: it.parent } : {})
+    }
+  })) }, null, 2);
+
+  // Show export modal
+  let modal = document.getElementById('jira-modal');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'jira-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  modal.innerHTML = `
+    <div style="background:#1e293b;border-radius:20px;padding:36px;max-width:520px;width:100%;border:1px solid rgba(255,255,255,.1);">
+      <h3 style="font-size:18px;font-weight:800;color:#f1f5f9;margin:0 0 6px;">🔗 Export to Jira</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 20px;">${items.length} items found · ${items.filter(i=>i.type==='Epic').length} Epics · ${items.filter(i=>i.type==='Story').length} Stories · ${items.filter(i=>i.type==='Sub-task').length} Sub-tasks</p>
+      <div style="background:#0f172a;border-radius:10px;padding:14px 16px;margin-bottom:20px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:12px;color:#94a3b8;line-height:1.8;">
+        ${items.map(it=>`<div style="color:${it.type==='Epic'?'#a78bfa':it.type==='Story'?'#60a5fa':'#94a3b8'};padding-left:${it.type==='Epic'?0:it.type==='Story'?16:32}px">${it.type==='Epic'?'📌':it.type==='Story'?'📖':'  •'} ${it.code} ${it.summary}</div>`).join('')}
+      </div>
+      <p style="font-size:12px;color:#475569;margin:0 0 16px;">In Jira: <b>Project → Import → CSV</b>. Map columns: <i>Issue Type, Summary, Labels</i>. Use "Parent" column to manually link after import.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button id="jira-csv-btn" style="background:linear-gradient(135deg,#0052cc,#0065ff);color:white;border:none;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">⬇ Download CSV</button>
+        <button id="jira-json-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#f1f5f9;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">⬇ Download JSON</button>
+        <button onclick="document.getElementById('jira-modal').remove()" style="background:none;border:1px solid rgba(255,255,255,.15);color:#64748b;padding:11px 16px;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  document.getElementById('jira-csv-btn').addEventListener('click', () => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (project.name || 'project').replace(/\s+/g,'-') + '-jira-wbs.csv';
+    a.click();
+  });
+  document.getElementById('jira-json-btn').addEventListener('click', () => {
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (project.name || 'project').replace(/\s+/g,'-') + '-jira-wbs.json';
+    a.click();
+  });
 }
 
 function openUploadUpdate() {
