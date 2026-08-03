@@ -356,19 +356,12 @@ async function loadAll() {
 }
 
 async function loadUsers() {
-  // Use RPC to get users (needs service role or RPC)
   const { data } = await sb.rpc('admin_get_users').catch(() => ({ data: null }));
-  if (data) { allUsers = data; return; }
-  // Fallback: get from projects (users who created projects)
-  const { data: projects } = await sb.from('projects').select('user_id, created_at').order('created_at', { ascending: false });
-  // Get unique user_ids
-  const seen = new Set();
-  allUsers = (projects || []).filter(p => { if (seen.has(p.user_id)) return false; seen.add(p.user_id); return true; })
-    .map(p => ({ id: p.user_id, email: '', created_at: p.created_at }));
+  allUsers = data || [];
 }
 
 async function loadSubs() {
-  const { data } = await sb.from('subscriptions').select('*').order('created_at', { ascending: false });
+  const { data } = await sb.rpc('admin_get_subscriptions').catch(() => ({ data: null }));
   allSubs = data || [];
 }
 
