@@ -36,6 +36,9 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
 .header-actions{display:flex;align-items:center;gap:10px;position:relative;z-index:1;flex-shrink:0;}
 .lang-select{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;width:auto;max-width:170px;}
 .lang-select option{color:#0f172a;background:white;}
+/* Centred in the header bar, independent of how wide the two side groups get */
+.plan-badge{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.45);color:#c4b5fd;font-size:15px;font-weight:900;letter-spacing:.3px;padding:9px 20px;border-radius:12px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+@media(max-width:1250px){.plan-badge{display:none !important;}}
 .btn-new-project{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;}
 .btn-new-project:hover{background:rgba(255,255,255,.3);}
 .btn-demo{background:linear-gradient(135deg,#f59e0b,#f97316);border:none;color:white;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(249,115,22,.4);letter-spacing:.3px;}
@@ -552,6 +555,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <h1>PM Master</h1>
     <p>AI-powered Project Management · PMBOK® 8th Edition</p>
   </div>
+  <span id="plan-badge" class="plan-badge"></span>
   <div class="header-actions">
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="btn-demo" id="btn-demo" onclick="startTour()">▶ Demo</button>
@@ -560,9 +564,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       <button class="btn-new-project" id="btn-my-projects" onclick="goMyProjects()" style="display:none;" data-i18n="nav.myProjects">My Projects</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-left:16px;padding-left:16px;border-left:1px solid rgba(255,255,255,.2);">
-      <span id="plan-badge" style="display:none;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;"></span>
-      <!-- Language state lives here; the visible picker is in the user dropdown -->
-      <select class="lang-select" id="langSelect" onchange="setLang(this.value)" style="display:none;">
+      <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
         <option value="en">🌐 English</option>
         <option value="ua">🇺🇦 Українська</option>
         <option value="de">🇩🇪 Deutsch</option>
@@ -5176,7 +5178,7 @@ async function loadSubscription(userId) {
   badge.style.display = 'inline-block';
   badge.style.background = '';
   badge.style.borderColor = '';
-  badge.style.color = '#a78bfa';
+  badge.style.color = '';
   _subscriptionExpired = false;
 
   try {
@@ -5422,22 +5424,11 @@ function openUserMenu() {
   const menu = document.createElement('div');
   menu.id = 'user-dropdown';
   menu.className = 'user-dropdown';
-  const langSelect = document.getElementById('langSelect');
-  const currentLang = langSelect ? langSelect.value : 'en';
-  const langOptions = ['en','ua','de','fr','es','pl','pt','it','tr','ar','zh','ja','ko','hi'];
-  const langLabels = {'en':'🌐 English','ua':'🇺🇦 Українська','de':'🇩🇪 Deutsch','fr':'🇫🇷 Français','es':'🇪🇸 Español','pl':'🇵🇱 Polski','pt':'🇧🇷 Português','it':'🇮🇹 Italiano','tr':'🇹🇷 Türkçe','ar':'🇸🇦 العربية','zh':'🇨🇳 中文','ja':'🇯🇵 日本語','ko':'🇰🇷 한국어','hi':'🇮🇳 हिन्दी'};
   menu.innerHTML = `
     <div class="user-dropdown-header">
       <div class="user-dropdown-email">${currentUser.email}</div>
     </div>
     <a href="/pricing.html" class="user-dropdown-item" style="text-decoration:none;color:#374151;">💳 Pricing</a>
-    <div class="user-dropdown-divider"></div>
-    <div class="user-dropdown-item" style="flex-direction:column;align-items:flex-start;gap:4px;">
-      <span style="font-size:11px;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.5px;">Language</span>
-      <select onchange="setLang(this.value);document.getElementById('langSelect').value=this.value;" style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:6px 8px;font-size:13px;font-weight:600;outline:none;cursor:pointer;">
-        ${langOptions.map(l => `<option value="${l}" ${l===currentLang?'selected':''}>${langLabels[l]}</option>`).join('')}
-      </select>
-    </div>
     <div class="user-dropdown-divider"></div>
     <div class="user-dropdown-item" onclick="openSettingsModal()">⚙️ Settings</div>
     <div class="user-dropdown-item" onclick="openContactModal()">📧 Contact Us</div>
