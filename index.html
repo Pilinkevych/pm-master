@@ -3145,7 +3145,7 @@ function generateJira() {
     if (indent === 0)      { type = 'Epic';    parent = '';      lastL1 = name; }
     else if (indent <= 3)  { type = 'Story';   parent = lastL1; lastL2 = name; }
     else                   { type = 'Sub-task'; parent = lastL2; }
-    items.push({ type, summary: name, code, parent });
+    if (name && name.length > 1) items.push({ type, summary: name, code, parent });
   }
 
   // Build CSV
