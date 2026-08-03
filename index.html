@@ -3071,20 +3071,22 @@ function generateJira() {
       const t = el.textContent.trim();
       if (/^\d+\.\d*\s/.test(t)) { wbsText = t; break; }
     }
-    // Fallback: scan all text lines for WBS pattern
+    // Fallback: find WBS section heading, then extract outline after it
     if (!wbsText) {
       const allText = doc.body.innerText || doc.body.textContent || '';
-      const lines = allText.split('\n');
+      const lines = allText.split('\n').map(l => l.trimEnd());
       const wbsLines = [];
       let inWbs = false;
       for (const line of lines) {
-        if (/^\s*\d+\.\d*\s+\w/.test(line)) { inWbs = true; }
-        if (inWbs) {
-          if (/^\s*\d+\.\d*\s+\w/.test(line) || (wbsLines.length && /^\s{2,}/.test(line))) {
-            wbsLines.push(line);
-          } else if (wbsLines.length > 2 && line.trim() === '') {
-            break; // end of WBS block
-          }
+        if (!inWbs) {
+          if (/work breakdown|wbs/i.test(line)) inWbs = true;
+          continue;
+        }
+        // Collect lines that look like WBS outline items (X.Y.Z format or indented)
+        if (/^\s*\d+\.[\d.]*\s+\S/.test(line) || (wbsLines.length && /^\s{2,}\S/.test(line))) {
+          wbsLines.push(line);
+        } else if (wbsLines.length > 0 && line.trim() !== '') {
+          break; // non-outline non-empty line after WBS items → end of section
         }
       }
       wbsText = wbsLines.join('\n').trim();
