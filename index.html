@@ -43,6 +43,15 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
 .btn-login{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;display:flex;align-items:center;gap:6px;}
 .btn-login:hover{background:rgba(255,255,255,.25);}
 .user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#34d399,#059669);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:white;flex-shrink:0;}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);border:1px solid rgba(0,0,0,.08);min-width:200px;z-index:9999;overflow:hidden;animation:fadeInDown .15s ease;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.user-dropdown-header{padding:12px 16px;border-bottom:1px solid #f1f5f9;}
+.user-dropdown-email{font-size:12px;font-weight:700;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-dropdown-item{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;font-weight:700;color:#374151;cursor:pointer;transition:background .12s;}
+.user-dropdown-item:hover{background:#f8fafc;}
+.user-dropdown-item.danger{color:#ef4444;}
+.user-dropdown-item.danger:hover{background:#fff5f5;}
+.user-dropdown-divider{height:1px;background:#f1f5f9;}
 
 /* AUTH MODAL */
 #auth-overlay{position:fixed;inset:0;background:rgba(10,20,50,.6);z-index:1000;display:none;align-items:center;justify-content:center;}
@@ -689,6 +698,48 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
   </footer>
 </div>
+
+  <!-- CONTACT MODAL -->
+  <div id="contact-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:440px;margin:16px;position:relative;">
+      <button onclick="closeContactModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+      <div style="font-size:20px;font-weight:900;color:#1e293b;margin-bottom:4px;">📧 Contact Us</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:20px;">We usually reply within a few hours.</div>
+      <form id="contact-modal-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" onsubmit="submitContactModal(event)">
+        <input type="hidden" name="form-name" value="contact">
+        <p style="display:none;"><input name="bot-field"></p>
+        <input name="name" type="text" required placeholder="Your name" style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'">
+        <input name="email" type="email" required placeholder="Your email" style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'">
+        <textarea name="message" required placeholder="Your message..." rows="4" style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;resize:vertical;line-height:1.6;margin-bottom:16px;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+        <button id="contact-modal-btn" type="submit" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">Send Message →</button>
+        <div id="contact-modal-success" style="display:none;margin-top:12px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;color:#15803d;font-size:14px;font-weight:700;text-align:center;">✅ Message sent! We'll get back to you soon.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:440px;margin:16px;position:relative;">
+      <button onclick="document.getElementById('settings-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+      <div style="font-size:20px;font-weight:900;color:#1e293b;margin-bottom:4px;">⚙️ Settings</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:20px;">Manage your account</div>
+      <div style="border:1px solid #f1f5f9;border-radius:12px;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;">
+          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Email</div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b;" id="settings-email">—</div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;">
+          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Password</div>
+          <button onclick="resetPassword()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;color:#374151;">Send Reset Link</button>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Subscription</div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b;" id="settings-plan">—</div>
+          <a href="/pricing.html" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#7c3aed;text-decoration:none;">Upgrade plan →</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <!-- AUTH MODAL -->
 <div id="auth-overlay">
@@ -5362,9 +5413,77 @@ async function authGoogle() {
 }
 
 function openUserMenu() {
-  pmConfirm('Вийти з PM Master?', () => {
-    sb.auth.signOut().then(() => window.location.reload());
-  }, null, '👤', 'Вийти', 'Скасувати');
+  const existing = document.getElementById('user-dropdown');
+  if (existing) { existing.remove(); return; }
+
+  const btn = document.getElementById('btn-auth');
+  btn.style.position = 'relative';
+
+  const menu = document.createElement('div');
+  menu.id = 'user-dropdown';
+  menu.className = 'user-dropdown';
+  menu.innerHTML = `
+    <div class="user-dropdown-header">
+      <div class="user-dropdown-email">${currentUser.email}</div>
+    </div>
+    <div class="user-dropdown-item" onclick="openSettingsModal()">⚙️ Settings</div>
+    <div class="user-dropdown-item" onclick="openContactModal()">📧 Contact Us</div>
+    <div class="user-dropdown-divider"></div>
+    <div class="user-dropdown-item danger" onclick="signOutUser()">← Sign Out</div>
+  `;
+  btn.appendChild(menu);
+
+  setTimeout(() => document.addEventListener('click', function handler(e) {
+    if (!menu.contains(e.target) && e.target !== btn) { menu.remove(); document.removeEventListener('click', handler); }
+  }), 0);
+}
+
+function signOutUser() {
+  sb.auth.signOut().then(() => window.location.reload());
+}
+
+function openContactModal() {
+  document.getElementById('user-dropdown')?.remove();
+  document.getElementById('contact-modal').style.display = 'flex';
+}
+
+function closeContactModal() {
+  document.getElementById('contact-modal').style.display = 'none';
+  document.getElementById('contact-modal-form').reset();
+  document.getElementById('contact-modal-success').style.display = 'none';
+  document.getElementById('contact-modal-btn').style.display = '';
+}
+
+async function submitContactModal(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = document.getElementById('contact-modal-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const data = new FormData(form);
+  try {
+    const res = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() });
+    if (!res.ok) throw new Error();
+    form.reset();
+    document.getElementById('contact-modal-success').style.display = 'block';
+    btn.style.display = 'none';
+  } catch {
+    btn.disabled = false; btn.textContent = 'Send Message →';
+    alert('Something went wrong. Please try again.');
+  }
+}
+
+function openSettingsModal() {
+  document.getElementById('user-dropdown')?.remove();
+  document.getElementById('settings-email').textContent = currentUser.email;
+  const badge = document.querySelector('.sub-badge');
+  document.getElementById('settings-plan').textContent = badge ? badge.textContent : '🆓 Trial';
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+
+async function resetPassword() {
+  const { error } = await sb.auth.resetPasswordForEmail(currentUser.email, { redirectTo: window.location.origin });
+  if (error) { alert('Error: ' + error.message); return; }
+  alert('✅ Password reset link sent to ' + currentUser.email);
 }
 
 // ══════════════════════════════════════════
