@@ -496,8 +496,9 @@ function filterRecipients() {
   const expiredUserIds = new Set(allSubs.filter(s => s.status === 'expired').map(s => s.user_id));
   const allSubUserIds = new Set(allSubs.map(s => s.user_id));
 
-  // Build email list from subscriptions
+  // Build email list from users + subscriptions
   const emailMap = {};
+  allUsers.forEach(u => { if (u.email) emailMap[u.id] = { id: u.id, email: u.email, name: u.email.split('@')[0] }; });
   allSubs.forEach(s => { if (s.email) emailMap[s.user_id] = { id: s.user_id, email: s.email, name: s.email.split('@')[0] }; });
   const allWithEmail = Object.values(emailMap);
 
