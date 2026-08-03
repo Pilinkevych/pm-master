@@ -536,6 +536,10 @@ async function sendNewsletter() {
   if (!nlUsers.length) { showToast('⚠️ Немає отримувачів', true); return; }
   if (!confirm(`Надіслати "${subject}" для ${nlUsers.length} користувачів?`)) return;
 
+  // The function verifies this token is the admin's before touching Brevo.
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showToast('⚠️ Сесія завершилась, увійдіть знову', true); return; }
+
   const btn = document.getElementById('nlSendBtn');
   const progress = document.getElementById('nlProgress');
   btn.disabled = true;
@@ -566,7 +570,10 @@ async function sendNewsletter() {
       try {
         const res = await fetch('/.netlify/functions/send-newsletter', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({ to: user.email, subject, htmlContent })
         });
         if (res.ok) sent++; else failed++;
