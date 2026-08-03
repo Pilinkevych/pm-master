@@ -3052,9 +3052,47 @@ function buildRiskMatrix() {
 // JIRA + UPDATES
 // ══════════════════════════════════════════
 function generateJira() {
-  const wbsText = (project.docData['scope'] || {}).wbs || '';
+  // Try multiple sources for WBS text
+  let wbsText = '';
+
+  // 1. Open form field (if scope modal is currently open)
+  const fWbs = document.getElementById('f-wbs');
+  if (fWbs && fWbs.value.trim()) wbsText = fWbs.value.trim();
+
+  // 2. Demo/template data
+  if (!wbsText) wbsText = (project.docData['scope'] || {}).wbs || '';
+
+  // 3. AI-generated HTML content — extract text from <pre>/<code> or find WBS outline pattern
+  if (!wbsText && project.docContent && project.docContent['scope']) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(project.docContent['scope'], 'text/html');
+    // Try <pre> and <code> blocks first
+    for (const el of doc.querySelectorAll('pre, code')) {
+      const t = el.textContent.trim();
+      if (/^\d+\.\d*\s/.test(t)) { wbsText = t; break; }
+    }
+    // Fallback: scan all text lines for WBS pattern
+    if (!wbsText) {
+      const allText = doc.body.innerText || doc.body.textContent || '';
+      const lines = allText.split('\n');
+      const wbsLines = [];
+      let inWbs = false;
+      for (const line of lines) {
+        if (/^\s*\d+\.\d*\s+\w/.test(line)) { inWbs = true; }
+        if (inWbs) {
+          if (/^\s*\d+\.\d*\s+\w/.test(line) || (wbsLines.length && /^\s{2,}/.test(line))) {
+            wbsLines.push(line);
+          } else if (wbsLines.length > 2 && line.trim() === '') {
+            break; // end of WBS block
+          }
+        }
+      }
+      wbsText = wbsLines.join('\n').trim();
+    }
+  }
+
   if (!wbsText.trim()) {
-    alert('No WBS found.\n\nPlease generate the Scope Statement + WBS document first, then come back here.');
+    alert('No WBS found.\n\nPlease open the Scope Statement + WBS document and make sure the WBS outline is filled in.');
     return;
   }
 
