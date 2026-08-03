@@ -5566,7 +5566,8 @@ async function handleContactSubmit(e) {
   btn.textContent = 'Sending...';
   const data = new FormData(form);
   try {
-    await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() });
+    const res = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() });
+    if (!res.ok) throw new Error('Network error');
     form.reset();
     document.getElementById('contact-success').style.display = 'block';
     btn.style.display = 'none';
