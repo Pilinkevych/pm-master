@@ -1539,7 +1539,7 @@ function analyzeContext_internal() {
   const hasFiles = uploadedFilesList.length > 0;
 
   if (!paste && !hasFiles) {
-    alert('Please upload a file or paste text (MoM, email, brief) first.');
+    pmAlert('Please upload a file or paste text (MoM, email or brief) first.', '📎');
     return;
   }
 
@@ -1553,13 +1553,19 @@ function analyzeContext_internal() {
       headers: n8nHeaders(),
       body: JSON.stringify({ text: textContent, projectType: project.type, approach: project.approach })
     })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(r => {
+      if (handleN8nStatus(r.status)) { btn.innerHTML = orig; btn.disabled = false; return null; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(data => {
+      if (!data) return;
       btn.innerHTML = orig;
       btn.disabled = false;
       console.log('[PM Master] AI response:', JSON.stringify(data, null, 2));
       if (!data.success) {
-        alert('⚠️ AI returned an error:\n' + (data.error || JSON.stringify(data).slice(0, 300)));
+        console.error('[PM Master] analyze error:', data.error || data);
+        pmToast('The AI could not read that file. Try pasting the text instead.', 'error');
         return;
       }
       applyExtractedData(data);
@@ -1567,7 +1573,8 @@ function analyzeContext_internal() {
     .catch(err => {
       btn.innerHTML = orig;
       btn.disabled = false;
-      alert('⚠️ Analysis failed: ' + err.message + '\n\nCheck n8n workflow pm-master-analyze-mom is active.');
+      console.error('[PM Master] analyze failed:', err);
+      pmToast('Analysis failed. Please try again in a moment.', 'error');
     });
   }
 
@@ -1888,7 +1895,7 @@ function openDoc(key, mode) {
 function copyDocContent(key) {
   const content = project.docContent[key] || '';
   const text = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  navigator.clipboard.writeText(text).then(() => alert('✅ Copied to clipboard!'));
+  navigator.clipboard.writeText(text).then(() => pmToast('✅ Copied to clipboard!'));
 }
 
 function buildDocForm(key) {
@@ -2107,6 +2114,7 @@ function generateDoc(key) {
     body: JSON.stringify({ key, project, lang: curLang() })
   })
   .then(r => {
+    if (handleN8nStatus(r.status)) { btn.innerHTML = orig; btn.disabled = false; return null; }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.text().then(text => {
       console.log('[PM Master] Generate raw:', text.slice(0, 500));
@@ -2114,6 +2122,7 @@ function generateDoc(key) {
     });
   })
   .then(data => {
+    if (!data) return;
     btn.innerHTML = orig;
     btn.disabled = false;
     if (!data.success) throw new Error('Generation failed');
@@ -2128,7 +2137,8 @@ function generateDoc(key) {
   .catch(err => {
     btn.innerHTML = orig;
     btn.disabled = false;
-    alert('⚠️ Generation failed: ' + err.message + '\n\nCheck that n8n workflow is active.');
+    console.error('[PM Master] generate failed:', err);
+    pmToast('Could not generate that document. Please try again.', 'error');
   });
 }
 
@@ -2152,6 +2162,8 @@ async function generateInitiationDocs() {
         method: 'POST', headers: n8nHeaders(),
         body: JSON.stringify({ key, project, lang: curLang() })
       });
+      // No point grinding through the rest of the batch once access is refused.
+      if (handleN8nStatus(r.status)) { banner.remove(); return; }
       const text = await r.text();
       const data = text ? JSON.parse(text) : {};
       if (data.success && data.content) {
@@ -2207,6 +2219,8 @@ async function generateAllDocs() {
         method: 'POST', headers: n8nHeaders(),
         body: JSON.stringify({ key, project, lang: curLang() })
       });
+      // No point grinding through the rest of the batch once access is refused.
+      if (handleN8nStatus(r.status)) { banner.remove(); return; }
       const text = await r.text();
       const data = text ? JSON.parse(text) : {};
       if (data.success && data.content) {
@@ -2426,7 +2440,7 @@ function closeModal() {
 function exportDocPDF(key) {
   const doc = DOCS.find(d => d.key === key);
   const content = project.docContent && project.docContent[key];
-  if (!content) { alert('No content to export. Generate the document first.'); return; }
+  if (!content) { pmAlert('No content to export yet. Generate the document first.', '📄'); return; }
 
   const filename = (doc?.name || key).replace(/[^a-zA-Z0-9а-яА-ЯїЇіІєЄ\s]/g, '').trim().replace(/\s+/g, '_') + '.pdf';
   const dateStr = new Date().toLocaleDateString('uk-UA');
@@ -2521,7 +2535,7 @@ function exportDocPDF(key) {
     if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
   }).catch(err => {
     if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
-    alert('PDF export failed: ' + err.message);
+    console.error('[PM Master] PDF export failed:', err); pmToast('PDF export failed. Please try again.', 'error');
   });
 }
 
@@ -2599,6 +2613,7 @@ async function fetchQuizBatch(count) {
       mode:   quizState.mode
     })
   });
+  if (handleN8nStatus(resp.status)) throw new Error('access refused');
   if (!resp.ok) throw new Error(`n8n HTTP ${resp.status} — check workflow is active`);
   const text = await resp.text();
   if (!text || !text.trim()) throw new Error('Empty response from n8n — activate the workflow');
@@ -2681,7 +2696,11 @@ async function startQuiz() {
     if (quizState.questions.length < totalTarget) prefetchNextBatch();
   } catch(err) {
     session.style.display = 'none';
-    alert('⚠️ Failed to generate questions: ' + err.message + '\n\nMake sure n8n workflow is active.');
+    console.error('[PM Master] quiz generation failed:', err);
+    // handleN8nStatus has already told the user why; anything else is a glitch.
+    if (err.message !== 'access refused') {
+      pmToast('Could not load questions. Please try again in a moment.', 'error');
+    }
   }
 }
 
@@ -3274,7 +3293,7 @@ function generateJira() {
   }
 
   if (!wbsText.trim()) {
-    alert('No WBS found.\n\nPlease open the Scope Statement + WBS document and make sure the WBS outline is filled in.');
+    pmAlert('No WBS found.\n\nOpen the Scope Statement + WBS document and make sure the WBS outline is filled in.', '🎯');
     return;
   }
 
@@ -3353,7 +3372,8 @@ function generateJira() {
 }
 
 function openUploadUpdate() {
-  alert('📎 Upload Project Update\n\nUpload MoM, email or audio → AI will:\n• Identify what changed\n• Update Risk Register, Scope, Schedule automatically\n• Log changes for Lessons Learned\n\nComing soon — will connect to n8n workflow.');
+  // Still a teaser, but it no longer names the plumbing it is waiting on.
+  pmAlert('Upload Project Update — coming soon.\n\nUpload a MoM, email or audio file and AI will spot what changed, update the Risk Register, Scope and Schedule, and log it for Lessons Learned.', '📎');
 }
 
 // ══════════════════════════════════════════
@@ -5616,7 +5636,7 @@ async function submitContactModal(e) {
     btn.style.display = 'none';
   } catch {
     btn.disabled = false; btn.textContent = 'Send Message →';
-    alert('Something went wrong. Please try again.');
+    pmToast('Something went wrong. Please try again.', 'error');
   }
 }
 
@@ -5630,8 +5650,8 @@ function openSettingsModal() {
 
 async function resetPassword() {
   const { error } = await sb.auth.resetPasswordForEmail(currentUser.email, { redirectTo: window.location.origin });
-  if (error) { alert('Error: ' + error.message); return; }
-  alert('✅ Password reset link sent to ' + currentUser.email);
+  if (error) { console.error('[PM Master] password reset failed:', error); pmToast('Could not send the reset link. Please try again.', 'error'); return; }
+  pmToast('✅ Reset link sent to ' + currentUser.email);
 }
 
 // ══════════════════════════════════════════
@@ -5811,18 +5831,38 @@ async function openProject(id) {
   showPage('dashboard');
 }
 
-function showSaveToast() {
+function pmToast(text, kind) {
   let toast = document.getElementById('save-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'save-toast';
-    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;max-width:340px;';
     document.body.appendChild(toast);
   }
-  toast.textContent = '✅ Project saved!';
+  toast.style.background = kind === 'error' ? '#dc2626' : '#059669';
+  toast.textContent = text;
   toast.style.opacity = '1';
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, kind === 'error' ? 5000 : 2500);
+}
+
+function showSaveToast() { pmToast('✅ Project saved!'); }
+
+// n8n answers 401 when the token is missing or stale, 403 once the trial or the
+// subscription is over. Neither should reach the user as "HTTP 403".
+// Returns true when it has taken care of the response.
+function handleN8nStatus(status) {
+  if (status === 401) {
+    pmToast('Your session expired. Please sign in again.', 'error');
+    return true;
+  }
+  if (status === 403) {
+    _accessBlocked = true;
+    if (!_blockReason) _blockReason = 'trial';
+    showRenewalPopup();
+    return true;
+  }
+  return false;
 }
 
 function openSample(src, title, sub) {
@@ -5857,7 +5897,7 @@ async function handleContactSubmit(e) {
   } catch {
     btn.disabled = false;
     btn.textContent = 'Send Message →';
-    alert('Something went wrong. Please try again.');
+    pmToast('Something went wrong. Please try again.', 'error');
   }
 }
 </script>
