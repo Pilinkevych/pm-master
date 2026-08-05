@@ -276,6 +276,7 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
     <div class="modal-title">✏️ Редагувати підписку</div>
     <div class="modal-sub" id="editModalEmail">—</div>
     <input type="hidden" id="editUserId">
+    <input type="hidden" id="editOrigStatus">
     <div class="modal-field">
       <label class="modal-label">План</label>
       <select class="modal-select" id="editPlan">
@@ -463,6 +464,9 @@ function openEditUser(userId, email) {
   document.getElementById('editPlan').value = sub?.plan || '';
   document.getElementById('editStatus').value = sub?.status || 'active';
   document.getElementById('editExpires').value = sub?.expires_at ? sub.expires_at.slice(0,10) : '';
+  // Remembered so the save knows which row to update — the status field itself
+  // is editable, so it cannot be used to find the row afterwards.
+  document.getElementById('editOrigStatus').value = sub ? sub.status : '';
   document.getElementById('editModal').classList.add('open');
 }
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
@@ -473,14 +477,25 @@ async function saveUserSub() {
   const status = document.getElementById('editStatus').value;
   const expires = document.getElementById('editExpires').value;
   if (!plan) { showToast('⚠️ Оберіть план', true); return; }
-  const { error } = await sb.from('subscriptions').upsert({
+
+  const row = {
     user_id: userId, plan, status,
     expires_at: expires ? new Date(expires).toISOString() : null,
     activated_at: new Date().toISOString(),
     amount: PLAN_PRICE[plan] || 0,
-    currency: 'USD',
-    order_reference: 'admin_manual_' + Date.now()
-  }, { onConflict: 'user_id,status' });
+    currency: 'USD'
+  };
+
+  // Not an upsert: ON CONFLICT needs a unique index on (user_id, status), and
+  // adding one would forbid a second expired subscription per user — which is
+  // exactly what happens to anyone who renews twice.
+  const origStatus = document.getElementById('editOrigStatus').value;
+  const { error } = origStatus
+    ? await sb.from('subscriptions').update(row)
+        .eq('user_id', userId).eq('status', origStatus)
+    : await sb.from('subscriptions').insert(
+        Object.assign({ order_reference: 'admin_manual_' + Date.now() }, row));
+
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
   showToast('✅ Збережено!');
   closeModal();
