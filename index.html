@@ -5520,10 +5520,10 @@ function showPaymentPopup(state, plan, seats, reason) {
     toast.style.cssText = 'position:fixed;bottom:32px;right:32px;background:#fff;border:2px solid #7c3aed;border-radius:14px;padding:20px 24px;z-index:9999;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.15);font-family:"Nunito",sans-serif;';
     toast.innerHTML = `
       <div style="display:flex;align-items:flex-start;gap:12px;">
-        <div style="font-size:32px;line-height:1;">✅</div>
+        <div style="font-size:32px;line-height:1;">⏳</div>
         <div>
-          <div style="color:#7c3aed;font-weight:700;font-size:15px;margin-bottom:4px;">Payment Accepted!</div>
-          <div style="color:#475569;font-size:14px;">Your plan will be activated automatically. If not within 10 min — contact us.</div>
+          <div style="color:#7c3aed;font-weight:700;font-size:15px;margin-bottom:4px;">Still Confirming</div>
+          <div style="color:#475569;font-size:14px;">If your payment went through, the plan activates automatically. Nothing yet after 10 min? Write to support@pm-master.club.</div>
         </div>
         <button onclick="closePaymentPopup()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;margin-left:4px;">✕</button>
       </div>
