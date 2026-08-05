@@ -5578,7 +5578,12 @@ async function authSubmit() {
 async function authGoogle() {
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + '/' }
+    options: {
+      redirectTo: window.location.origin + '/',
+      // Google silently reuses the one session it can see, which strands anyone
+      // with more than one account. Always let them pick.
+      queryParams: { prompt: 'select_account' }
+    }
   });
 }
 
