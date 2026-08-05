@@ -8,11 +8,22 @@
 -- Run the AUDIT block first and keep the output: it is the only record of what
 -- was in force before.
 
--- ── AUDIT ────────────────────────────────────────────────────────────────────
+-- ── WHAT WAS IN FORCE BEFORE (audited 2026-08-05) ────────────────────────────
+-- rls_enabled: true, with three policies:
+--
+--   subs_insert  INSERT  {anon, authenticated}  with_check: true
+--   subs_select  SELECT  {authenticated}        using: user_id = auth.uid()
+--   subs_update  UPDATE  {anon, authenticated}  using: true
+--
+-- subs_select was correct. The other two had no condition at all, and both
+-- included `anon` — the key that ships in every page. Anyone could POST a row
+-- granting themselves any plan, or UPDATE any row to extend it. No DELETE
+-- policy existed, and TRUNCATE is not reachable through PostgREST, so the data
+-- could not be read or destroyed — only forged.
+--
+-- Re-run this to see the current state:
 -- select policyname, cmd, roles, qual, with_check
 --   from pg_policies where schemaname='public' and tablename='subscriptions';
--- select grantee, privilege_type from information_schema.role_table_grants
---   where table_name='subscriptions';
 
 -- ── APPLY ────────────────────────────────────────────────────────────────────
 alter table public.subscriptions enable row level security;
