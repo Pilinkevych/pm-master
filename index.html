@@ -5321,6 +5321,33 @@ function checkPaymentReturn(user) {
   }, 3000);
 }
 
+// Hidden 1 UAH rehearsal of the real checkout — no button anywhere, admin-only,
+// enforced in create-payment. Mirrors the copy on pricing.html so it works from
+// whichever page happens to be open. Console: __pmTestPay() / __pmTestPay('pro')
+window.__pmTestPay = async function (plan = 'starter', seats) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { console.warn('[PM] sign in first'); return; }
+  console.log('[PM] test checkout: 1 UAH as', plan, seats ? '×' + seats : '');
+  const res = await fetch('/.netlify/functions/create-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify({ plan, seats, test: true }),
+  });
+  const data = await res.json();
+  if (!res.ok) { console.error('[PM] test checkout refused:', data.error); return; }
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = data.action;
+  form.style.display = 'none';
+  for (const [k, v] of Object.entries(data.fields)) {
+    const i = document.createElement('input');
+    i.type = 'hidden'; i.name = k; i.value = v;
+    form.appendChild(i);
+  }
+  document.body.appendChild(form);
+  form.submit();
+};
+
 function showPaymentPopup(state, plan, seats) {
   closePaymentPopup();
 
