@@ -5265,7 +5265,11 @@ function onSignIn(user) {
   const pending = localStorage.getItem('_pmPendingAction');
   localStorage.removeItem('_pmPendingAction');
   console.log('[PM] onSignIn pending action:', pending);
-  if (pending && pending.startsWith('pricing_')) { window.location.href = '/pricing.html'; }
+  // Hand the chosen plan back, so they land on checkout rather than on the
+  // pricing page having to pick it a second time.
+  if (pending && pending.startsWith('pricing_')) {
+    window.location.href = '/pricing.html?resume=' + encodeURIComponent(pending.slice('pricing_'.length));
+  }
   else if (pending === 'analyze') { showPage('setup'); setTimeout(() => analyzeContext_internal(), 300); }
   else if (pending === 'create') { showPage('setup'); }
   else if (pending === 'quiz') { showPage('quiz'); }
