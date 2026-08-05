@@ -335,7 +335,8 @@ function checkAdmin(user) {
   if (user.email !== ADMIN_EMAIL) {
     document.getElementById('auth-error').textContent = 'Доступ заборонено. Email: ' + user.email;
     document.getElementById('auth-error').style.display = 'block';
-    sb.auth.signOut();
+    // Deliberately no signOut(): it is global, so wandering onto this page
+    // would kick the person out of the app itself. Refusing them is enough.
     return;
   }
   currentUser = user;
