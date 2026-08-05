@@ -1,2 +1,5 @@
 .DS_Store
 pmbok-8.pdf
+
+# Editor safe-save leftovers
+.!*!*
