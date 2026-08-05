@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PM Master — Pricing</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -186,7 +185,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> All domains & areas</div>
       </div>
-      <button class="btn-pay outline" onclick="pay('quiz_only', 5, 'PM Master Quiz Only - PMP Trainer')">Get Quiz Only</button>
+      <button class="btn-pay outline" onclick="pay('quiz_only')">Get Quiz Only</button>
     </div>
 
     <!-- STARTER -->
@@ -204,7 +203,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> PDF export</div>
       </div>
-      <button class="btn-pay" onclick="pay('starter', 9, 'PM Master Starter - 3 projects')">Get Starter</button>
+      <button class="btn-pay" onclick="pay('starter')">Get Starter</button>
     </div>
 
   </div>
@@ -225,7 +224,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> Priority generation</div>
       </div>
-      <button class="btn-pay" onclick="pay('pro', 19, 'PM Master Pro - 10 projects')">Get Pro</button>
+      <button class="btn-pay" onclick="pay('pro')">Get Pro</button>
     </div>
 
     <!-- UNLIMITED -->
@@ -242,7 +241,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
         <div class="plan-feature"><span class="check">✓</span> Full Exam (180 Q)</div>
         <div class="plan-feature"><span class="check">✓</span> Priority generation</div>
       </div>
-      <button class="btn-pay outline" onclick="pay('unlimited', 29, 'PM Master Unlimited')">Get Unlimited</button>
+      <button class="btn-pay outline" onclick="pay('unlimited')">Get Unlimited</button>
     </div>
 
   </div>
@@ -323,8 +322,6 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--dark); 
 <div class="toast" id="toast"><span id="toastEmoji">✅</span> <span id="toastText"></span></div>
 
 <script>
-const MERCHANT_LOGIN  = 'pm_master_club';
-const MERCHANT_SECRET = 'e32c27510b3511977ae78b678bdc08ca268c8fc7';
 const SUPA_URL = 'https://ijfawcrcmmvjhilpytsg.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZmF3Y3JjbW12amhpbHB5dHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDY0NjQsImV4cCI6MjA5ODQ4MjQ2NH0.bcjSxVd5UNeaoM1yiK7NQoma2HEZepmTrDaz7A_p5CQ';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
@@ -364,14 +361,14 @@ function changeSeats(delta) {
   updateTeamPrice();
 }
 
-async function pay(planKey, amount, productName) {
+async function pay(planKey) {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) {
     localStorage.setItem('_pmPendingAction', 'pricing_' + planKey);
     window.location.href = '/?auth=1';
     return;
   }
-  submitWayForPay(planKey, amount, productName, session.user.email, 1);
+  await startCheckout(session, { plan: planKey });
 }
 
 async function payTeam() {
@@ -382,43 +379,36 @@ async function payTeam() {
     return;
   }
   const seats = parseInt(document.getElementById('seatCount').value) || 5;
-  const perSeat = getPricePerSeat(seats);
-  const total = Math.round(seats * perSeat);
-  const productName = `PM Master Team - ${seats} seats/month`;
-  submitWayForPay('team_' + seats, total, productName, session.user.email, seats);
+  await startCheckout(session, { plan: 'team', seats });
 }
 
-function submitWayForPay(planKey, amount, productName, email, seats) {
-  const orderRef  = 'pm_' + planKey + '_' + Date.now();
-  const orderDate = Math.floor(Date.now() / 1000);
+// The price and the signature are the server's call — we only say which plan.
+async function startCheckout(session, order) {
+  try {
+    const res = await fetch('/.netlify/functions/create-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + session.access_token,
+      },
+      body: JSON.stringify(order),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast('⚠️', data.error || 'Could not start checkout. Please try again.');
+      return;
+    }
+    submitToWayForPay(data.action, data.fields);
+  } catch (e) {
+    showToast('⚠️', 'Network error — please try again.');
+  }
+}
 
+function submitToWayForPay(action, fields) {
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = 'https://secure.wayforpay.com/pay';
+  form.action = action;
   form.style.display = 'none';
-
-  const domain = 'pm-master.club';
-  const sigData = [MERCHANT_LOGIN, domain, orderRef, orderDate, amount, 'USD', productName, 1, amount].join(';');
-  const signature = CryptoJS.HmacMD5(sigData, MERCHANT_SECRET).toString();
-
-  const fields = {
-    merchantAccount:    MERCHANT_LOGIN,
-    merchantDomainName: domain,
-    orderReference:     orderRef,
-    orderDate:          orderDate,
-    amount:             amount,
-    currency:           'USD',
-    orderLifetime:      86400,
-    productName:        productName,
-    productCount:       1,
-    productPrice:       amount,
-    clientEmail:        email,
-    language:           'EN',
-    returnUrl:          'https://pm-master.club/.netlify/functions/payment-return',
-    serviceUrl:         'https://aikinomaker.app.n8n.cloud/webhook/pm-master-payment',
-    merchantSignature:  signature
-  };
-
   for (const [k, v] of Object.entries(fields)) {
     const i = document.createElement('input');
     i.type = 'hidden'; i.name = k; i.value = v;
@@ -427,6 +417,15 @@ function submitWayForPay(planKey, amount, productName, email, seats) {
   document.body.appendChild(form);
   form.submit();
 }
+
+// Hidden 1 UAH rehearsal of the whole flow — no button anywhere, admin-only,
+// enforced server-side. Run from the console: __pmTestPay() or __pmTestPay('pro')
+window.__pmTestPay = async function (plan = 'starter', seats) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { console.warn('[PM] sign in first'); return; }
+  console.log('[PM] test checkout: 1 UAH as', plan, seats ? '×' + seats : '');
+  await startCheckout(session, { plan, seats, test: true });
+};
 
 function contactEnterprise() {
   window.location.href = 'mailto:yuriy.pilinkevych@gmail.com?subject=PM Master Enterprise — ' + encodeURIComponent('200+ PMs');
