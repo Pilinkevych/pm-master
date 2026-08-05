@@ -1508,6 +1508,7 @@ function removeFile(i) {
 
 function analyzeContext() {
   if (!currentUser) { localStorage.setItem('_pmPendingAction', 'analyze'); openAuth(); return; }
+  if (_accessBlocked) { showRenewalPopup(); return; }
   analyzeContext_internal();
 }
 
@@ -1529,7 +1530,7 @@ function analyzeContext_internal() {
 
     fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-analyze-mom', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: n8nHeaders(),
       body: JSON.stringify({ text: textContent, projectType: project.type, approach: project.approach })
     })
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -1692,7 +1693,7 @@ function applyExtractedData(data) {
 
 function createProject() {
   if (!currentUser) { localStorage.setItem('_pmPendingAction', 'create'); openAuth(); return; }
-  if (_subscriptionExpired) { showRenewalPopup(); return; }
+  if (_accessBlocked) { showRenewalPopup(); return; }
   const name = document.getElementById('s-name').value.trim();
   if (!name) { document.getElementById('s-name').focus(); return; }
 
@@ -2072,6 +2073,7 @@ function saveDoc() {
 }
 
 function generateDoc(key) {
+  if (_accessBlocked) { showRenewalPopup(); return; }
   const btn = event.target;
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
@@ -2081,7 +2083,7 @@ function generateDoc(key) {
 
   fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: n8nHeaders(),
     body: JSON.stringify({ key, project, lang: curLang() })
   })
   .then(r => {
@@ -2111,6 +2113,7 @@ function generateDoc(key) {
 }
 
 async function generateInitiationDocs() {
+  if (_accessBlocked) { showRenewalPopup(); return; }
   const INIT_KEYS = DOCS
     .filter(d => d.phase && d.phase.startsWith('Initiation') && project.docStatus[d.key] && project.docStatus[d.key] !== 'excluded')
     .map(d => d.key);
@@ -2126,7 +2129,7 @@ async function generateInitiationDocs() {
     banner.innerHTML = `<div class="gen-banner-inner"><div class="gen-spinner"></div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.generating'] || 'Генерую...'}</div><div class="gen-banner-doc">${doc?.icon || '📄'} ${doc?.name || key}</div><div class="gen-banner-count">${done + 1} / ${INIT_KEYS.length}</div></div></div>`;
     try {
       const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: n8nHeaders(),
         body: JSON.stringify({ key, project, lang: curLang() })
       });
       const text = await r.text();
@@ -2154,6 +2157,7 @@ async function generateInitiationDocs() {
 }
 
 async function generateAllDocs() {
+  if (_accessBlocked) { showRenewalPopup(); return; }
   const keys = DOCS.filter(d => project.docStatus[d.key] && project.docStatus[d.key] !== 'excluded').map(d => d.key);
   if (!keys.length) return;
   const t = dl();
@@ -2180,7 +2184,7 @@ async function generateAllDocs() {
     setBanner(doc?.name || key, doc?.icon || '📄', done + 1, keys.length);
     try {
       const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: n8nHeaders(),
         body: JSON.stringify({ key, project, lang: curLang() })
       });
       const text = await r.text();
@@ -2533,7 +2537,7 @@ let quizState = {
 
 function showQuizOrLogin() {
   if (!currentUser) { localStorage.setItem('_pmPendingAction', 'quiz'); openAuth(); return; }
-  if (_subscriptionExpired) { showRenewalPopup(); return; }
+  if (_accessBlocked) { showRenewalPopup(); return; }
   showPage('quiz');
 }
 
@@ -2566,7 +2570,7 @@ async function fetchQuizBatch(count) {
   // 1. POST to n8n — get jobId immediately (async pattern)
   const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: n8nHeaders(),
     body: JSON.stringify({
       domain: quizState.domain,
       area:   quizState.area,
@@ -2969,7 +2973,7 @@ async function openPmbok(key) {
   try {
     const res = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmbok-summary', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: n8nHeaders(),
       body: JSON.stringify({ section: ref.section, docName: doc?.name || key, chunks })
     });
     const data = await res.json();
@@ -5149,19 +5153,32 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
 
 let currentUser = null;
 
+// Kept fresh by onAuthStateChange (which also fires on TOKEN_REFRESHED) so the
+// n8n calls below can attach it without every one of them going async.
+let _accessToken = null;
+
+// Every call into n8n carries this: the workflows verify the token and check
+// the trial/subscription themselves. Without it the webhooks are open to anyone.
+function n8nHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (_accessToken) h.Authorization = 'Bearer ' + _accessToken;
+  return h;
+}
+
 // Init — check session on load (also handles OAuth redirect hash)
 sb.auth.getSession().then(({ data: { session } }) => {
   console.log('[PM] getSession:', session ? 'found' : 'null');
-  if (session) onSignIn(session.user);
+  if (session) { _accessToken = session.access_token; onSignIn(session.user); }
 });
 
 // Listen for auth state changes
 sb.auth.onAuthStateChange((event, session) => {
   console.log('[PM] onAuthStateChange:', event, session ? session.user.email : 'null');
   if (session) {
+    _accessToken = session.access_token;
     if (!currentUser) onSignIn(session.user); // тільки перший раз
     else currentUser = session.user; // просто оновлюємо юзера без редіректу
-  } else onSignOut();
+  } else { _accessToken = null; onSignOut(); }
 });
 
 // Fallback: якщо в URL є access_token (після Google OAuth)
@@ -5170,6 +5187,7 @@ if (window.location.hash.includes('access_token')) {
   setTimeout(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
       console.log('[PM] fallback getSession:', session ? 'found' : 'null');
+      if (session) _accessToken = session.access_token;
       if (session && !currentUser) onSignIn(session.user);
     });
   }, 1000);
@@ -5217,18 +5235,36 @@ function onSignIn(user) {
   checkPaymentReturn(user);
 }
 
-let _subscriptionExpired = false;
+const TRIAL_DAYS = 7;
+
+// 'trial' and 'expired' both close the door; they differ only in what we say.
+let _accessBlocked = false;
+let _blockReason = '';
+
+// Days of trial left, counted from sign-up. Server-side checks recompute this
+// from auth.users.created_at — this copy only decides what the badge says.
+function trialDaysLeft() {
+  const created = currentUser && currentUser.created_at;
+  if (!created) return TRIAL_DAYS;
+  const used = Math.floor((Date.now() - new Date(created)) / 86400000);
+  return Math.max(0, TRIAL_DAYS - used);
+}
+
+function paintBadge(badge, text, alarm) {
+  badge.textContent = text;
+  badge.style.background   = alarm ? 'rgba(220,38,38,.25)' : '';
+  badge.style.borderColor  = alarm ? 'rgba(220,38,38,.5)'  : '';
+  badge.style.color        = alarm ? '#fca5a5' : '';
+}
 
 async function loadSubscription(userId) {
   const badge = document.getElementById('plan-badge');
   if (!badge) return;
 
-  badge.textContent = '🆓 Trial';
   badge.style.display = 'inline-block';
-  badge.style.background = '';
-  badge.style.borderColor = '';
-  badge.style.color = '';
-  _subscriptionExpired = false;
+  paintBadge(badge, '🆓 Trial', false);
+  _accessBlocked = false;
+  _blockReason = '';
 
   try {
     // Check active first
@@ -5241,12 +5277,7 @@ async function loadSubscription(userId) {
       const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
       const label = planNames[active.plan] || active.plan;
       const daysLeft = Math.max(0, Math.ceil((new Date(active.expires_at) - Date.now()) / 86400000));
-      badge.textContent = '✦ ' + label + (active.plan === 'team' ? ' ×' + active.seats : '') + ' · ' + daysLeft + 'd';
-      if (daysLeft <= 5) {
-        badge.style.background = 'rgba(220,38,38,.25)';
-        badge.style.borderColor = 'rgba(220,38,38,.5)';
-        badge.style.color = '#fca5a5';
-      }
+      paintBadge(badge, '✦ ' + label + (active.plan === 'team' ? ' ×' + active.seats : '') + ' · ' + daysLeft + 'd', daysLeft <= 5);
       return;
     }
 
@@ -5257,34 +5288,51 @@ async function loadSubscription(userId) {
       .order('expires_at', { ascending: false }).limit(1).maybeSingle();
 
     if (expired) {
-      _subscriptionExpired = true;
-      badge.textContent = '⚠️ Expired';
-      badge.style.background = 'rgba(220,38,38,.25)';
-      badge.style.borderColor = 'rgba(220,38,38,.5)';
-      badge.style.color = '#fca5a5';
+      _accessBlocked = true;
+      _blockReason = 'expired';
+      paintBadge(badge, '⚠️ Expired', true);
+      return;
+    }
+
+    // Never paid: they are on the trial clock.
+    const left = trialDaysLeft();
+    if (left <= 0) {
+      _accessBlocked = true;
+      _blockReason = 'trial';
+      paintBadge(badge, '⚠️ Trial ended', true);
+    } else {
+      paintBadge(badge, '🆓 Trial · ' + left + 'd', left <= 2);
     }
   } catch (e) {
-    badge.textContent = '🆓 Trial';
+    paintBadge(badge, '🆓 Trial', false);
   }
 }
 
-function showRenewalPopup() {
-  let el = document.getElementById('renewal-popup');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'renewal-popup';
-    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    el.innerHTML = `<div style="background:#1e293b;border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.1);">
-      <div style="font-size:40px;margin-bottom:16px;">⚠️</div>
-      <h3 style="font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 12px;">Subscription Expired</h3>
-      <p style="font-size:14px;color:#94a3b8;line-height:1.6;margin:0 0 28px;">Your plan has expired. Your data is safe — renew to continue creating projects and taking quizzes.</p>
+function showRenewalPopup(reason) {
+  const trial = (reason || _blockReason) === 'trial';
+  const title = trial ? 'Your Free Trial Has Ended' : 'Subscription Expired';
+  const text  = trial
+    ? `Your ${TRIAL_DAYS}-day trial is over. Your projects are safe — choose a plan to keep creating documents and taking quizzes.`
+    : 'Your plan has expired. Your data is safe — renew to continue creating projects and taking quizzes.';
+  const cta   = trial ? 'See Plans →' : 'Renew Plan →';
+
+  // Rebuilt every time: the same popup covers both reasons, with different copy.
+  const old = document.getElementById('renewal-popup');
+  if (old) old.remove();
+
+  const el = document.createElement('div');
+  el.id = 'renewal-popup';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  el.innerHTML = `<div style="background:#1e293b;border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.1);">
+      <div style="font-size:40px;margin-bottom:16px;">${trial ? '🎁' : '⚠️'}</div>
+      <h3 style="font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 12px;">${title}</h3>
+      <p style="font-size:14px;color:#94a3b8;line-height:1.6;margin:0 0 28px;">${text}</p>
       <div style="display:flex;gap:12px;justify-content:center;">
-        <button onclick="window.location.href='/pricing.html'" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">Renew Plan →</button>
+        <button onclick="window.location.href='/pricing.html'" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">${cta}</button>
         <button onclick="document.getElementById('renewal-popup').remove()" style="background:none;border:1px solid rgba(255,255,255,.2);color:#94a3b8;padding:12px 20px;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
       </div>
     </div>`;
-    document.body.appendChild(el);
-  }
+  document.body.appendChild(el);
   el.style.display = 'flex';
 }
 
