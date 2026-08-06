@@ -93,7 +93,12 @@ exports.handler = async (event) => {
     name = `[TEST] ${name}`;
   }
 
-  const orderRef  = 'pm_' + order.planKey + '_' + Date.now();
+  // The buyer's id travels inside the reference, because WayForPay echoes the
+  // reference back and confirms it via CHECK_STATUS — whereas the email in the
+  // callback body is just whatever the caller typed. Without this, someone
+  // could quote a real order and name themselves as the buyer.
+  // Format: pm_<plan>_<userId>_<ts>, or pm_team_<seats>_<userId>_<ts>.
+  const orderRef  = 'pm_' + order.planKey + '_' + user.id + '_' + Date.now();
   const orderDate = Math.floor(Date.now() / 1000);
   const amountStr = String(amount);
 
