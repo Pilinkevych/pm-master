@@ -39,7 +39,11 @@
    paints the overscroll area above the header black — the strip you see when a
    scroll carries past the top. */
 html{background:var(--gray-100);color-scheme:light;}
-body{font-family:'Nunito',system-ui,sans-serif;background:var(--gray-100);min-height:100vh;color:var(--gray-900);overscroll-behavior-y:none;}
+/* clip, not hidden: hidden would make body a scroll container and break every
+   position:sticky on the page. This stops off-screen panels — the PMBOK drawer
+   parks at right:-460px — from widening the document, which was letting the
+   sticky header slide sideways and show the page edge behind it. */
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--gray-100);min-height:100vh;color:var(--gray-900);overscroll-behavior:none;overflow-x:clip;}
 
 /* HEADER */
 header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8,#2563eb);color:white;padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.2);}
@@ -467,8 +471,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .modal-btn-pdf{background:var(--green-50);color:var(--green);border:1px solid var(--green-100);padding:10px 22px;font-size:14px;}
 
 /* PMBOK drawer */
-#pmbokDrawer{position:fixed;top:0;right:-460px;width:440px;height:100vh;background:white;box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:600;display:flex;flex-direction:column;transition:right .3s ease;}
-#pmbokDrawer.open{right:0;}
+/* Parked with a transform rather than right:-460px, so the closed drawer takes
+   up no space beyond the viewport at all — and it animates on the compositor. */
+#pmbokDrawer{position:fixed;top:0;right:0;width:440px;max-width:100vw;height:100vh;background:white;box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:600;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .3s ease;will-change:transform;}
+#pmbokDrawer.open{transform:none;}
 .pd-header{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;}
 .pd-header h3{font-size:15px;font-weight:900;margin-bottom:3px;}
 .pd-header p{font-size:11px;opacity:.75;}
