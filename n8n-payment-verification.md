@@ -62,8 +62,8 @@ Specify Body: Using JSON
 JSON:   {{ JSON.stringify($json) }}
 ```
 
-The reply carries the authoritative `transactionStatus`, `amount`, `currency`
-and `email`.
+The reply carries the authoritative `transactionStatus`, `amount` and
+`currency`. It does **not** carry the buyer's email — see step 4.
 
 ### 3. Rewire `Is Approved?`
 
@@ -88,14 +88,18 @@ pm_team_<seats>_<userId>_<timestamp>
 ```
 
 WayForPay echoes that reference back and CHECK_STATUS confirms it exists, so
-the id is as trustworthy as the payment. A user id is a UUID and carries no
-underscores, which keeps the split unambiguous.
+the id is as trustworthy as the payment.
 
 **In `Parse Body`**, pull it out:
 
 ```js
-const parts = String(orderReference).split('_');
-const userId = parts[1] === 'team' ? parts[3] : parts[2];
+// Count from the end: the timestamp is last, the id second to last. Reading
+// from the front breaks on quiz_only, the one plan key with an underscore.
+const parts = orderReference.split('_');
+const userId = parts[parts.length - 2];
+const mid = parts.slice(1, parts.length - 2);
+const plan = mid[0] === 'team' ? 'team' : mid.join('_');
+const seats = mid[0] === 'team' ? (parseInt(mid[1]) || 1) : 1;
 ```
 
 **Then delete the `Get User ID` node entirely** — there is nothing left to look

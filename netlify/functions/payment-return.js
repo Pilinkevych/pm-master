@@ -37,14 +37,17 @@ exports.handler = async (event) => {
     status = body.transactionStatus || '';
     reason = body.reason || '';
 
-    // orderRef format: pm_starter_1234567890 or pm_team_5_1234567890
+    // pm_<plan>_<userId>_<ts>, or pm_team_<seats>_<userId>_<ts>. Counting from
+    // the end keeps quiz_only — the one plan key with an underscore in it —
+    // from shifting every field along by one.
     const parts = String(body.orderReference || '').split('_');
-    if (parts.length >= 3) {
-      if (parts[1] === 'team') {
-        plan = 'team_' + parts[2];
-        seats = parts[2];
+    if (parts.length >= 4 && parts[0] === 'pm') {
+      const mid = parts.slice(1, parts.length - 2);
+      if (mid[0] === 'team') {
+        plan = 'team_' + mid[1];
+        seats = mid[1];
       } else {
-        plan = parts[1];
+        plan = mid.join('_');
       }
     }
   } catch (e) {}
