@@ -414,14 +414,25 @@ function renderStats() {
 // ── USERS TABLE ───────────────────────────
 let filteredUsers = [];
 function renderUsers() {
-  // Build user list from subscriptions
+  // Start from the accounts, not from who has paid — otherwise the page called
+  // "all registered accounts" only lists customers, and everyone still on trial
+  // is invisible. Subscriptions are then hung off each account.
   const userMap = {};
+  allUsers.forEach(u => {
+    userMap[u.id] = { id: u.id, email: u.email || '—', created_at: u.created_at, sub: null };
+  });
+
   allSubs.forEach(s => {
-    if (!userMap[s.user_id]) userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
-    if (s.status === 'active' && (!userMap[s.user_id].sub || new Date(s.expires_at) > new Date(userMap[s.user_id].sub.expires_at))) {
-      userMap[s.user_id].sub = s;
+    // A subscription for an account the RPC did not return still deserves a row.
+    if (!userMap[s.user_id]) {
+      userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
+    }
+    const known = userMap[s.user_id];
+    if (s.status === 'active' && (!known.sub || new Date(s.expires_at) > new Date(known.sub.expires_at))) {
+      known.sub = s;
     }
   });
+
   filteredUsers = Object.values(userMap);
   document.getElementById('users-count').textContent = filteredUsers.length + ' юзерів';
   renderUsersTable(filteredUsers);
