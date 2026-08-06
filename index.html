@@ -1921,6 +1921,23 @@ function buildDocsGrid() {
 // ══════════════════════════════════════════
 // DOCUMENT MODAL
 // ══════════════════════════════════════════
+// The model returns a whole HTML document often enough — <style> included —
+// and dropping that into innerHTML makes its rules global: one generated
+// document was setting `body { margin: 40px }`, which pushed the whole page
+// away from the window edges. Keep the markup, drop anything page-wide.
+function sanitizeDocHTML(html) {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(String(html), 'text/html');
+  doc.querySelectorAll('style,script,link,meta,title,base').forEach(el => el.remove());
+  // Inline handlers would survive the tag sweep; they have no business here.
+  doc.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(a => {
+      if (/^on/i.test(a.name)) el.removeAttribute(a.name);
+    });
+  });
+  return doc.body.innerHTML;
+}
+
 function openDoc(key, mode) {
   currentDocKey = key;
   const doc = DOCS.find(d => d.key === key);
@@ -1938,7 +1955,7 @@ function openDoc(key, mode) {
         <button onclick="copyDocContent('${key}')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📋 Copy</button>
         <button onclick="exportDocPDF('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:13px;">📥 Export PDF</button>
       </div>
-      <div class="generated-doc-content" style="font-size:14px;line-height:1.7;color:#1e293b;">${project.docContent[key]}</div>`;
+      <div class="generated-doc-content" style="font-size:14px;line-height:1.7;color:#1e293b;">${sanitizeDocHTML(project.docContent[key])}</div>`;
   } else {
     document.getElementById('modal-body').innerHTML = (hasContent ? `<div style="margin-bottom:12px;"><button onclick="openDoc('${key}','generated')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#2563eb;cursor:pointer;font-size:13px;">✨ View Generated Document</button></div>` : '') + buildDocForm(key);
   }
@@ -2186,7 +2203,7 @@ function generateDoc(key) {
     if (!data.success) throw new Error('Generation failed');
     project.docStatus[key] = 'done';
     project.docContent = project.docContent || {};
-    project.docContent[key] = data.content;
+    project.docContent[key] = sanitizeDocHTML(data.content);
     updateStats();
     buildDocsGrid();
     saveCurrentProject(true);
@@ -2227,7 +2244,7 @@ async function generateInitiationDocs() {
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
-        project.docContent[key] = data.content;
+        project.docContent[key] = sanitizeDocHTML(data.content);
         succeeded++;
         buildDocsGrid();
       } else if (!data.success && data.error) {
@@ -2284,7 +2301,7 @@ async function generateAllDocs() {
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
-        project.docContent[key] = data.content;
+        project.docContent[key] = sanitizeDocHTML(data.content);
         buildDocsGrid();
       } else if (!data.success && data.error) {
         console.error('[PM Master] Doc generation error for', key, ':', data.error);
@@ -2332,7 +2349,7 @@ function editDocContent(key) {
     </div>
     <div id="doc-edit-area" contenteditable="true" spellcheck="true"
       style="min-height:420px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;overflow-y:auto;font-size:14px;line-height:1.7;color:#1e293b;"
-    >${content}</div>`;
+    >${sanitizeDocHTML(content)}</div>`;
   const area = document.getElementById('doc-edit-area');
   area.focus();
   area.addEventListener('mouseup', _updateTableToolbar);
@@ -2513,7 +2530,7 @@ function exportDocPDF(key) {
   const dateStr = today.toLocaleDateString('uk-UA');
 
   // Pre-process: strip all background/color inline styles before parsing HTML
-  const cleanContent = content.replace(/\bbackground(-color|-image)?\s*:[^;'"]+;?/gi, '')
+  const cleanContent = sanitizeDocHTML(content).replace(/\bbackground(-color|-image)?\s*:[^;'"]+;?/gi, '')
                               .replace(/\bcolor\s*:\s*(white|#fff(?:fff)?|rgba?\(255,\s*255,\s*255[^)]*\))[^;]*;?/gi, '');
 
   const wrapper = document.createElement('div');
