@@ -1111,6 +1111,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <div style="display:flex;gap:10px;">
       <button class="btn-quiz-check" id="btn-check" onclick="checkAnswer()" style="display:none;">✓ Check</button>
       <button class="btn-quiz-next" id="btn-next" onclick="nextQuestion()" style="display:none;">Next →</button>
+      <!-- Only appears if more questions cannot be loaded, so the session can
+           still end in a score instead of a dead end. -->
+      <button class="btn-quiz-next" id="btn-finish-early" onclick="finishQuiz()" style="display:none;background:linear-gradient(135deg,#059669,#047857);">See Results</button>
     </div>
   </div>
 </div>
@@ -2663,9 +2666,15 @@ async function prefetchNextBatch() {
     else quizState.done = true;
   } catch(e) {
     quizState.prefetching = false;
-    // retry after 3s on failure so the chain never silently breaks
-    if (quizState.questions.length < (quizState.totalTarget || quizState.count)) {
+    console.error('[PM Master] quiz prefetch failed:', e);
+    // Retry, but not forever: an endless 3s loop against a broken workflow left
+    // the Next button disabled with no way out and no explanation.
+    quizState.prefetchFails = (quizState.prefetchFails || 0) + 1;
+    if (quizState.prefetchFails < 3 &&
+        quizState.questions.length < (quizState.totalTarget || quizState.count)) {
       setTimeout(prefetchNextBatch, 3000);
+    } else {
+      quizState.prefetchFailed = true;
     }
   }
 }
@@ -2688,6 +2697,7 @@ async function startQuiz() {
     </div>`;
   document.getElementById('btn-check').style.display = 'none';
   document.getElementById('btn-next').style.display  = 'none';
+  { const fe = document.getElementById('btn-finish-early'); if (fe) fe.style.display = 'none'; }
   document.getElementById('qs-timer').style.display  = 'none';
 
   try {
@@ -2769,6 +2779,7 @@ function renderQuestion() {
   quizState.answered = false;
   document.getElementById('btn-check').style.display = 'block';
   document.getElementById('btn-next').style.display  = 'none';
+  { const fe = document.getElementById('btn-finish-early'); if (fe) fe.style.display = 'none'; }
   document.getElementById('qs-footer-left').textContent = '';
 }
 
@@ -2849,14 +2860,30 @@ function nextQuestion() {
   if (quizState.current >= loaded) {
     if (quizState.current >= target) { finishQuiz(); return; }
     // Not done yet — show loading hint and wait for prefetch
-    if (!quizState.prefetching) prefetchNextBatch();
-    document.getElementById('btn-next').disabled = true;
-    document.getElementById('btn-next').textContent = '⏳ Loading...';
+    if (!quizState.prefetching) { quizState.prefetchFails = 0; quizState.prefetchFailed = false; prefetchNextBatch(); }
+    const btn = document.getElementById('btn-next');
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading...';
+
+    // Give up after 30s rather than spin forever behind a dead button: hand the
+    // question back so they can retry, and let them stop with what they have.
+    const startedAt = Date.now();
     quizState._waitInterval = setInterval(() => {
       if (quizState.questions.length > quizState.current) {
         clearInterval(quizState._waitInterval);
         quizState._waitInterval = null;
         renderQuestion();
+        return;
+      }
+      if (quizState.prefetchFailed || Date.now() - startedAt > 30000) {
+        clearInterval(quizState._waitInterval);
+        quizState._waitInterval = null;
+        quizState.current--;              // stay on the question they finished
+        btn.disabled = false;
+        btn.textContent = 'Next →';
+        pmToast('Could not load more questions. Tap Next to retry, or finish now.', 'error');
+        const finish = document.getElementById('btn-finish-early');
+        if (finish) finish.style.display = 'inline-block';
       }
     }, 300);
     return;
