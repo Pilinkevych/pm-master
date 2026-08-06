@@ -358,11 +358,27 @@ async function loadAll() {
 }
 
 async function loadUsers() {
-  try { const { data } = await sb.rpc('admin_get_users'); allUsers = data || []; } catch { allUsers = []; }
+  // Errors used to be swallowed here, so a failing RPC looked exactly like an
+  // empty platform — three accounts showed up as one.
+  const { data, error } = await sb.rpc('admin_get_users');
+  if (error) {
+    console.error('[PM Admin] admin_get_users failed:', error);
+    showToast('❌ Не вдалось завантажити користувачів: ' + error.message, true);
+    allUsers = [];
+    return;
+  }
+  allUsers = data || [];
 }
 
 async function loadSubs() {
-  try { const { data } = await sb.rpc('admin_get_subscriptions'); allSubs = data || []; } catch { allSubs = []; }
+  const { data, error } = await sb.rpc('admin_get_subscriptions');
+  if (error) {
+    console.error('[PM Admin] admin_get_subscriptions failed:', error);
+    showToast('❌ Не вдалось завантажити підписки: ' + error.message, true);
+    allSubs = [];
+    return;
+  }
+  allSubs = data || [];
 }
 
 // ── STATS ─────────────────────────────────
@@ -375,9 +391,11 @@ function renderStats() {
     .filter(s => (s.currency || 'USD') === 'USD')
     .reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
 
-  // Get unique users from subs
+  // Registered accounts, not paying ones — counting subscription owners hid
+  // everyone who signed up and never bought anything, which is most of them.
   const subUserIds = new Set(allSubs.map(s => s.user_id));
-  document.getElementById('stat-total').textContent = subUserIds.size || allUsers.length || '—';
+  document.getElementById('stat-total').textContent =
+    allUsers.length || subUserIds.size || '—';
   document.getElementById('stat-active').textContent = active.length;
   document.getElementById('stat-mrr').textContent = '$' + mrr;
   document.getElementById('stat-expired').textContent = expired.length;
