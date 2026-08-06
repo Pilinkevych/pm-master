@@ -369,7 +369,11 @@ async function loadSubs() {
 function renderStats() {
   const active = allSubs.filter(s => s.status === 'active');
   const expired = allSubs.filter(s => s.status === 'expired');
-  const mrr = active.reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
+  // Priced from the plan, so a 1 UAH rehearsal would otherwise be counted as a
+  // full month's revenue. Only what was actually billed in USD belongs here.
+  const mrr = active
+    .filter(s => (s.currency || 'USD') === 'USD')
+    .reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
 
   // Get unique users from subs
   const subUserIds = new Set(allSubs.map(s => s.user_id));
@@ -443,7 +447,7 @@ function renderSubsTable(list) {
       <td class="td-email">${s.email || '—'}</td>
       <td>${planLabel(s.plan)}</td>
       <td>${badge}</td>
-      <td>$${s.amount || '—'}</td>
+      <td>${s.amount ? (s.currency === 'UAH' ? s.amount + ' ₴' : '$' + s.amount) : '—'}</td>
       <td>${fmtDate(s.activated_at)}</td>
       <td>${fmtDate(s.expires_at)}</td>
       <td style="font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${s.order_reference || '—'}</td>
