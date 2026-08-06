@@ -1,21 +1,19 @@
-// WayForPay POSTs the outcome here after the payment page closes. Treat it as a
-// hint for what to show, not as proof: the authoritative record is the row n8n
-// writes from the serviceUrl callback, which the page polls for.
-const DECLINED = new Set([
-  'Declined', 'Expired', 'Refunded', 'Voided', 'RefundInProcessing',
-]);
+const crypto = require('crypto');
 
+const MERCHANT_ACCOUNT = process.env.WAYFORPAY_MERCHANT || 'pm_master_club';
+const MERCHANT_SECRET  = process.env.WAYFORPAY_SECRET || '';
+
+// WayForPay POSTs here after the payment page closes, but the body is not
+// dependable — a refusal often arrives with no transactionStatus at all, which
+// made every decline look like a success. So we ask them directly instead.
 function readBody(raw) {
   if (!raw) return {};
-  // The body arrives form-encoded most of the time and as JSON some of the
-  // time; which one is not worth guessing, so accept either.
   const trimmed = raw.trim();
   if (trimmed.startsWith('{')) {
     try { return JSON.parse(trimmed); } catch (e) { /* fall through */ }
   }
-  const params = new URLSearchParams(raw);
   const out = {};
-  for (const [k, v] of params) out[k] = v;
+  for (const [k, v] of new URLSearchParams(raw)) out[k] = v;
   // A JSON payload posted without a content type lands here as a single key.
   if (Object.keys(out).length === 1) {
     const only = Object.keys(out)[0];
@@ -26,37 +24,64 @@ function readBody(raw) {
   return out;
 }
 
-exports.handler = async (event) => {
-  let plan = '';
-  let seats = '1';
-  let status = '';
-  let reason = '';
+async function checkStatus(orderReference) {
+  if (!MERCHANT_SECRET || !orderReference) return null;
+  // CHECK_STATUS signs these two fields only, in this order.
+  const signature = crypto
+    .createHmac('md5', MERCHANT_SECRET)
+    .update([MERCHANT_ACCOUNT, orderReference].join(';'))
+    .digest('hex');
 
   try {
-    const body = readBody(event.body);
-    status = body.transactionStatus || '';
-    reason = body.reason || '';
+    const res = await fetch('https://api.wayforpay.com/api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiVersion: 1,
+        transactionType: 'CHECK_STATUS',
+        merchantAccount: MERCHANT_ACCOUNT,
+        orderReference,
+        merchantSignature: signature,
+      }),
+    });
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
 
-    // pm_<plan>_<userId>_<ts>, or pm_team_<seats>_<userId>_<ts>. Counting from
-    // the end keeps quiz_only — the one plan key with an underscore in it —
-    // from shifting every field along by one.
-    const parts = String(body.orderReference || '').split('_');
-    if (parts.length >= 4 && parts[0] === 'pm') {
-      const mid = parts.slice(1, parts.length - 2);
-      if (mid[0] === 'team') {
-        plan = 'team_' + mid[1];
-        seats = mid[1];
-      } else {
-        plan = mid.join('_');
-      }
+exports.handler = async (event) => {
+  const body = readBody(event.body);
+  const orderReference = String(body.orderReference || '');
+
+  let plan = '';
+  let seats = '1';
+
+  // pm_<plan>_<userId>_<ts>, or pm_team_<seats>_<userId>_<ts>. Counting from
+  // the end keeps quiz_only — the one plan key with an underscore in it —
+  // from shifting every field along by one.
+  const parts = orderReference.split('_');
+  if (parts.length >= 4 && parts[0] === 'pm') {
+    const mid = parts.slice(1, parts.length - 2);
+    if (mid[0] === 'team') {
+      plan = 'team_' + mid[1];
+      seats = mid[1];
+    } else {
+      plan = mid.join('_');
     }
-  } catch (e) {}
+  }
 
-  // Only an explicit refusal counts as failure. A missing or unfamiliar status
-  // means "ask the database" — better a moment of waiting than telling someone
-  // their successful payment failed.
-  const location = DECLINED.has(status)
-    ? `/?payment=failed&reason=${encodeURIComponent(reason || status)}`
+  const status = await checkStatus(orderReference);
+  const wfpStatus = status && status.transactionStatus;
+
+  // Approved and InProcessing are on their way to becoming a subscription, and
+  // the page polls for the row. Anything else WayForPay names — Declined,
+  // Refunded, Expired — is told to the buyer as it is. When the lookup itself
+  // fails we fall through to polling rather than guess either way.
+  const refused = wfpStatus && wfpStatus !== 'Approved' && wfpStatus !== 'InProcessing' && wfpStatus !== 'Pending';
+
+  const location = refused
+    ? `/?payment=failed&reason=${encodeURIComponent(status.reason || wfpStatus)}`
     : `/?payment=success&plan=${encodeURIComponent(plan)}&seats=${encodeURIComponent(seats)}`;
 
   return { statusCode: 302, headers: { Location: location }, body: '' };
