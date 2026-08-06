@@ -2444,8 +2444,17 @@ function exportDocPDF(key) {
   const content = project.docContent && project.docContent[key];
   if (!content) { pmAlert('No content to export yet. Generate the document first.', '📄'); return; }
 
-  const filename = (doc?.name || key).replace(/[^a-zA-Z0-9а-яА-ЯїЇіІєЄ\s]/g, '').trim().replace(/\s+/g, '_') + '.pdf';
-  const dateStr = new Date().toLocaleDateString('uk-UA');
+  // Project and date in the name: without them every download is
+  // "Stakeholder_Register.pdf" and the browser starts numbering them (12), (13),
+  // which says nothing about which project or when.
+  const clean = s => String(s || '').replace(/[^a-zA-Z0-9а-яА-ЯїЇіІєЄ\s-]/g, '').trim().replace(/\s+/g, '-');
+  const today = new Date();
+  const iso = today.getFullYear() + '-' +
+    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+    String(today.getDate()).padStart(2, '0');
+  const parts = [clean(project.name), clean(doc?.name || key), iso].filter(Boolean);
+  const filename = parts.join('_') + '.pdf';
+  const dateStr = today.toLocaleDateString('uk-UA');
 
   // Pre-process: strip all background/color inline styles before parsing HTML
   const cleanContent = content.replace(/\bbackground(-color|-image)?\s*:[^;'"]+;?/gi, '')
