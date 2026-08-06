@@ -1136,7 +1136,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <div class="dash-header-actions">
       <button class="btn btn-secondary" style="font-size:13px;padding:9px 16px;" onclick="openUploadUpdate()">📎 <span data-i18n="dash.updateBtn">Update from Document</span></button>
       <button class="btn btn-ai" style="font-size:13px;padding:9px 16px;" onclick="generateJira()">🔗 <span data-i18n="dash.jiraBtn">Generate Jira Tasks</span></button>
-      <div id="autosave-indicator" style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap;display:none;"></div>
+      <!-- Width is reserved for the longest state ("Autosaved · date, time"), or
+           the row of buttons beside it shifts every time the text changes. -->
+      <div id="autosave-indicator" style="font-size:12px;color:#64748b;font-weight:600;white-space:nowrap;min-width:230px;visibility:hidden;"></div>
     </div>
   </div>
 
@@ -2503,6 +2505,9 @@ function exportDocPDF(key) {
   };
 
   const btn = event?.target;
+  // The card button says "PDF" and the modal one "Export PDF", so restore what
+  // was there rather than stamping one label onto both.
+  const btnLabel = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating...'; }
 
   html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
@@ -2532,9 +2537,9 @@ function exportDocPDF(key) {
       pdf.text((doc?.name || key) + ' · ' + dateStr, 12, H - FOOTER_MM + 4);
     }
   }).save().then(() => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = btnLabel; }
   }).catch(err => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '📥 Export PDF'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = btnLabel; }
     console.error('[PM Master] PDF export failed:', err); pmToast('PDF export failed. Please try again.', 'error');
   });
 }
@@ -5742,22 +5747,32 @@ function updateAutosaveIndicator(status) {
   if (status === 'saving') {
     el.innerHTML = '⏳ Saving...';
     el.style.color = '#94a3b8';
-    el.style.display = 'block';
+    el.style.visibility = 'visible';
   } else if (status === 'saved') {
     el.innerHTML = `✅ Autosaved · ${formatAutosaveTime()}`;
     el.style.color = '#059669';
-    el.style.display = 'block';
+    el.style.visibility = 'visible';
   } else if (status === 'error') {
     el.innerHTML = '⚠️ Save failed';
     el.style.color = '#dc2626';
-    el.style.display = 'block';
+    el.style.visibility = 'visible';
   }
 }
 
 var _autosaveTimer = null;
+var _projectDirty = false;
+
+// Every save used to schedule the next one, so an idle tab rewrote the project
+// and every document to the database twice a minute, for as long as it stayed
+// open. Now the timer keeps ticking but only writes when something changed.
+document.addEventListener('input', () => { _projectDirty = true; }, true);
+
 function scheduleAutosave() {
   clearTimeout(_autosaveTimer);
-  _autosaveTimer = setTimeout(() => saveCurrentProject(true), 30000);
+  _autosaveTimer = setTimeout(() => {
+    if (_projectDirty) saveCurrentProject(true);
+    else scheduleAutosave();
+  }, 30000);
 }
 
 async function saveCurrentProject(silent) {
@@ -5799,6 +5814,7 @@ async function saveCurrentProject(silent) {
     }, { onConflict: 'project_id,doc_type,version' });
   }
 
+  _projectDirty = false;
   updateAutosaveIndicator('saved');
   scheduleAutosave();
 }
