@@ -70,6 +70,9 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
    Below that it has to fold, and the email in the account button has to be
    allowed to truncate rather than push everything sideways. */
 .btn-login{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* The account menu hangs off this wrapper, not off the button — the button
+   clips its own overflow to truncate the email, and would clip the menu too. */
+.auth-wrap{position:relative;display:inline-flex;min-width:0;}
 
 @media(max-width:1100px){
   header{flex-wrap:wrap;padding:12px 18px;gap:10px;}
@@ -653,7 +656,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
         <option value="ko">🇰🇷 한국어</option>
         <option value="hi">🇮🇳 हिन्दी</option>
       </select>
-      <button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button>
+      <span class="auth-wrap"><button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button></span>
     </div>
   </div>
 </header>
@@ -5738,7 +5741,7 @@ function openUserMenu() {
   if (existing) { existing.remove(); return; }
 
   const btn = document.getElementById('btn-auth');
-  btn.style.position = 'relative';
+  const wrap = btn.parentElement;
 
   const menu = document.createElement('div');
   menu.id = 'user-dropdown';
@@ -5754,10 +5757,10 @@ function openUserMenu() {
     <div class="user-dropdown-divider"></div>
     <div class="user-dropdown-item danger" onclick="signOutUser()">← Sign Out</div>
   `;
-  btn.appendChild(menu);
+  wrap.appendChild(menu);
 
   setTimeout(() => document.addEventListener('click', function handler(e) {
-    if (!menu.contains(e.target) && e.target !== btn) { menu.remove(); document.removeEventListener('click', handler); }
+    if (!menu.contains(e.target) && !btn.contains(e.target)) { menu.remove(); document.removeEventListener('click', handler); }
   }), 0);
 }
 
