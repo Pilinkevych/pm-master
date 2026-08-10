@@ -262,6 +262,7 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
             <div class="nl-progress" id="nlProgress">
               <div class="nl-progress-bar-wrap"><div class="nl-progress-bar" id="nlProgressBar" style="width:0%"></div></div>
               <div class="nl-progress-text" id="nlProgressText">0 / 0</div>
+              <div class="modal-warn" id="nlErrors" style="display:none;margin-top:12px;margin-bottom:0;"></div>
             </div>
             <button class="nl-send-btn" id="nlSendBtn" onclick="sendNewsletter()">📤 Надіслати розсилку</button>
           </div>
@@ -810,7 +811,9 @@ function filterRecipients() {
 
   if (filter === 'all') nlUsers = allWithEmail;
   else if (filter === 'active') nlUsers = allWithEmail.filter(u => subUserIds.has(u.id));
-  else if (filter === 'expired') nlUsers = allWithEmail.filter(u => expiredUserIds.has(u.id));
+  // Someone who let one plan lapse and bought another is a current customer.
+  // Telling them their subscription has expired is a good way to lose them.
+  else if (filter === 'expired') nlUsers = allWithEmail.filter(u => expiredUserIds.has(u.id) && !subUserIds.has(u.id));
   else if (filter === 'nosub') nlUsers = allWithEmail.filter(u => !allSubUserIds.has(u.id));
 
   document.getElementById('nlCountNum').textContent = nlUsers.length;
@@ -843,7 +846,14 @@ async function sendNewsletter() {
   btn.textContent = '⏳ Надсилаємо...';
   progress.style.display = 'block';
 
+  const errBox = document.getElementById('nlErrors');
+  errBox.style.display = 'none';
+  errBox.textContent = '';
+
   let sent = 0, failed = 0;
+  // A failed send used to be nothing but a number, even though the function
+  // already forwards whatever Brevo said about it.
+  const errors = [];
   const total = nlUsers.length;
   const BATCH = 10;
   const DELAY = 3000; // 3s between batches → ~200/min, safe for Brevo
@@ -873,8 +883,20 @@ async function sendNewsletter() {
           },
           body: JSON.stringify({ to: user.email, subject, htmlContent })
         });
-        if (res.ok) sent++; else failed++;
-      } catch { failed++; }
+        if (res.ok) { sent++; return; }
+        failed++;
+        let detail = 'HTTP ' + res.status;
+        try {
+          const j = JSON.parse(await res.text());
+          if (j.error) detail = typeof j.error === 'string' ? j.error : JSON.stringify(j.error);
+        } catch { /* not JSON — the status is all there is */ }
+        console.error('[PM Admin] newsletter →', user.email, res.status, detail);
+        errors.push(`${user.email} — ${detail}`);
+      } catch (e) {
+        failed++;
+        console.error('[PM Admin] newsletter →', user.email, e.message);
+        errors.push(`${user.email} — ${e.message}`);
+      }
     }));
 
     // Update progress
@@ -888,6 +910,13 @@ async function sendNewsletter() {
 
   btn.disabled = false;
   btn.textContent = '📤 Надіслати розсилку';
+
+  if (errors.length) {
+    errBox.innerHTML = '<b>Не надіслано:</b><br>' +
+      errors.slice(0, 5).map(e => e.replace(/[<>]/g, '')).join('<br>') +
+      (errors.length > 5 ? `<br>…і ще ${errors.length - 5}` : '');
+    errBox.style.display = 'block';
+  }
 
   // Save to history
   const record = { subject, sent, failed, date: new Date().toISOString(), filter: document.getElementById('nlFilter').value };
