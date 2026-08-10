@@ -112,6 +112,11 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
 .modal-label{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
 .modal-input,.modal-select{width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;font-size:13px;color:#f1f5f9;font-family:'Inter',sans-serif;outline:none;}
 .modal-select option{background:#1e293b;}
+.modal-check{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:#94a3b8;cursor:pointer;}
+.modal-check input{width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;}
+.modal-input:disabled{opacity:.4;cursor:not-allowed;}
+.badge-comp{background:rgba(124,58,237,.18);color:#a78bfa;}
+.btn-comp:hover{border-color:#a78bfa;color:#c4b5fd;}
 .modal-actions{display:flex;gap:10px;margin-top:20px;}
 .btn-save{flex:1;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;}
 .btn-cancel{background:none;border:1px solid rgba(255,255,255,.15);color:#64748b;padding:11px 16px;border-radius:10px;font-size:13px;cursor:pointer;}
@@ -187,7 +192,7 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
         <div class="plan-card"><div class="plan-name">Quiz Only</div><div class="plan-count" id="pc-quiz">—</div><div class="plan-rev">$5/мiс</div></div>
         <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-count" id="pc-starter">—</div><div class="plan-rev">$9/мiс</div></div>
         <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-count" id="pc-pro">—</div><div class="plan-rev">$19/мiс</div></div>
-        <div class="plan-card"><div class="plan-name">Unlimited</div><div class="plan-count" id="pc-unlimited">—</div><div class="plan-rev">$29/мiс</div></div>
+        <div class="plan-card"><div class="plan-name">Unlimited</div><div class="plan-count" id="pc-unlimited">—</div><div class="plan-rev" id="pc-unlimited-rev">$29/мiс</div></div>
       </div>
     </div>
 
@@ -298,6 +303,10 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
     <div class="modal-field">
       <label class="modal-label">Дійсна до</label>
       <input class="modal-input" type="date" id="editExpires">
+      <label class="modal-check">
+        <input type="checkbox" id="editForever" onchange="toggleForever()">
+        ♾️ Безстроково — доступ не закінчується
+      </label>
     </div>
     <div class="modal-actions">
       <button class="btn-save" onclick="saveUserSub()">💾 Зберегти</button>
@@ -386,9 +395,11 @@ function renderStats() {
   const active = allSubs.filter(s => s.status === 'active');
   const expired = allSubs.filter(s => s.status === 'expired');
   // Priced from the plan, so a 1 UAH rehearsal would otherwise be counted as a
-  // full month's revenue. Only what was actually billed in USD belongs here.
+  // full month's revenue. Only what was actually billed in USD belongs here —
+  // and a comped account was billed nothing at all.
   const mrr = active
     .filter(s => (s.currency || 'USD') === 'USD')
+    .filter(s => !isComped(s))
     .reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
 
   // Registered accounts, not paying ones — counting subscription owners hid
@@ -406,6 +417,11 @@ function renderStats() {
     const count = active.filter(s => s.plan === p).length;
     document.getElementById('pc-' + ids[i]).textContent = count;
   });
+  // Say how many of the Unlimited seats were given away, so the count is not
+  // mistaken for demand.
+  const comped = active.filter(isComped).length;
+  document.getElementById('pc-unlimited-rev').textContent =
+    comped ? '$29/мiс · ' + comped + ' ♾️' : '$29/мiс';
   // Trial = users without any subscription
   const paidUsers = new Set(allSubs.map(s => s.user_id));
   document.getElementById('pc-trial').textContent = Math.max(0, (subUserIds.size || allUsers.length) - paidUsers.size);
@@ -428,7 +444,7 @@ function renderUsers() {
       userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
     }
     const known = userMap[s.user_id];
-    if (s.status === 'active' && (!known.sub || new Date(s.expires_at) > new Date(known.sub.expires_at))) {
+    if (s.status === 'active' && (!known.sub || expiryRank(s) > expiryRank(known.sub))) {
       known.sub = s;
     }
   });
@@ -443,15 +459,25 @@ function renderUsersTable(list) {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
     const sub = u.sub;
-    const badge = sub ? `<span class="badge badge-active">✦ ${planLabel(sub.plan)}</span>` : `<span class="badge badge-trial">🆓 Trial</span>`;
-    const expires = sub ? fmtDate(sub.expires_at) : '—';
+    const badge = sub
+      ? `<span class="badge ${isComped(sub) ? 'badge-comp' : 'badge-active'}">${isComped(sub) ? '♾️' : '✦'} ${planLabel(sub.plan)}</span>`
+      : `<span class="badge badge-trial">🆓 Trial</span>`;
+    const expires = expiryLabel(sub);
     const reg = fmtDate(u.created_at);
+    // The onclick attribute is double-quoted, so the JS string literal inside it
+    // has to arrive as entities or it closes the attribute early.
+    const emailArg = JSON.stringify(u.email).replace(/"/g, '&quot;');
     return `<tr>
       <td class="td-email">${u.email}</td>
       <td>${reg}</td>
       <td>${badge}</td>
       <td>${expires}</td>
-      <td><button class="btn-action" onclick="openEditUser('${u.id}','${u.email}')">✏️ Редагувати</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn-action" onclick="openEditUser('${u.id}',${emailArg})">✏️ Редагувати</button>
+        ${sub && isComped(sub)
+          ? `<button class="btn-action btn-comp" onclick="revokeUnlimited('${u.id}',${emailArg})" title="Забрати безстроковий доступ">✖ Забрати ♾️</button>`
+          : `<button class="btn-action btn-comp" onclick="grantUnlimited('${u.id}',${emailArg})" title="Безстроковий Unlimited">♾️ Безліміт</button>`}
+      </td>
     </tr>`;
   }).join('');
 }
@@ -471,14 +497,18 @@ function renderSubsTable(list) {
   const tbody = document.getElementById('subs-tbody');
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
   tbody.innerHTML = list.map(s => {
-    const badge = s.status === 'active' ? `<span class="badge badge-active">active</span>` : `<span class="badge badge-expired">expired</span>`;
+    const badge = s.status !== 'active'
+      ? `<span class="badge badge-expired">expired</span>`
+      : isComped(s)
+        ? `<span class="badge badge-comp">♾️ comp</span>`
+        : `<span class="badge badge-active">active</span>`;
     return `<tr>
       <td class="td-email">${s.email || '—'}</td>
       <td>${planLabel(s.plan)}</td>
       <td>${badge}</td>
       <td>${s.amount ? (s.currency === 'UAH' ? s.amount + ' ₴' : '$' + s.amount) : '—'}</td>
       <td>${fmtDate(s.activated_at)}</td>
-      <td>${fmtDate(s.expires_at)}</td>
+      <td>${expiryLabel(s)}</td>
       <td style="font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${s.order_reference || '—'}</td>
     </tr>`;
   }).join('');
@@ -497,6 +527,8 @@ function openEditUser(userId, email) {
   document.getElementById('editPlan').value = sub?.plan || '';
   document.getElementById('editStatus').value = sub?.status || 'active';
   document.getElementById('editExpires').value = sub?.expires_at ? sub.expires_at.slice(0,10) : '';
+  document.getElementById('editForever').checked = !!sub && isComped(sub);
+  toggleForever();
   // Remembered so the save knows which row to update — the status field itself
   // is editable, so it cannot be used to find the row afterwards.
   document.getElementById('editOrigStatus').value = sub ? sub.status : '';
@@ -504,38 +536,103 @@ function openEditUser(userId, email) {
 }
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
 
+// A date and "never expires" are mutually exclusive; greying the field out says
+// so before the save has to explain it.
+function toggleForever() {
+  const forever = document.getElementById('editForever').checked;
+  const date = document.getElementById('editExpires');
+  date.disabled = forever;
+  if (forever) date.value = '';
+}
+
 async function saveUserSub() {
   const userId = document.getElementById('editUserId').value;
   const plan = document.getElementById('editPlan').value;
   const status = document.getElementById('editStatus').value;
   const expires = document.getElementById('editExpires').value;
+  const forever = document.getElementById('editForever').checked;
   if (!plan) { showToast('⚠️ Оберіть план', true); return; }
+  // An empty date used to mean "no expiry recorded". It now means "never
+  // expires", so leaving it blank by accident would hand out a free account.
+  if (!forever && !expires) {
+    showToast('⚠️ Вкажіть дату або позначте «безстроково»', true);
+    return;
+  }
 
   const row = {
     user_id: userId, plan, status,
-    expires_at: expires ? new Date(expires).toISOString() : null,
+    expires_at: forever ? null : new Date(expires).toISOString(),
     activated_at: new Date().toISOString(),
-    amount: PLAN_PRICE[plan] || 0,
+    // Nothing was charged for a comped account, and the subscriptions table is
+    // what the revenue figures are read from.
+    amount: forever ? 0 : (PLAN_PRICE[plan] || 0),
     currency: 'USD'
   };
 
-  // Not an upsert: ON CONFLICT needs a unique index on (user_id, status), and
-  // adding one would forbid a second expired subscription per user — which is
-  // exactly what happens to anyone who renews twice.
   const origStatus = document.getElementById('editOrigStatus').value;
-  const { error } = origStatus
-    ? await sb.from('subscriptions').update(row)
-        .eq('user_id', userId).eq('status', origStatus)
-    : await sb.from('subscriptions').insert(
-        Object.assign({ order_reference: 'admin_manual_' + Date.now() }, row));
+  const { error } = await writeSub(userId, row, origStatus, forever);
 
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
   showToast('✅ Збережено!');
   closeModal();
+  await refreshAll();
+}
+
+// Not an upsert: ON CONFLICT needs a unique index on (user_id, status), and
+// adding one would forbid a second expired subscription per user — which is
+// exactly what happens to anyone who renews twice.
+function writeSub(userId, row, origStatus, forever) {
+  if (origStatus) {
+    return sb.from('subscriptions').update(row)
+      .eq('user_id', userId).eq('status', origStatus);
+  }
+  const prefix = forever ? 'admin_comp_' : 'admin_manual_';
+  return sb.from('subscriptions').insert(
+    Object.assign({ order_reference: prefix + Date.now() }, row));
+}
+
+async function refreshAll() {
   await loadSubs();
   renderSubs();
   renderUsers();
   renderStats();
+}
+
+// ── COMPED ACCOUNTS ───────────────────────
+// The whole point is that it takes one click: testers get handed an account
+// that behaves exactly like a paid Unlimited one and never runs out.
+async function grantUnlimited(userId, email) {
+  const existing = allSubs.find(s => s.user_id === userId && s.status === 'active');
+  // Granting over a live subscription rewrites that row — including what was
+  // paid for it. Worth saying out loud rather than discovering in the table.
+  const warning = existing
+    ? `\n\n⚠️ У цього юзера вже є активна підписка (${planLabel(existing.plan)}). Її запис буде перезаписано — сума й дата оплати зникнуть.`
+    : '';
+  if (!confirm(`Видати ${email} безстроковий Unlimited?\n\nДоступ не матиме дати закінчення, і в дохід це не зарахується.${warning}`)) return;
+
+  const { error } = await writeSub(userId, {
+    user_id: userId, plan: 'unlimited', status: 'active',
+    expires_at: null,
+    activated_at: new Date().toISOString(),
+    amount: 0, currency: 'USD'
+  }, existing ? 'active' : '', true);
+
+  if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
+  showToast('♾️ Безстроковий Unlimited видано');
+  await refreshAll();
+}
+
+// Expiring it rather than deleting keeps the record of what was given out.
+async function revokeUnlimited(userId, email) {
+  if (!confirm(`Забрати безстроковий доступ у ${email}?`)) return;
+
+  const { error } = await sb.from('subscriptions')
+    .update({ status: 'expired', expires_at: new Date().toISOString() })
+    .eq('user_id', userId).eq('status', 'active').is('expires_at', null);
+
+  if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
+  showToast('✖ Безстроковий доступ забрано');
+  await refreshAll();
 }
 
 // ── NEWSLETTER ────────────────────────────
@@ -671,6 +768,22 @@ function planLabel(p) {
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('uk-UA', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+// On an active subscription a missing expiry date is not missing data — it is a
+// comped account that never runs out. Anything that prints or compares an
+// expiry has to say so, or `new Date(null)` quietly makes it 1970.
+function expiryLabel(sub) {
+  if (!sub) return '—';
+  if (sub.status === 'active' && !sub.expires_at) return '♾️ ∞';
+  return fmtDate(sub.expires_at);
+}
+function expiryRank(sub) {
+  if (sub.status === 'active' && !sub.expires_at) return Infinity;
+  return sub.expires_at ? new Date(sub.expires_at).getTime() : -Infinity;
+}
+function isComped(sub) {
+  return sub.status === 'active' && !sub.expires_at;
 }
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');

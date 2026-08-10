@@ -5438,16 +5438,25 @@ async function loadSubscription(userId) {
 
   try {
     // Check active first
+    // nullsFirst because a comped account carries no expiry date, and that row
+    // outranks any dated one — it is the subscription that never runs out.
     const { data: active } = await sb.from('subscriptions')
       .select('plan, seats, expires_at, status')
       .eq('user_id', userId).eq('status', 'active')
-      .order('expires_at', { ascending: false }).limit(1).maybeSingle();
+      .order('expires_at', { ascending: false, nullsFirst: true }).limit(1).maybeSingle();
 
     if (active) {
       const planNames = { starter: 'Starter', pro: 'Pro', unlimited: 'Unlimited', quiz_only: 'Quiz Only', team: 'Team' };
       const label = planNames[active.plan] || active.plan;
+      const seats = active.plan === 'team' ? ' ×' + active.seats : '';
+      // No expiry date on an active row means it never expires. Reading it as a
+      // date would make it 1970 and count down to a red "0d".
+      if (!active.expires_at) {
+        paintBadge(badge, '✦ ' + label + seats + ' · ∞', false);
+        return;
+      }
       const daysLeft = Math.max(0, Math.ceil((new Date(active.expires_at) - Date.now()) / 86400000));
-      paintBadge(badge, '✦ ' + label + (active.plan === 'team' ? ' ×' + active.seats : '') + ' · ' + daysLeft + 'd', daysLeft <= 5);
+      paintBadge(badge, '✦ ' + label + seats + ' · ' + daysLeft + 'd', daysLeft <= 5);
       return;
     }
 
