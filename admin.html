@@ -118,6 +118,8 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
 .badge-comp{background:rgba(124,58,237,.18);color:#a78bfa;}
 .btn-comp:hover{border-color:#a78bfa;color:#c4b5fd;}
 .btn-del:hover{border-color:#dc2626;color:#f87171;}
+.badge-current{background:rgba(16,185,129,.15);color:#34d399;letter-spacing:.4px;}
+.row-history{opacity:.55;}
 .modal-warn{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;color:#fca5a5;margin-bottom:16px;}
 .btn-danger{flex:1;background:#dc2626;color:white;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;}
 .btn-danger:disabled{background:#3f1d1d;color:#7f4a4a;cursor:not-allowed;}
@@ -203,7 +205,10 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
     <!-- USERS -->
     <div class="section" id="section-users">
       <div class="page-title">👥 Користувачі</div>
-      <div class="page-sub">Всі зареєстровані акаунти</div>
+      <div class="page-sub">
+        Один рядок на акаунт — те, що діє прямо зараз.
+        Історія платежів і order reference — у «Журналі підписок».
+      </div>
       <div class="table-controls">
         <input class="table-search" type="text" id="usersSearch" placeholder="🔍 Пошук по email..." oninput="filterUsers(this.value)">
         <span id="users-count" style="font-size:13px;font-weight:700;color:#475569;"></span>
@@ -216,15 +221,20 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
 
     <!-- SUBSCRIPTIONS -->
     <div class="section" id="section-subscriptions">
-      <div class="page-title">💳 Підписки</div>
-      <div class="page-sub">Всі транзакції</div>
+      <div class="page-title">💳 Журнал підписок</div>
+      <div class="page-sub">
+        Кожен запис, що коли-небудь створювався, разом з історією та order reference —
+        саме цим звіряють оплати з WayForPay. Один акаунт може мати кілька записів.
+        Той, що діє зараз, позначено <span class="badge badge-current">ПОТОЧНИЙ</span> —
+        решта це історія. Поточний стан кожного акаунта — на сторінці «Користувачі».
+      </div>
       <div class="table-controls">
         <input class="table-search" type="text" id="subsSearch" placeholder="🔍 Пошук по email або плану..." oninput="filterSubs(this.value)">
         <span id="subs-count" style="font-size:13px;font-weight:700;color:#475569;"></span>
       </div>
       <table class="data-table">
-        <thead><tr><th>Email</th><th>План</th><th>Статус</th><th>Сума</th><th>Активовано</th><th>До</th><th>Order Ref</th></tr></thead>
-        <tbody id="subs-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Завантаження...</td></tr></tbody>
+        <thead><tr><th>Email</th><th>План</th><th>Статус</th><th>Сума</th><th>Активовано</th><th>До</th><th>Order Ref</th><th></th></tr></thead>
+        <tbody id="subs-tbody"><tr><td colspan="8" style="text-align:center;padding:32px;color:#475569;">Завантаження...</td></tr></tbody>
       </table>
     </div>
 
@@ -481,9 +491,7 @@ function renderUsers() {
     // Expired rows count too. Ignoring them labelled an account whose plan had
     // run out as "Trial", while the app itself was already refusing it — the
     // panel and the product disagreed about the same person.
-    if (!known.sub) known.sub = s;
-    else if (s.status === 'active' && known.sub.status !== 'active') known.sub = s;
-    else if (s.status === known.sub.status && expiryRank(s) > expiryRank(known.sub)) known.sub = s;
+    known.sub = pickCurrentSub([known.sub, s].filter(Boolean));
   });
 
   filteredUsers = Object.values(userMap);
@@ -536,23 +544,54 @@ function renderSubs() {
 
 function renderSubsTable(list) {
   const tbody = document.getElementById('subs-tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
+  const current = currentSubIds();
   tbody.innerHTML = list.map(s => {
+    const isCurrent = current.has(s.id);
     const badge = s.status !== 'active'
       ? `<span class="badge badge-expired">expired</span>`
       : isComped(s)
         ? `<span class="badge badge-comp">♾️ comp</span>`
         : `<span class="badge badge-active">active</span>`;
-    return `<tr>
+    // Everything else on this page is history, and history that looks as loud
+    // as the live record is what made the two pages read as contradictory.
+    const mark = isCurrent ? ' <span class="badge badge-current">ПОТОЧНИЙ</span>' : '';
+    return `<tr class="${isCurrent ? '' : 'row-history'}">
       <td class="td-email">${s.email || '—'}</td>
       <td>${planLabel(s.plan)}</td>
-      <td>${badge}</td>
+      <td style="white-space:nowrap;">${badge}${mark}</td>
       <td>${s.amount ? (s.currency === 'UAH' ? s.amount + ' ₴' : '$' + s.amount) : '—'}</td>
       <td>${fmtDate(s.activated_at || s.created_at)}</td>
       <td>${expiryLabel(s)}</td>
       <td style="font-size:11px;color:#475569;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.order_reference || ''}">${s.order_reference || '—'}</td>
+      <td><button class="btn-action btn-del" onclick="deleteSub('${s.id}')" title="Видалити цей запис">🗑</button></td>
     </tr>`;
   }).join('');
+}
+
+// Removing a stray row, not cancelling a subscription — expiring one is what
+// the Users page is for. Mostly this cleans up duplicates.
+async function deleteSub(id) {
+  const s = allSubs.find(r => r.id === id);
+  if (!s) return;
+  const live = currentSubIds().has(id)
+    ? '\n\n⚠️ Це ПОТОЧНИЙ запис цього акаунта. Після видалення він відкотиться до попереднього запису, а якщо іншого немає — до тріалу.'
+    : '';
+  const paid = s.amount
+    ? `\n\n⚠️ Тут записана оплата (${s.currency === 'UAH' ? s.amount + ' ₴' : '$' + s.amount}, ${s.order_reference}). Видалення прибере єдиний слід платежу на нашому боці.`
+    : '';
+  if (!confirm(`Видалити запис ${planLabel(s.plan)} (${s.status}) для ${s.email}?${live}${paid}`)) return;
+
+  const { error } = await sb.from('subscriptions').delete().eq('id', id);
+  if (error) {
+    const hint = /permission|denied/i.test(error.message)
+      ? ' — перевір, чи виконано supabase_subscriptions_delete.sql'
+      : '';
+    showToast('❌ Помилка: ' + error.message + hint, true);
+    return;
+  }
+  showToast('🗑 Запис видалено');
+  await refreshAll();
 }
 
 function filterSubs(q) {
@@ -899,6 +938,25 @@ function expiryRank(sub) {
 }
 function isComped(sub) {
   return sub.status === 'active' && !sub.expires_at;
+}
+
+// Which of an account's rows describes it right now: an active one always wins,
+// otherwise the one that ran out last. Both pages read this, so the badge on
+// Users and the ПОТОЧНИЙ marker in the journal can never disagree.
+function pickCurrentSub(subs) {
+  let best = null;
+  subs.forEach(s => {
+    if (!best) best = s;
+    else if (s.status === 'active' && best.status !== 'active') best = s;
+    else if (s.status === best.status && expiryRank(s) > expiryRank(best)) best = s;
+  });
+  return best;
+}
+
+function currentSubIds() {
+  const byUser = {};
+  allSubs.forEach(s => (byUser[s.user_id] = byUser[s.user_id] || []).push(s));
+  return new Set(Object.values(byUser).map(rows => pickCurrentSub(rows).id));
 }
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');

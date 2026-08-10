@@ -1,0 +1,31 @@
+-- Letting the admin remove a stray subscription row.
+--
+-- supabase_rls_subscriptions.sql granted `select, insert, update` and stopped
+-- there, so DELETE was never possible from a browser — not even for the admin.
+-- That was right at the time: nothing in the panel deleted rows. The journal
+-- now has a 🗑 per record, mostly for clearing duplicates, so the privilege has
+-- to exist.
+--
+-- Run this once in the Supabase SQL editor.
+
+-- ── APPLY ────────────────────────────────────────────────────────────────────
+-- Table-level only. Who may actually delete is still decided by RLS: the
+-- existing `subs_admin_all` policy is FOR ALL and already covers DELETE for the
+-- admin's JWT email, and no other policy permits it — so an ordinary user with
+-- this grant still deletes nothing. anon keeps no privileges at all.
+grant delete on public.subscriptions to authenticated;
+
+-- ── VERIFY ───────────────────────────────────────────────────────────────────
+-- 1. The grant is there, and anon has none:
+-- select grantee, privilege_type from information_schema.role_table_grants
+--  where table_schema='public' and table_name='subscriptions'
+--  order by grantee, privilege_type;
+--
+-- 2. A policy still stands between the grant and the data. Expect
+--    subs_admin_all (ALL) and subs_select_own (SELECT), nothing else:
+-- select policyname, cmd, roles from pg_policies
+--  where schemaname='public' and tablename='subscriptions';
+--
+-- 3. The check that matters: signed in as a NON-admin, deleting somebody's row
+--    must remove nothing. PostgREST reports this as 0 rows affected rather than
+--    an error, so read the count, not the status code.
