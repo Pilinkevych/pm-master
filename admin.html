@@ -543,9 +543,9 @@ function renderSubsTable(list) {
       <td>${planLabel(s.plan)}</td>
       <td>${badge}</td>
       <td>${s.amount ? (s.currency === 'UAH' ? s.amount + ' ₴' : '$' + s.amount) : '—'}</td>
-      <td>${fmtDate(s.activated_at)}</td>
+      <td>${fmtDate(s.activated_at || s.created_at)}</td>
       <td>${expiryLabel(s)}</td>
-      <td style="font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${s.order_reference || '—'}</td>
+      <td style="font-size:11px;color:#475569;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.order_reference || ''}">${s.order_reference || '—'}</td>
     </tr>`;
   }).join('');
 }
@@ -638,20 +638,31 @@ async function refreshAll() {
 // The whole point is that it takes one click: testers get handed an account
 // that behaves exactly like a paid Unlimited one and never runs out.
 async function grantUnlimited(userId, email) {
-  const existing = allSubs.find(s => s.user_id === userId && s.status === 'active');
-  // Granting over a live subscription rewrites that row — including what was
-  // paid for it. Worth saying out loud rather than discovering in the table.
-  const warning = existing
-    ? `\n\n⚠️ У цього юзера вже є активна підписка (${planLabel(existing.plan)}). Її запис буде перезаписано — сума й дата оплати зникнуть.`
+  const live = allSubs.filter(s => s.user_id === userId && s.status === 'active');
+  const warning = live.length
+    ? `\n\nПоточн${live.length > 1 ? 'і' : 'а'} підписк${live.length > 1 ? 'и' : 'а'} (${live.map(s => planLabel(s.plan)).join(', ')}) пере${live.length > 1 ? 'йдуть' : 'йде'} в expired. Запис оплати збережеться.`
     : '';
   if (!confirm(`Видати ${email} безстроковий Unlimited?\n\nДоступ не матиме дати закінчення, і в дохід це не зарахується.${warning}`)) return;
 
-  const { error } = await writeSub(userId, {
+  // Retire what is live instead of rewriting it. An update would land on every
+  // active row at once and overwrite what was actually paid — the amount and the
+  // WayForPay order reference — leaving no record that the purchase happened.
+  // Only `status` moves; the rest of each row stays as history.
+  if (live.length) {
+    const { error } = await sb.from('subscriptions')
+      .update({ status: 'expired' })
+      .eq('user_id', userId).eq('status', 'active');
+    if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
+  }
+
+  // Always a fresh row, so granting twice cannot leave two active ones behind.
+  const { error } = await sb.from('subscriptions').insert({
+    order_reference: 'admin_comp_' + Date.now(),
     user_id: userId, plan: 'unlimited', status: 'active',
     expires_at: null,
     activated_at: new Date().toISOString(),
     amount: 0, currency: 'USD'
-  }, existing ? 'active' : '', true);
+  });
 
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
   showToast('♾️ Безстроковий Unlimited видано');
@@ -867,7 +878,9 @@ function fmtDate(d) {
 // expiry has to say so, or `new Date(null)` quietly makes it 1970.
 function expiryLabel(sub) {
   if (!sub) return '—';
-  if (sub.status === 'active' && !sub.expires_at) return '♾️ ∞';
+  // Just the symbol — the ♾️ emoji renders as an infinity sign too, so the two
+  // together read as "∞ ∞".
+  if (sub.status === 'active' && !sub.expires_at) return '∞';
   return fmtDate(sub.expires_at);
 }
 function expiryRank(sub) {
