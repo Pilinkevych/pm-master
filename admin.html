@@ -117,6 +117,10 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
 .modal-input:disabled{opacity:.4;cursor:not-allowed;}
 .badge-comp{background:rgba(124,58,237,.18);color:#a78bfa;}
 .btn-comp:hover{border-color:#a78bfa;color:#c4b5fd;}
+.btn-del:hover{border-color:#dc2626;color:#f87171;}
+.modal-warn{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;color:#fca5a5;margin-bottom:16px;}
+.btn-danger{flex:1;background:#dc2626;color:white;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;}
+.btn-danger:disabled{background:#3f1d1d;color:#7f4a4a;cursor:not-allowed;}
 .modal-actions{display:flex;gap:10px;margin-top:20px;}
 .btn-save{flex:1;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;}
 .btn-cancel{background:none;border:1px solid rgba(255,255,255,.15);color:#64748b;padding:11px 16px;border-radius:10px;font-size:13px;cursor:pointer;}
@@ -315,6 +319,28 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
   </div>
 </div>
 
+<!-- DELETE USER MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">🗑 Видалити акаунт</div>
+    <div class="modal-sub" id="delModalEmail">—</div>
+    <input type="hidden" id="delUserId">
+    <div class="modal-warn">
+      <b>Це не можна скасувати.</b><br>
+      Назавжди зникнуть: акаунт і вхід, усі проєкти й згенеровані документи,
+      ризики, команда, файли та підписки. Резервної копії немає.
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Введіть email повністю, щоб підтвердити</label>
+      <input class="modal-input" type="text" id="delConfirm" autocomplete="off" spellcheck="false" oninput="checkDeleteConfirm()">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="delBtn" onclick="deleteUser()" disabled>🗑 Видалити назавжди</button>
+      <button class="btn-cancel" onclick="closeDeleteModal()">Скасувати</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -402,29 +428,37 @@ function renderStats() {
     .filter(s => !isComped(s))
     .reduce((sum, s) => sum + (PLAN_PRICE[s.plan] || 0), 0);
 
+  // Every headline here counts people, not rows. One account can own several
+  // subscription rows — a renewal, or a grant that inserted where it should
+  // have updated — and counting rows makes one user look like two.
+  const people = list => new Set(list.map(s => s.user_id)).size;
+
   // Registered accounts, not paying ones — counting subscription owners hid
   // everyone who signed up and never bought anything, which is most of them.
   const subUserIds = new Set(allSubs.map(s => s.user_id));
   document.getElementById('stat-total').textContent =
     allUsers.length || subUserIds.size || '—';
-  document.getElementById('stat-active').textContent = active.length;
+  document.getElementById('stat-active').textContent = people(active);
   document.getElementById('stat-mrr').textContent = '$' + mrr;
-  document.getElementById('stat-expired').textContent = expired.length;
+  document.getElementById('stat-expired').textContent = people(expired);
 
   const plans = ['quiz_only','starter','pro','unlimited'];
   const ids = ['quiz','starter','pro','unlimited'];
   plans.forEach((p, i) => {
-    const count = active.filter(s => s.plan === p).length;
-    document.getElementById('pc-' + ids[i]).textContent = count;
+    document.getElementById('pc-' + ids[i]).textContent =
+      people(active.filter(s => s.plan === p));
   });
   // Say how many of the Unlimited seats were given away, so the count is not
   // mistaken for demand.
-  const comped = active.filter(isComped).length;
+  const comped = people(active.filter(isComped));
   document.getElementById('pc-unlimited-rev').textContent =
     comped ? '$29/мiс · ' + comped + ' ♾️' : '$29/мiс';
-  // Trial = users without any subscription
-  const paidUsers = new Set(allSubs.map(s => s.user_id));
-  document.getElementById('pc-trial').textContent = Math.max(0, (subUserIds.size || allUsers.length) - paidUsers.size);
+
+  // Trial = registered accounts with no subscription at all. This read
+  // `subUserIds.size - paidUsers.size` from two identical sets, so it was
+  // always zero the moment anyone bought anything.
+  document.getElementById('pc-trial').textContent =
+    Math.max(0, (allUsers.length || subUserIds.size) - subUserIds.size);
 }
 
 // ── USERS TABLE ───────────────────────────
@@ -477,6 +511,8 @@ function renderUsersTable(list) {
         ${sub && isComped(sub)
           ? `<button class="btn-action btn-comp" onclick="revokeUnlimited('${u.id}',${emailArg})" title="Забрати безстроковий доступ">✖ Забрати ♾️</button>`
           : `<button class="btn-action btn-comp" onclick="grantUnlimited('${u.id}',${emailArg})" title="Безстроковий Unlimited">♾️ Безліміт</button>`}
+        ${isAdminAccount(u.email) ? '' :
+          `<button class="btn-action btn-del" onclick="openDeleteUser('${u.id}',${emailArg})" title="Видалити акаунт назавжди">🗑</button>`}
       </td>
     </tr>`;
   }).join('');
@@ -619,6 +655,62 @@ async function grantUnlimited(userId, email) {
 
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
   showToast('♾️ Безстроковий Unlimited видано');
+  await refreshAll();
+}
+
+// ── DELETING AN ACCOUNT ───────────────────
+// The browser holds the public anon key, which cannot touch auth.users at all.
+// The work happens in the admin_delete_user function — see
+// supabase_admin_delete_user.sql, which also explains why the admin check lives
+// inside its body rather than in a policy.
+function isAdminAccount(email) {
+  return (email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+}
+
+function openDeleteUser(userId, email) {
+  // Deleting the account doing the deleting locks the admin out of the panel.
+  if (isAdminAccount(email)) { showToast('⚠️ Не можна видалити акаунт адміна', true); return; }
+  document.getElementById('delUserId').value = userId;
+  document.getElementById('delModalEmail').textContent = email;
+  document.getElementById('delConfirm').value = '';
+  checkDeleteConfirm();
+  document.getElementById('deleteModal').classList.add('open');
+  document.getElementById('delConfirm').focus();
+}
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+// A yes/no dialog is too easy to click through for something with no undo, so
+// the button stays dead until the whole address has been typed out.
+function checkDeleteConfirm() {
+  const typed = document.getElementById('delConfirm').value.trim().toLowerCase();
+  const target = document.getElementById('delModalEmail').textContent.trim().toLowerCase();
+  document.getElementById('delBtn').disabled = !typed || typed !== target;
+}
+
+async function deleteUser() {
+  const userId = document.getElementById('delUserId').value;
+  const email = document.getElementById('delModalEmail').textContent;
+  const btn = document.getElementById('delBtn');
+  btn.disabled = true;
+  btn.textContent = 'Видаляю…';
+
+  const { error } = await sb.rpc('admin_delete_user', { target: userId });
+
+  btn.textContent = '🗑 Видалити назавжди';
+  if (error) {
+    checkDeleteConfirm();
+    // The function is missing until the SQL has been run, and PostgREST reports
+    // that as a schema-cache miss rather than anything about permissions.
+    const hint = /admin_delete_user|schema cache|function/i.test(error.message)
+      ? ' — перевір, чи виконано supabase_admin_delete_user.sql'
+      : '';
+    showToast('❌ Помилка: ' + error.message + hint, true);
+    return;
+  }
+
+  showToast('🗑 Акаунт ' + email + ' видалено');
+  closeDeleteModal();
+  await loadUsers();
   await refreshAll();
 }
 
