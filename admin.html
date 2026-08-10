@@ -285,7 +285,7 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
     <div class="modal-title">✏️ Редагувати підписку</div>
     <div class="modal-sub" id="editModalEmail">—</div>
     <input type="hidden" id="editUserId">
-    <input type="hidden" id="editOrigStatus">
+    <input type="hidden" id="editRowId">
     <div class="modal-field">
       <label class="modal-label">План</label>
       <select class="modal-select" id="editPlan">
@@ -478,9 +478,12 @@ function renderUsers() {
       userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
     }
     const known = userMap[s.user_id];
-    if (s.status === 'active' && (!known.sub || expiryRank(s) > expiryRank(known.sub))) {
-      known.sub = s;
-    }
+    // Expired rows count too. Ignoring them labelled an account whose plan had
+    // run out as "Trial", while the app itself was already refusing it — the
+    // panel and the product disagreed about the same person.
+    if (!known.sub) known.sub = s;
+    else if (s.status === 'active' && known.sub.status !== 'active') known.sub = s;
+    else if (s.status === known.sub.status && expiryRank(s) > expiryRank(known.sub)) known.sub = s;
   });
 
   filteredUsers = Object.values(userMap);
@@ -493,9 +496,11 @@ function renderUsersTable(list) {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
     const sub = u.sub;
-    const badge = sub
-      ? `<span class="badge ${isComped(sub) ? 'badge-comp' : 'badge-active'}">${isComped(sub) ? '♾️' : '✦'} ${planLabel(sub.plan)}</span>`
-      : `<span class="badge badge-trial">🆓 Trial</span>`;
+    const badge = !sub
+      ? `<span class="badge badge-trial">🆓 Trial</span>`
+      : sub.status !== 'active'
+        ? `<span class="badge badge-expired">⚠️ ${planLabel(sub.plan)} expired</span>`
+        : `<span class="badge ${isComped(sub) ? 'badge-comp' : 'badge-active'}">${isComped(sub) ? '♾️' : '✦'} ${planLabel(sub.plan)}</span>`;
     const expires = expiryLabel(sub);
     const reg = fmtDate(u.created_at);
     // The onclick attribute is double-quoted, so the JS string literal inside it
@@ -559,15 +564,21 @@ function filterSubs(q) {
 function openEditUser(userId, email) {
   document.getElementById('editUserId').value = userId;
   document.getElementById('editModalEmail').textContent = email;
-  const sub = allSubs.find(s => s.user_id === userId && s.status === 'active');
+  // Fall back to the newest expired row. Looking only for an active one meant
+  // that once a subscription was marked expired the modal could never find it
+  // again — every subsequent save inserted another row instead of editing it.
+  const mine = allSubs.filter(s => s.user_id === userId);
+  const sub = mine.find(s => s.status === 'active')
+    || mine.filter(s => s.status !== 'active')
+           .sort((a, b) => expiryRank(b) - expiryRank(a))[0];
   document.getElementById('editPlan').value = sub?.plan || '';
   document.getElementById('editStatus').value = sub?.status || 'active';
   document.getElementById('editExpires').value = sub?.expires_at ? sub.expires_at.slice(0,10) : '';
   document.getElementById('editForever').checked = !!sub && isComped(sub);
   toggleForever();
-  // Remembered so the save knows which row to update — the status field itself
-  // is editable, so it cannot be used to find the row afterwards.
-  document.getElementById('editOrigStatus').value = sub ? sub.status : '';
+  // The row's own id, so the save lands on exactly this record. Matching on
+  // (user_id, status) instead would rewrite every row that shares the status.
+  document.getElementById('editRowId').value = sub ? sub.id : '';
   document.getElementById('editModal').classList.add('open');
 }
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
@@ -605,8 +616,8 @@ async function saveUserSub() {
     currency: 'USD'
   };
 
-  const origStatus = document.getElementById('editOrigStatus').value;
-  const { error } = await writeSub(userId, row, origStatus, forever);
+  const rowId = document.getElementById('editRowId').value;
+  const { error } = await writeSub(rowId, row, forever);
 
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
   showToast('✅ Збережено!');
@@ -617,10 +628,9 @@ async function saveUserSub() {
 // Not an upsert: ON CONFLICT needs a unique index on (user_id, status), and
 // adding one would forbid a second expired subscription per user — which is
 // exactly what happens to anyone who renews twice.
-function writeSub(userId, row, origStatus, forever) {
-  if (origStatus) {
-    return sb.from('subscriptions').update(row)
-      .eq('user_id', userId).eq('status', origStatus);
+function writeSub(rowId, row, forever) {
+  if (rowId) {
+    return sb.from('subscriptions').update(row).eq('id', rowId);
   }
   const prefix = forever ? 'admin_comp_' : 'admin_manual_';
   return sb.from('subscriptions').insert(
