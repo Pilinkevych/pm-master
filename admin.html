@@ -358,6 +358,9 @@ const SUPA_URL = 'https://ijfawcrcmmvjhilpytsg.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZmF3Y3JjbW12amhpbHB5dHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDY0NjQsImV4cCI6MjA5ODQ4MjQ2NH0.bcjSxVd5UNeaoM1yiK7NQoma2HEZepmTrDaz7A_p5CQ';
 const ADMIN_EMAIL = 'ai.kinomaker@gmail.com';
 const PLAN_PRICE = { quiz_only: 5, starter: 9, pro: 19, unlimited: 29, team: 49 };
+// Same clock the app and the workflows run on: counted from auth.users.created_at,
+// never from the subscriptions table. Keep in step with TRIAL_DAYS in index.html.
+const TRIAL_DAYS = 7;
 
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { detectSessionInUrl: true, flowType: 'implicit' } });
 
@@ -504,12 +507,17 @@ function renderUsersTable(list) {
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#475569;">Немає даних</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
     const sub = u.sub;
+    const left = trialLeft(u.created_at);
     const badge = !sub
-      ? `<span class="badge badge-trial">🆓 Trial</span>`
+      ? (left > 0
+          ? `<span class="badge badge-trial">🆓 Trial · ${left}d</span>`
+          : `<span class="badge badge-expired">⚠️ Trial ended</span>`)
       : sub.status !== 'active'
         ? `<span class="badge badge-expired">⚠️ ${planLabel(sub.plan)} expired</span>`
         : `<span class="badge ${isComped(sub) ? 'badge-comp' : 'badge-active'}">${isComped(sub) ? '♾️' : '✦'} ${planLabel(sub.plan)}</span>`;
-    const expires = expiryLabel(sub);
+    // With no subscription the meaningful date is when the free week runs out,
+    // not a dash.
+    const expires = sub ? expiryLabel(sub) : fmtDate(trialEndsAt(u.created_at));
     const reg = fmtDate(u.created_at);
     // The onclick attribute is double-quoted, so the JS string literal inside it
     // has to arrive as entities or it closes the attribute early.
@@ -938,6 +946,16 @@ function expiryRank(sub) {
 }
 function isComped(sub) {
   return sub.status === 'active' && !sub.expires_at;
+}
+
+// An account with no subscription is not simply "on trial" — it is on trial for
+// seven days and then locked out, and the panel showed both states identically.
+function trialLeft(createdAt) {
+  if (!createdAt) return TRIAL_DAYS;
+  return Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(createdAt)) / 86400000));
+}
+function trialEndsAt(createdAt) {
+  return createdAt ? new Date(new Date(createdAt).getTime() + TRIAL_DAYS * 86400000) : null;
 }
 
 // Which of an account's rows describes it right now: an active one always wins,
