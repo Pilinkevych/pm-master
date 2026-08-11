@@ -49,10 +49,21 @@ as $function$
   ORDER BY u.created_at DESC;
 $function$;
 
-create or replace function public.admin_get_subscriptions()
+-- 2026-08-11: `activated_at` joins the column list. The panel writes that field
+-- on every grant and edit but never received it back, so the "Активовано" column
+-- fell through to created_at for every row.
+--
+-- Adding a column changes the return type, and CREATE OR REPLACE cannot do that
+-- — hence the drop. A drop also takes the function's grants with it, which is
+-- why the REVOKE/GRANT block below must run in the same pass. Running this whole
+-- file top to bottom does the right thing; running the create alone does not.
+drop function if exists public.admin_get_subscriptions();
+
+create function public.admin_get_subscriptions()
 returns table(id uuid, user_id uuid, email text, plan text, status text,
               seats integer, amount numeric, currency text,
               created_at timestamp with time zone,
+              activated_at timestamp with time zone,
               expires_at timestamp with time zone, order_reference text)
 language sql
 security definer
@@ -63,7 +74,7 @@ as $function$
     s.seats,
     COALESCE(s.amount, 0) as amount,
     COALESCE(s.currency, 'USD') as currency,
-    s.created_at, s.expires_at,
+    s.created_at, s.activated_at, s.expires_at,
     COALESCE(s.order_reference, '') as order_reference
   FROM subscriptions s
   JOIN auth.users u ON s.user_id = u.id
@@ -89,6 +100,12 @@ grant  execute on function public.admin_delete_user(uuid) to authenticated;
 -- select proname, prosecdef, prosrc like '%ai.kinomaker@gmail.com%' as has_guard
 --   from pg_proc
 --  where proname in ('admin_get_users','admin_get_subscriptions','admin_delete_user');
+--
+-- 1b. The drop above is the one step that can leave things worse than it found
+--     them: if the file was stopped partway, the function exists with no grants
+--     and the panel loads nothing. Expect `authenticated` and nobody else:
+-- select grantee, privilege_type from information_schema.role_routine_grants
+--  where routine_name = 'admin_get_subscriptions';
 --
 -- 2. anon can no longer execute. Expect an error, not a list:
 -- curl -s 'https://ijfawcrcmmvjhilpytsg.supabase.co/rest/v1/rpc/admin_get_users' \

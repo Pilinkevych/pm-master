@@ -488,8 +488,11 @@ function renderUsers() {
 
   allSubs.forEach(s => {
     // A subscription for an account the RPC did not return still deserves a row.
+    // No created_at here on purpose: s.created_at is when the subscription row
+    // was written, not when the account signed up, and it now drives the trial
+    // countdown. A plausible wrong date is worse than an honest blank.
     if (!userMap[s.user_id]) {
-      userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: s.created_at, sub: null };
+      userMap[s.user_id] = { id: s.user_id, email: s.email || '—', created_at: null, sub: null };
     }
     const known = userMap[s.user_id];
     // Expired rows count too. Ignoring them labelled an account whose plan had
@@ -510,9 +513,11 @@ function renderUsersTable(list) {
     const sub = u.sub;
     const left = trialLeft(u.created_at);
     const badge = !sub
-      ? (left > 0
-          ? `<span class="badge badge-trial">🆓 Trial · ${left}d</span>`
-          : `<span class="badge badge-expired">⚠️ Trial ended</span>`)
+      ? (left === null
+          ? `<span class="badge badge-trial">🆓 Trial</span>`
+          : left > 0
+            ? `<span class="badge badge-trial">🆓 Trial · ${left}d</span>`
+            : `<span class="badge badge-expired">⚠️ Trial ended</span>`)
       : sub.status !== 'active'
         ? `<span class="badge badge-expired">⚠️ ${planLabel(sub.plan)} expired</span>`
         : `<span class="badge ${isComped(sub) ? 'badge-comp' : 'badge-active'}">${isComped(sub) ? '♾️' : '✦'} ${planLabel(sub.plan)}</span>`;
@@ -657,7 +662,6 @@ async function saveUserSub() {
   const row = {
     user_id: userId, plan, status,
     expires_at: forever ? null : new Date(expires).toISOString(),
-    activated_at: new Date().toISOString(),
     // Nothing was charged for a comped account, and the subscriptions table is
     // what the revenue figures are read from.
     amount: forever ? 0 : (PLAN_PRICE[plan] || 0),
@@ -665,6 +669,14 @@ async function saveUserSub() {
   };
 
   const rowId = document.getElementById('editRowId').value;
+  // Keep the original activation date. Stamping today's on every save meant
+  // correcting a typo in a real payment moved the date it was paid — the same
+  // kind of quiet rewrite that cost an order reference before.
+  const before = allSubs.find(r => r.id === rowId);
+  if (!before || (before.status !== 'active' && status === 'active')) {
+    row.activated_at = new Date().toISOString();
+  }
+
   const { error } = await writeSub(rowId, row, forever);
 
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
@@ -702,18 +714,11 @@ async function grantUnlimited(userId, email) {
     : '';
   if (!confirm(`Видати ${email} безстроковий Unlimited?\n\nДоступ не матиме дати закінчення, і в дохід це не зарахується.${warning}`)) return;
 
-  // Retire what is live instead of rewriting it. An update would land on every
-  // active row at once and overwrite what was actually paid — the amount and the
-  // WayForPay order reference — leaving no record that the purchase happened.
-  // Only `status` moves; the rest of each row stays as history.
-  if (live.length) {
-    const { error } = await sb.from('subscriptions')
-      .update({ status: 'expired' })
-      .eq('user_id', userId).eq('status', 'active');
-    if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
-  }
-
-  // Always a fresh row, so granting twice cannot leave two active ones behind.
+  // Grant before retiring. The other order reads better but fails badly: if the
+  // insert errors after the old rows are already expired, a paying customer is
+  // left with no subscription at all. This way a failure leaves them exactly as
+  // they were, and the worst case is one extra active row — visible in the
+  // journal, and still access rather than none.
   const { error } = await sb.from('subscriptions').insert({
     order_reference: 'admin_comp_' + Date.now(),
     user_id: userId, plan: 'unlimited', status: 'active',
@@ -721,8 +726,22 @@ async function grantUnlimited(userId, email) {
     activated_at: new Date().toISOString(),
     amount: 0, currency: 'USD'
   });
-
   if (error) { showToast('❌ Помилка: ' + error.message, true); return; }
+
+  // By id, not by (user_id, status) — the row just inserted is active too, and
+  // matching on status would expire it along with the rest. Only `status` moves;
+  // what was paid stays on each row as history.
+  if (live.length) {
+    const { error: retireError } = await sb.from('subscriptions')
+      .update({ status: 'expired' })
+      .in('id', live.map(s => s.id));
+    if (retireError) {
+      showToast('⚠️ Безліміт видано, але старі підписки лишились активними: ' + retireError.message, true);
+      await refreshAll();
+      return;
+    }
+  }
+
   showToast('♾️ Безстроковий Unlimited видано');
   await refreshAll();
 }
@@ -979,8 +998,10 @@ function isComped(sub) {
 
 // An account with no subscription is not simply "on trial" — it is on trial for
 // seven days and then locked out, and the panel showed both states identically.
+// null when the signup date is unknown, so the badge can say "Trial" plainly
+// rather than invent a countdown from a date it does not have.
 function trialLeft(createdAt) {
-  if (!createdAt) return TRIAL_DAYS;
+  if (!createdAt) return null;
   return Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(createdAt)) / 86400000));
 }
 function trialEndsAt(createdAt) {
