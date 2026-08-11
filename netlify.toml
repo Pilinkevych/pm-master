@@ -11,3 +11,10 @@
 
 [build.processing.html]
   pretty_urls = true
+
+# The article template is a build input, not a page. It ships with the site
+# because there is no build step, so keep it out of search results.
+[[headers]]
+  for = "/blog/_template.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"

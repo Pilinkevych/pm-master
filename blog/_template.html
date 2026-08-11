@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} | PM Master</title>
+<meta name="description" content="{{DESCRIPTION}}">
+<link rel="canonical" href="https://pm-master.club/blog/{{SLUG}}">
+<meta property="og:url" content="https://pm-master.club/blog/{{SLUG}}">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESCRIPTION}}">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://pm-master.club/og-image.jpg">
+<meta property="article:published_time" content="{{DATE_ISO}}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{TITLE}}",
+  "description": "{{DESCRIPTION}}",
+  "datePublished": "{{DATE_ISO}}",
+  "mainEntityOfPage": "https://pm-master.club/blog/{{SLUG}}",
+  "author": { "@type": "Organization", "name": "PM Master" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "PM Master",
+    "url": "https://pm-master.club"
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#f8fafc; color:#0f172a; }
+.header { background:#0f172a; padding:16px 48px; display:flex; align-items:center; justify-content:space-between; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-box { width:36px; height:36px; background:linear-gradient(135deg,#7c3aed,#4f46e5); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.logo-name { font-size:16px; font-weight:900; color:white; }
+.logo-name span { color:#a78bfa; }
+.btn-back { color:#94a3b8; font-size:13px; font-weight:600; text-decoration:none; }
+.btn-back:hover { color:white; }
+.wrap { max-width:720px; margin:0 auto; padding:56px 24px 80px; }
+h1 { font-size:32px; font-weight:900; line-height:1.25; margin-bottom:10px; }
+.meta { font-size:13px; color:#94a3b8; font-weight:600; margin-bottom:36px; }
+h2 { font-size:20px; font-weight:800; margin:36px 0 12px; }
+h3 { font-size:16px; font-weight:800; margin:26px 0 10px; }
+p { font-size:16px; color:#334155; line-height:1.75; margin-bottom:14px; }
+ul, ol { margin:0 0 16px 22px; }
+li { font-size:16px; color:#334155; line-height:1.75; margin-bottom:8px; }
+blockquote { border-left:3px solid #7c3aed; padding:4px 0 4px 18px; margin:20px 0; color:#475569; font-style:italic; }
+a { color:#7c3aed; }
+table { width:100%; border-collapse:collapse; margin:20px 0; font-size:15px; }
+th, td { border:1px solid #e2e8f0; padding:10px 12px; text-align:left; }
+th { background:#f1f5f9; font-weight:800; }
+.source { margin-top:40px; padding-top:20px; border-top:1px solid #e2e8f0; font-size:14px; color:#64748b; }
+.cta { margin-top:40px; background:linear-gradient(135deg,#7c3aed,#4f46e5); border-radius:16px; padding:28px; text-align:center; }
+.cta h2 { color:#fff; font-size:19px; margin:0 0 8px; }
+.cta p { color:rgba(255,255,255,.85); font-size:14px; margin-bottom:18px; }
+.cta a { display:inline-block; background:#fff; color:#4f46e5; text-decoration:none; padding:12px 24px; border-radius:10px; font-weight:800; font-size:14px; }
+.more { margin-top:32px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/" class="logo">
+    <div class="logo-box">📋</div>
+    <div class="logo-name">PM<span>Master</span></div>
+  </a>
+  <a href="/blog" class="btn-back">← All posts</a>
+</div>
+
+<div class="wrap">
+  <h1>{{TITLE}}</h1>
+  <p class="meta">{{DATE_HUMAN}}</p>
+
+  {{BODY}}
+
+  <p class="source">Based on: <a href="{{SOURCE_URL}}" target="_blank" rel="noopener nofollow">{{SOURCE_TITLE}}</a></p>
+
+  <div class="cta">
+    <h2>Turn this into an actual project plan</h2>
+    <p>PM Master generates a Charter, WBS, Risk Register and 20+ PMBOK® 8 documents from your notes.</p>
+    <a href="/">Try it free →</a>
+  </div>
+
+  <p class="more"><a href="/blog">← More project management notes</a></p>
+</div>
+</body>
+</html>
