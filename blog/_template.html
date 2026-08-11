@@ -75,7 +75,9 @@ th { background:#f1f5f9; font-weight:800; }
 
   {{BODY}}
 
-  <p class="source">Based on: <a href="{{SOURCE_URL}}" target="_blank" rel="noopener nofollow">{{SOURCE_TITLE}}</a></p>
+  <!-- Замінюється цілком на порожній рядок, коли першоджерела немає:
+       PMBOK-статті пишуться з теми стандарту, а не за чужою публікацією. -->
+  {{SOURCE_BLOCK}}
 
   <div class="cta">
     <h2>Turn this into an actual project plan</h2>
