@@ -30,6 +30,12 @@
   </url>
   <!-- ARTICLES:START -->
   <url>
+    <loc>https://pm-master.club/blog/when-your-framework-stops-serving-you-and-starts-owning-you</loc>
+    <lastmod>2026-08-11</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://pm-master.club/blog/why-your-production-schedule-fails-before-the-week-starts</loc>
     <lastmod>2026-08-11</lastmod>
     <changefreq>yearly</changefreq>
