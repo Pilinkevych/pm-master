@@ -3,3 +3,6 @@ pmbok-8.pdf
 
 # Editor safe-save leftovers
 .!*!*
+
+# Editor backup copies
+*~
