@@ -47,11 +47,11 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--gray-100);min-he
 
 /* HEADER */
 header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8,#2563eb);color:white;padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.2);}
-header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;height:350px;background:radial-gradient(circle,rgba(255,255,255,0.07),transparent 70%);border-radius:50%;pointer-events:none;}
+header::before{content:'';position:absolute;top:-50%;right:0;width:350px;height:350px;background:radial-gradient(circle,rgba(255,255,255,0.07),transparent 70%);border-radius:50%;pointer-events:none;}
 .header-logo{font-size:28px;position:relative;z-index:1;flex-shrink:0;}
 .header-title{flex:1;position:relative;z-index:1;min-width:0;}
-.header-title h1{font-size:20px;font-weight:900;white-space:nowrap;}
-.header-title p{font-size:12px;opacity:.75;white-space:nowrap;}
+.header-title h1{font-size:20px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.header-title p{font-size:12px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sec-banner{display:none;position:sticky;top:90px;z-index:99;background:#1e40af;border-top:1px solid rgba(255,255,255,.15);border-bottom:2px solid rgba(255,255,255,.2);padding:10px 24px;font-size:14px;color:rgba(255,255,255,.9);text-align:center;line-height:1.6;letter-spacing:.1px;}
 .sec-banner strong{color:#fff;font-weight:900;font-size:15px;}
 .sec-banner-detail{display:block;color:rgba(255,255,255,.65);font-size:12.5px;margin-top:1px;}
@@ -74,7 +74,7 @@ header::before{content:'';position:absolute;top:-50%;right:-5%;width:350px;heigh
    clips its own overflow to truncate the email, and would clip the menu too. */
 .auth-wrap{position:relative;display:inline-flex;min-width:0;}
 
-@media(max-width:1100px){
+@media(max-width:1280px){
   header{flex-wrap:wrap;padding:12px 18px;gap:10px;}
   .header-title{flex:1 1 auto;}
   .header-actions{flex:1 1 100%;justify-content:flex-end;flex-wrap:wrap;}
