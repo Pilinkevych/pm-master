@@ -103,9 +103,15 @@ grant  execute on function public.admin_delete_user(uuid) to authenticated;
 --
 -- 1b. The drop above is the one step that can leave things worse than it found
 --     them: if the file was stopped partway, the function exists with no grants
---     and the panel loads nothing. Expect `authenticated` and nobody else:
+--     and the panel loads nothing.
 -- select grantee, privilege_type from information_schema.role_routine_grants
 --  where routine_name = 'admin_get_subscriptions';
+--
+--     Expect three rows: `authenticated`, plus `postgres` (the owner, which
+--     always has EXECUTE) and `service_role` (Supabase's server-side key, which
+--     bypasses RLS anyway and never reaches a browser). Those two are normal —
+--     the one that must NOT appear is `anon`, and neither must PUBLIC, which is
+--     how anon had it in the first place. Step 2 is the real proof.
 --
 -- 2. anon can no longer execute. Expect an error, not a list:
 -- curl -s 'https://ijfawcrcmmvjhilpytsg.supabase.co/rest/v1/rpc/admin_get_users' \
