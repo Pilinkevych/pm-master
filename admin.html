@@ -118,6 +118,12 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
 .badge-comp{background:rgba(124,58,237,.18);color:#a78bfa;}
 .btn-comp:hover{border-color:#a78bfa;color:#c4b5fd;}
 .btn-del:hover{border-color:#dc2626;color:#f87171;}
+.nl-picker-list{max-height:230px;overflow-y:auto;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#0f172a;}
+.nl-pick{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:13px;color:#cbd5e1;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);}
+.nl-pick:last-child{border-bottom:none;}
+.nl-pick:hover{background:rgba(124,58,237,.1);}
+.nl-pick input{width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0;}
+.nl-pick-tag{margin-left:auto;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;}
 .badge-current{background:rgba(16,185,129,.15);color:#34d399;letter-spacing:.4px;}
 .row-history{opacity:.55;}
 .modal-warn{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;color:#fca5a5;margin-bottom:16px;}
@@ -252,12 +258,21 @@ body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;min-height:
             <textarea class="nl-textarea" id="nlBody" rows="8" placeholder="Hi {{name}},&#10;&#10;Write your message here...&#10;&#10;Tip: {{name}} will be replaced with the user's name." oninput="updatePreview()"></textarea>
             <div style="font-size:11px;color:#475569;margin-top:4px;font-weight:600;">💡 <strong style="color:#a78bfa;">{{name}}</strong> → ім'я юзера автоматично</div>
             <label class="nl-label" style="margin-top:16px;">Отримувачі</label>
-            <select class="nl-select" id="nlFilter" onchange="filterRecipients()">
+            <select class="nl-select" id="nlFilter" onchange="filterRecipientsAndRender()">
               <option value="all">👥 Всі користувачі</option>
               <option value="active">💳 Активна підписка</option>
               <option value="expired">⚠️ Прострочена підписка</option>
               <option value="nosub">🆓 Без підписки (Trial)</option>
+              <option value="manual">✋ Вибрати вручну</option>
             </select>
+            <div id="nlPicker" style="display:none;margin-top:10px;">
+              <input class="nl-input" type="text" id="nlPickerSearch" placeholder="🔍 Пошук по email..." oninput="renderRecipientPicker()" style="margin-bottom:8px;">
+              <div id="nlPickerList" class="nl-picker-list"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="btn-action" onclick="pickAllRecipients(true)">Вибрати всіх видимих</button>
+                <button class="btn-action" onclick="pickAllRecipients(false)">Зняти вибір</button>
+              </div>
+            </div>
             <div class="nl-counter" style="margin-top:12px;">👥 Буде надіслано: <strong id="nlCountNum">0</strong> листів</div>
             <div class="nl-progress" id="nlProgress">
               <div class="nl-progress-bar-wrap"><div class="nl-progress-bar" id="nlProgressBar" style="width:0%"></div></div>
@@ -403,7 +418,7 @@ async function loadAll() {
   renderUsers();
   renderSubs();
   loadNlHistory();
-  filterRecipients();
+  filterRecipientsAndRender();
 }
 
 async function loadUsers() {
@@ -834,8 +849,64 @@ function filterRecipients() {
   // Telling them their subscription has expired is a good way to lose them.
   else if (filter === 'expired') nlUsers = allWithEmail.filter(u => expiredUserIds.has(u.id) && !subUserIds.has(u.id));
   else if (filter === 'nosub') nlUsers = allWithEmail.filter(u => !allSubUserIds.has(u.id));
+  // Hand-picked: whoever is ticked, and nothing about their plan comes into it.
+  else if (filter === 'manual') nlUsers = allWithEmail.filter(u => nlSelected.has(u.id));
 
+  // Kept for the picker, which lists everyone regardless of the current filter.
+  nlAllRecipients = allWithEmail;
   document.getElementById('nlCountNum').textContent = nlUsers.length;
+  return filter;
+}
+
+// Ticking a box only changes the total. Re-rendering the list on every click
+// would throw away the scroll position half way down a long list of accounts.
+function filterRecipientsAndRender() {
+  const filter = filterRecipients();
+  document.getElementById('nlPicker').style.display = filter === 'manual' ? 'block' : 'none';
+  if (filter === 'manual') renderRecipientPicker();
+}
+
+// ── PICKING RECIPIENTS BY HAND ────────────
+// The plan-based filters cover the broadcasts; this covers writing to one
+// person, or to three, for a reason that has nothing to do with what they pay.
+let nlAllRecipients = [];
+const nlSelected = new Set();
+
+function visibleRecipients() {
+  const q = document.getElementById('nlPickerSearch').value.trim().toLowerCase();
+  return q ? nlAllRecipients.filter(u => u.email.toLowerCase().includes(q)) : nlAllRecipients;
+}
+
+function renderRecipientPicker() {
+  const list = visibleRecipients();
+  const box = document.getElementById('nlPickerList');
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:16px;text-align:center;color:#475569;font-size:13px;">Нікого не знайдено</div>';
+    return;
+  }
+  // The plan is shown only so the right person is picked, never to restrict who
+  // may be picked.
+  box.innerHTML = list.map(u => {
+    const sub = pickCurrentSub(allSubs.filter(s => s.user_id === u.id));
+    const tag = !sub ? 'trial' : sub.status !== 'active' ? 'expired' : planLabel(sub.plan);
+    return `<label class="nl-pick">
+      <input type="checkbox" ${nlSelected.has(u.id) ? 'checked' : ''} onchange="toggleRecipient('${u.id}', this.checked)">
+      <span>${u.email}</span>
+      <span class="nl-pick-tag">${tag}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleRecipient(id, on) {
+  if (on) nlSelected.add(id); else nlSelected.delete(id);
+  filterRecipientsAndRender();
+}
+
+// Only what the search currently shows, so "select all" after typing a filter
+// cannot quietly rope in everyone else.
+function pickAllRecipients(on) {
+  visibleRecipients().forEach(u => { if (on) nlSelected.add(u.id); else nlSelected.delete(u.id); });
+  filterRecipientsAndRender();
 }
 
 function updatePreview() {
@@ -966,7 +1037,7 @@ function showSection(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
-  if (name === 'newsletter') filterRecipients();
+  if (name === 'newsletter') filterRecipientsAndRender();
 }
 
 // ── HELPERS ───────────────────────────────
