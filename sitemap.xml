@@ -4,6 +4,10 @@
   in netlify.toml rewrites every internal href from /pricing.html to /pricing.
   Both spellings return 200 with no redirect between them, so the canonical tag
   on each page names this one, and the sitemap has to agree with it.
+
+  Everything between ARTICLES:START and ARTICLES:END is rewritten by the
+  Telegram workflows whenever an article is published — newest first. Add
+  entries by hand if you like, just keep the two markers intact.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -24,6 +28,14 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- ARTICLES:START -->
+  <url>
+    <loc>https://pm-master.club/blog/why-your-production-schedule-fails-before-the-week-starts</loc>
+    <lastmod>2026-08-11</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- ARTICLES:END -->
   <url>
     <loc>https://pm-master.club/terms</loc>
     <lastmod>2026-08-11</lastmod>
