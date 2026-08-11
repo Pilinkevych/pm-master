@@ -1,0 +1,12 @@
+# pm-master.club
+#
+# Everything is open to crawlers. /admin.html is deliberately NOT disallowed
+# here: it is served with `X-Robots-Tag: noindex` (see netlify.toml), and a
+# crawler has to be able to fetch the page to read that header. Blocking it in
+# robots.txt would hide the noindex and let the bare URL show up in results
+# anyway, which is the opposite of what it is for.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://pm-master.club/sitemap.xml
