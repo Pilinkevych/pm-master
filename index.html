@@ -609,6 +609,26 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   .landing-tg-inner { flex-direction:column; text-align:center; gap:16px; }
   .landing-tg-btn { width:100%; text-align:center; }
 }
+/* Latest articles. The cards carry the same .post-card markup the workflows
+   already generate for /blog/, so one generated string serves both pages —
+   which is why every rule here is scoped to .landing-blog. A bare .post-card
+   rule would leak into generated documents, the way the app-wide restyle did. */
+.landing-blog { padding:56px 24px; background:#0f172a; border-top:1px solid rgba(255,255,255,.06); }
+.landing-blog-inner { max-width:1080px; margin:0 auto; }
+.landing-blog-head { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:28px; flex-wrap:wrap; }
+.landing-blog-head h2 { font-size:26px; font-weight:900; color:#f1f5f9; margin-bottom:6px; }
+.landing-blog-head p { font-size:14px; color:#94a3b8; margin:0; max-width:520px; line-height:1.6; }
+.landing-blog-all { color:#a78bfa; font-size:14px; font-weight:800; text-decoration:none; white-space:nowrap; }
+.landing-blog-all:hover { color:#c4b5fd; }
+.landing-blog-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.landing-blog .post-card { display:block; background:#1e293b; border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:22px; text-decoration:none; transition:border-color .15s, transform .15s; }
+.landing-blog .post-card:hover { border-color:#7c3aed; transform:translateY(-2px); }
+.landing-blog .post-date { font-size:12px; font-weight:700; color:#64748b; letter-spacing:.3px; }
+.landing-blog .post-title { font-size:16px; font-weight:800; color:#f1f5f9; margin:8px 0 8px; line-height:1.35; }
+.landing-blog .post-excerpt { font-size:13px; color:#94a3b8; line-height:1.6; }
+.landing-blog-empty { grid-column:1/-1; text-align:center; padding:32px; color:#64748b; font-size:14px; border:1px dashed rgba(255,255,255,.12); border-radius:14px; }
+@media(max-width:900px){ .landing-blog-grid { grid-template-columns:1fr 1fr; } }
+@media(max-width:620px){ .landing-blog-grid { grid-template-columns:1fr; } }
 .landing-pricing-cta { text-align:center; padding:56px 24px; background:#0f172a; }
 .landing-pricing-cta h2 { font-size:26px; font-weight:900; color:white; margin-bottom:12px; }
 .landing-pricing-cta p { color:#94a3b8; font-size:15px; margin-bottom:28px; }
@@ -776,6 +796,42 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <h2>Start free. Upgrade when ready.</h2>
     <p>Trial plan included. No credit card required to get started.</p>
     <a href="/pricing.html" class="btn-cta-primary" style="text-decoration:none;display:inline-block;">View Pricing →</a>
+  </section>
+
+  <!-- Latest articles. Everything between LATEST:START and LATEST:END is
+       rewritten by both Telegram workflows on every publish, newest first and
+       capped at three. The markers are named differently from the POSTS ones in
+       blog/index.html so a workflow can never write the wrong list into the
+       wrong file. Edit by hand if you like — just keep both markers. -->
+  <section class="landing-blog">
+    <div class="landing-blog-inner">
+      <div class="landing-blog-head">
+        <div>
+          <h2>Latest from the blog</h2>
+          <p>Practical notes on running projects and on PMBOK® 8 — what a change means once it reaches a real schedule, a real register, a real team.</p>
+        </div>
+        <a class="landing-blog-all" href="/blog/">All posts →</a>
+      </div>
+      <div class="landing-blog-grid">
+        <!-- LATEST:START -->
+        <a class="post-card" href="/blog/pmbok-8-risk-domain-managing-uncertainty-beyond-the-register">
+      <div class="post-date">12 August 2026</div>
+      <div class="post-title">PMBOK 8 Risk Domain: Managing Uncertainty Beyond the Register</div>
+      <div class="post-excerpt">PMBOK 8 separates discrete risks from true uncertainty. Learn how to handle ambiguity and volatility your risk register cannot capture.</div>
+    </a>
+        <a class="post-card" href="/blog/when-your-framework-stops-serving-you-and-starts-owning-you">
+      <div class="post-date">11 August 2026</div>
+      <div class="post-title">When Your Framework Stops Serving You and Starts Owning You</div>
+      <div class="post-excerpt">Learn how to audit the rituals your team never questions, spot the difference between process maturity and process dependency, and reclaim deliberate thinking.</div>
+    </a>
+        <a class="post-card" href="/blog/why-your-production-schedule-fails-before-the-week-starts">
+      <div class="post-date">11 August 2026</div>
+      <div class="post-title">Why Your Production Schedule Fails Before the Week Starts</div>
+      <div class="post-excerpt">Learn how to choose, adapt, and stress-test production scheduling templates so your plan survives first contact with the shop floor.</div>
+    </a>
+        <!-- LATEST:END -->
+      </div>
+    </div>
   </section>
 
   <!-- The channel posts twice a week whether or not anyone signs up, so it is
