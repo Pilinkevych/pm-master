@@ -798,57 +798,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <a href="/pricing.html" class="btn-cta-primary" style="text-decoration:none;display:inline-block;">View Pricing →</a>
   </section>
 
-  <!-- Latest articles. Everything between LATEST:START and LATEST:END is
-       rewritten by both Telegram workflows on every publish, newest first and
-       capped at three. The markers are named differently from the POSTS ones in
-       blog/index.html so a workflow can never write the wrong list into the
-       wrong file. Edit by hand if you like — just keep both markers. -->
-  <section class="landing-blog">
-    <div class="landing-blog-inner">
-      <div class="landing-blog-head">
-        <div>
-          <h2>Latest from the blog</h2>
-          <p>Practical notes on running projects and on PMBOK® 8 — what a change means once it reaches a real schedule, a real register, a real team.</p>
-        </div>
-        <a class="landing-blog-all" href="/blog/">All posts →</a>
-      </div>
-      <div class="landing-blog-grid">
-        <!-- LATEST:START -->
-        <a class="post-card" href="/blog/pmbok-8-risk-domain-managing-uncertainty-beyond-the-register">
-      <div class="post-date">12 August 2026</div>
-      <div class="post-title">PMBOK 8 Risk Domain: Managing Uncertainty Beyond the Register</div>
-      <div class="post-excerpt">PMBOK 8 separates discrete risks from true uncertainty. Learn how to handle ambiguity and volatility your risk register cannot capture.</div>
-    </a>
-        <a class="post-card" href="/blog/when-your-framework-stops-serving-you-and-starts-owning-you">
-      <div class="post-date">11 August 2026</div>
-      <div class="post-title">When Your Framework Stops Serving You and Starts Owning You</div>
-      <div class="post-excerpt">Learn how to audit the rituals your team never questions, spot the difference between process maturity and process dependency, and reclaim deliberate thinking.</div>
-    </a>
-        <a class="post-card" href="/blog/why-your-production-schedule-fails-before-the-week-starts">
-      <div class="post-date">11 August 2026</div>
-      <div class="post-title">Why Your Production Schedule Fails Before the Week Starts</div>
-      <div class="post-excerpt">Learn how to choose, adapt, and stress-test production scheduling templates so your plan survives first contact with the shop floor.</div>
-    </a>
-        <!-- LATEST:END -->
-      </div>
-    </div>
-  </section>
-
-  <!-- The channel posts twice a week whether or not anyone signs up, so it is
-       worth a block of its own rather than a line in the footer: it gives a
-       visitor who is not ready to create an account somewhere to go. -->
-  <section class="landing-tg">
-    <div class="landing-tg-inner">
-      <div class="landing-tg-icon" aria-hidden="true">✈️</div>
-      <div class="landing-tg-text">
-        <h2>PM news, twice a week</h2>
-        <p>Practical notes on project management and PMBOK® 8 — what changed, what it means in practice, and how it looks on a real project. Free, no sign-up.</p>
-      </div>
-      <a class="landing-tg-btn" href="https://t.me/pmmaster_club" target="_blank" rel="noopener">
-        Join the channel →
-      </a>
-    </div>
-  </section>
 
 </div>
 
@@ -6115,10 +6064,65 @@ async function handleContactSubmit(e) {
 </script>
 </div><!-- /app-section -->
 
-<!-- Contact form and footer live outside #landing-section on purpose: showApp()
-     hides that whole block, and with it went the blog, the legal pages and the
-     only way to reach us — exactly for the signed-in users most likely to need
-     them. Sitting here, they render under whichever section is on screen. -->
+  <!-- Latest articles. Everything between LATEST:START and LATEST:END is
+       rewritten by both Telegram workflows on every publish, newest first and
+       capped at three. The markers are named differently from the POSTS ones in
+       blog/index.html so a workflow can never write the wrong list into the
+       wrong file. Edit by hand if you like — just keep both markers. -->
+  <section class="landing-blog">
+    <div class="landing-blog-inner">
+      <div class="landing-blog-head">
+        <div>
+          <h2>Latest from the blog</h2>
+          <p>Practical notes on running projects and on PMBOK® 8 — what a change means once it reaches a real schedule, a real register, a real team.</p>
+        </div>
+        <a class="landing-blog-all" href="/blog/">All posts →</a>
+      </div>
+      <div class="landing-blog-grid">
+        <!-- LATEST:START -->
+        <a class="post-card" href="/blog/pmbok-8-risk-domain-managing-uncertainty-beyond-the-register">
+      <div class="post-date">12 August 2026</div>
+      <div class="post-title">PMBOK 8 Risk Domain: Managing Uncertainty Beyond the Register</div>
+      <div class="post-excerpt">PMBOK 8 separates discrete risks from true uncertainty. Learn how to handle ambiguity and volatility your risk register cannot capture.</div>
+    </a>
+        <a class="post-card" href="/blog/when-your-framework-stops-serving-you-and-starts-owning-you">
+      <div class="post-date">11 August 2026</div>
+      <div class="post-title">When Your Framework Stops Serving You and Starts Owning You</div>
+      <div class="post-excerpt">Learn how to audit the rituals your team never questions, spot the difference between process maturity and process dependency, and reclaim deliberate thinking.</div>
+    </a>
+        <a class="post-card" href="/blog/why-your-production-schedule-fails-before-the-week-starts">
+      <div class="post-date">11 August 2026</div>
+      <div class="post-title">Why Your Production Schedule Fails Before the Week Starts</div>
+      <div class="post-excerpt">Learn how to choose, adapt, and stress-test production scheduling templates so your plan survives first contact with the shop floor.</div>
+    </a>
+        <!-- LATEST:END -->
+      </div>
+    </div>
+  </section>
+
+  <!-- The channel posts twice a week whether or not anyone signs up, so it is
+       worth a block of its own rather than a line in the footer: it gives a
+       visitor who is not ready to create an account somewhere to go. -->
+  <section class="landing-tg">
+    <div class="landing-tg-inner">
+      <div class="landing-tg-icon" aria-hidden="true">✈️</div>
+      <div class="landing-tg-text">
+        <h2>PM news, twice a week</h2>
+        <p>Practical notes on project management and PMBOK® 8 — what changed, what it means in practice, and how it looks on a real project. Free, no sign-up.</p>
+      </div>
+      <a class="landing-tg-btn" href="https://t.me/pmmaster_club" target="_blank" rel="noopener">
+        Join the channel →
+      </a>
+    </div>
+  </section>
+
+<!-- These four blocks — articles, the channel, the contact form and the footer —
+     sit outside #landing-section on purpose. showApp() hides that block whole,
+     so everything inside it vanished the moment someone signed in: the blog, the
+     legal pages and the only way to reach us, for exactly the people most likely
+     to need a refund policy or support. Here they render under whichever section
+     is on screen, and there is still only one LATEST marker pair for the
+     workflows to write into. -->
   <section id="contact" style="background:#0d1117;padding:64px 24px;">
     <div style="max-width:560px;margin:0 auto;text-align:center;">
       <div style="font-size:13px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Get in touch</div>
