@@ -1535,6 +1535,83 @@ function updateSelCount() {
   document.getElementById('selCount').textContent = `${project.selectedDocs.length} of ${DOCS.length} selected`;
 }
 
+// ── Reading the uploaded context files ───────────────────────────────────
+// The drop zone offers PDF, DOCX and TXT, so all three have to reach the AI as
+// text. PDF and DOCX are parsed here in the browser; their libraries are pulled
+// in only when such a file actually turns up, because together they weigh twice
+// what the rest of the page does.
+const _scriptOnce = {};
+function loadScriptOnce(src) {
+  if (!_scriptOnce[src]) {
+    _scriptOnce[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => { delete _scriptOnce[src]; reject(new Error('library did not load')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _scriptOnce[src];
+}
+
+const PDFJS_SRC    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const MAMMOTH_SRC  = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+
+function readFileAs(file, how) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = e => resolve(e.target.result);
+    r.onerror = () => reject(new Error('the file could not be read'));
+    how === 'buffer' ? r.readAsArrayBuffer(file) : r.readAsText(file);
+  });
+}
+
+async function pdfToText(file) {
+  await loadScriptOnce(PDFJS_SRC);
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  const data = await readFileAs(file, 'buffer');
+  const doc = await window.pdfjsLib.getDocument({ data }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const content = await (await doc.getPage(p)).getTextContent();
+    pages.push(content.items.map(i => i.str).join(' '));
+  }
+  const text = pages.join('\n\n').replace(/[ \t]+/g, ' ').trim();
+  // A scanned page carries no text layer. Sending an empty string and letting
+  // the AI invent a project from nothing is worse than saying so out loud.
+  if (!text) throw new Error('no text layer — the PDF looks scanned, paste the text instead');
+  return text;
+}
+
+async function docxToText(file) {
+  await loadScriptOnce(MAMMOTH_SRC);
+  const arrayBuffer = await readFileAs(file, 'buffer');
+  const text = ((await window.mammoth.extractRawText({ arrayBuffer })).value || '').trim();
+  if (!text) throw new Error('the document had no text in it');
+  return text;
+}
+
+async function extractFilesText(files, onProgress) {
+  const texts = [], failures = [];
+  for (const f of files) {
+    try {
+      if (onProgress) onProgress(f.name);
+      let text;
+      if      (/\.(txt|md|csv)$/i.test(f.name))  text = await readFileAs(f, 'text');
+      else if (/\.pdf$/i.test(f.name))           text = await pdfToText(f);
+      else if (/\.docx$/i.test(f.name))          text = await docxToText(f);
+      else if (/\.(mp3|m4a|wav)$/i.test(f.name)) throw new Error('audio is not transcribed yet — paste the transcript for now');
+      else                                       throw new Error('unsupported format');
+      if (text && text.trim()) texts.push('=== ' + f.name + ' ===\n' + text.trim());
+      else failures.push({ name: f.name, error: 'the file was empty' });
+    } catch (e) {
+      failures.push({ name: f.name, error: e.message });
+    }
+  }
+  return { texts, failures };
+}
+
 function handleFiles(files) {
   for (const f of files) {
     if (!uploadedFilesList.find(x => x.name === f.name)) {
@@ -1616,23 +1693,25 @@ function analyzeContext_internal() {
     });
   }
 
-  // If files, read text ones; otherwise use paste directly
+  // Read every upload, not just the plain-text ones, and say which failed:
+  // a file that was quietly ignored looks identical to one that was read.
   if (hasFiles) {
-    const textFiles = uploadedFilesList.filter(f => f.name.match(/\.(txt|md|csv)$/i));
-    if (textFiles.length === 0) {
-      // No readable text files — use paste only
-      sendToAI(paste);
-      return;
-    }
-    const readers = textFiles.map(f => new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = e => res(e.target.result);
-      r.onerror = rej;
-      r.readAsText(f);
-    }));
-    Promise.all(readers).then(contents => {
-      const combined = contents.join('\n\n---\n\n') + (paste ? '\n\n---\n\n' + paste : '');
-      sendToAI(combined);
+    btn.innerHTML = '<span class="spinner-inline"></span> Reading files...';
+    btn.disabled = true;
+    extractFilesText(uploadedFilesList, n => {
+      btn.innerHTML = '<span class="spinner-inline"></span> Reading ' + n + '...';
+    }).then(({ texts, failures }) => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      failures.forEach(f => pmToast(f.name + ' — ' + f.error, 'error'));
+      const parts = texts.concat(paste ? [paste] : []);
+      if (!parts.length) return;
+      sendToAI(parts.join('\n\n---\n\n'));
+    }).catch(err => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      console.error('[PM Master] file read failed:', err);
+      pmToast('Could not read those files. Try pasting the text instead.', 'error');
     });
   } else {
     sendToAI(paste);
