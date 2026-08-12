@@ -966,10 +966,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
          ondragover="event.preventDefault();this.classList.add('drag')"
          ondragleave="this.classList.remove('drag')"
          ondrop="handleDrop(event)">
-      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.mp3,.m4a,.wav" onchange="handleFiles(this.files)">
+      <!-- Audio is deliberately absent: nothing transcribes it yet, and listing a
+           format the app cannot read is a promise broken on the first click.
+           Put .mp3,.m4a,.wav back the day transcription is wired up, not before.
+           extractFilesText still handles audio, because a drag-and-drop ignores
+           this attribute and the user deserves a reason rather than silence. -->
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt" onchange="handleFiles(this.files)">
       <div class="uz-icon">📂</div>
       <div class="uz-title" data-i18n="setup.dropTitle">Drop files here or click to upload</div>
-      <div class="uz-sub" data-i18n="setup.dropSub">PDF · DOCX · TXT · MP3 · M4A · WAV</div>
+      <div class="uz-sub" data-i18n="setup.dropSub">PDF · DOCX · TXT</div>
     </div>
     <div class="upload-files" id="uploadedFiles"></div>
 
@@ -3993,7 +3998,7 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'setup.uploadHint': '— optional but recommended',
   'setup.uploadDesc': 'Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents',
   'setup.dropTitle': 'Drop files here or click to upload',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Or paste text (email, MoM, brief)',
   'setup.analyzeBtn': 'Analyze & Auto-fill Documents',
   'setup.aiFound': '✅ AI found the following information:',
@@ -4369,7 +4374,7 @@ VP of People, TechCorp Solutions`,
   'setup.uploadHint': '— необов\'язково, але рекомендовано',
   'setup.uploadDesc': 'Завантажте МоМ, листи, брифи — AI витягне дані і автозаповнить документи',
   'setup.dropTitle': 'Перетягніть файли або натисніть для завантаження',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Або вставте текст (email, МоМ, бриф)',
   'setup.analyzeBtn': 'Аналізувати та автозаповнити',
   'setup.aiFound': '✅ AI знайшов наступну інформацію:',
@@ -4434,7 +4439,7 @@ de: {
   'setup.uploadHint': '— optional, aber empfohlen',
   'setup.uploadDesc': 'MoM, E-Mails, Briefings hochladen — KI extrahiert Daten und füllt Dokumente aus',
   'setup.dropTitle': 'Dateien hier ablegen oder klicken',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Oder Text einfügen (E-Mail, MoM, Briefing)',
   'setup.analyzeBtn': 'Analysieren & Automatisch ausfüllen',
   'setup.aiFound': '✅ KI hat folgende Informationen gefunden:',
@@ -4497,7 +4502,7 @@ fr: {
   'setup.uploadHint': '— facultatif mais recommandé',
   'setup.uploadDesc': 'Téléchargez MoM, e-mails, briefs — l\'IA extraira les données et remplira les documents',
   'setup.dropTitle': 'Déposez des fichiers ici ou cliquez pour télécharger',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Ou collez du texte (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analyser et remplir automatiquement',
   'setup.aiFound': '✅ L\'IA a trouvé les informations suivantes :',
@@ -4560,7 +4565,7 @@ es: {
   'setup.uploadHint': '— opcional pero recomendado',
   'setup.uploadDesc': 'Cargue MoM, correos, briefs — la IA extraerá datos y rellenará documentos',
   'setup.dropTitle': 'Arrastre archivos aquí o haga clic para cargar',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'O pegue texto (correo, MoM, brief)',
   'setup.analyzeBtn': 'Analizar y rellenar automáticamente',
   'setup.aiFound': '✅ La IA encontró la siguiente información:',
@@ -4623,7 +4628,7 @@ pl: {
   'setup.uploadHint': '— opcjonalne, ale zalecane',
   'setup.uploadDesc': 'Prześlij MoM, e-maile, briefy — AI wyodrębni dane i wypełni dokumenty',
   'setup.dropTitle': 'Upuść pliki tutaj lub kliknij, aby przesłać',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Lub wklej tekst (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analizuj i wypełnij automatycznie',
   'setup.aiFound': '✅ AI znalazło następujące informacje:',
@@ -4686,7 +4691,7 @@ pt: {
   'setup.uploadHint': '— opcional mas recomendado',
   'setup.uploadDesc': 'Faça upload de MoM, e-mails, briefings — a IA extrairá dados e preencherá documentos',
   'setup.dropTitle': 'Arraste arquivos aqui ou clique para fazer upload',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Ou cole o texto (e-mail, MoM, briefing)',
   'setup.analyzeBtn': 'Analisar e preencher automaticamente',
   'setup.aiFound': '✅ A IA encontrou as seguintes informações:',
@@ -4749,7 +4754,7 @@ it: {
   'setup.uploadHint': '— facoltativo ma consigliato',
   'setup.uploadDesc': 'Carica MoM, e-mail, brief — l\'AI estrarrà i dati e compilerà i documenti',
   'setup.dropTitle': 'Trascina file qui o clicca per caricare',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'O incolla il testo (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analizza e compila automaticamente',
   'setup.aiFound': '✅ L\'AI ha trovato le seguenti informazioni:',
@@ -4812,7 +4817,7 @@ tr: {
   'setup.uploadHint': '— isteğe bağlı ama önerilir',
   'setup.uploadDesc': 'MoM, e-posta, brief yükleyin — yapay zeka verileri çıkarıp belgeleri dolduracak',
   'setup.dropTitle': 'Dosyaları buraya sürükleyin veya yüklemek için tıklayın',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Veya metin yapıştırın (e-posta, MoM, brief)',
   'setup.analyzeBtn': 'Analiz Et ve Otomatik Doldur',
   'setup.aiFound': '✅ Yapay zeka şu bilgileri buldu:',
@@ -4875,7 +4880,7 @@ zh: {
   'setup.uploadHint': '— 可选但推荐',
   'setup.uploadDesc': '上传会议纪要、邮件、简报 — AI将提取数据并填写文件',
   'setup.dropTitle': '将文件拖放至此处或点击上传',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': '或粘贴文本（邮件、会议纪要、简报）',
   'setup.analyzeBtn': '分析并自动填写',
   'setup.aiFound': '✅ AI找到以下信息：',
@@ -4938,7 +4943,7 @@ ja: {
   'setup.uploadHint': '— 任意ですが推奨',
   'setup.uploadDesc': 'MoM、メール、ブリーフをアップロード — AIがデータを抽出してドキュメントを入力します',
   'setup.dropTitle': 'ファイルをここにドロップまたはクリックしてアップロード',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'またはテキストを貼り付け（メール、MoM、ブリーフ）',
   'setup.analyzeBtn': '分析して自動入力',
   'setup.aiFound': '✅ AIが次の情報を見つけました：',
@@ -5001,7 +5006,7 @@ ko: {
   'setup.uploadHint': '— 선택 사항이지만 권장',
   'setup.uploadDesc': 'MoM, 이메일, 브리프 업로드 — AI가 데이터를 추출하고 문서를 채웁니다',
   'setup.dropTitle': '파일을 여기에 드롭하거나 클릭하여 업로드',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': '또는 텍스트 붙여넣기 (이메일, MoM, 브리프)',
   'setup.analyzeBtn': '분석하고 자동으로 채우기',
   'setup.aiFound': '✅ AI가 다음 정보를 찾았습니다:',
@@ -5064,7 +5069,7 @@ hi: {
   'setup.uploadHint': '— वैकल्पिक लेकिन अनुशंसित',
   'setup.uploadDesc': 'MoM, ईमेल, ब्रीफ अपलोड करें — AI डेटा निकालकर दस्तावेज़ भरेगा',
   'setup.dropTitle': 'फ़ाइलें यहाँ खींचें या अपलोड करने के लिए क्लिक करें',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'या टेक्स्ट पेस्ट करें (ईमेल, MoM, ब्रीफ)',
   'setup.analyzeBtn': 'विश्लेषण करें और स्वचालित भरें',
   'setup.aiFound': '✅ AI को निम्नलिखित जानकारी मिली:',
@@ -5127,7 +5132,7 @@ ar: {
   'setup.uploadHint': '— اختياري لكن موصى به',
   'setup.uploadDesc': 'ارفع MoM أو بريد إلكتروني أو موجز — سيستخرج الذكاء الاصطناعي البيانات ويملأ المستندات',
   'setup.dropTitle': 'اسحب الملفات هنا أو انقر للرفع',
-  'setup.dropSub': 'PDF · DOCX · TXT · MP3 · M4A · WAV',
+  'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'أو الصق النص (بريد إلكتروني، MoM، موجز)',
   'setup.analyzeBtn': 'تحليل وملء تلقائي',
   'setup.aiFound': '✅ وجد الذكاء الاصطناعي المعلومات التالية:',
