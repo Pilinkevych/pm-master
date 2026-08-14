@@ -899,7 +899,45 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <div class="setup-hero">
     <div class="icon">🚀</div>
     <h2 data-i18n="setup.title">New Project</h2>
-    <p data-i18n="setup.subtitle">Fill in project details or upload documents — AI will auto-fill what it can</p>
+    <p data-i18n="setup.subtitle">Fill in project details or upload documents — PM Master will auto-fill what it can</p>
+  </div>
+
+  <!-- The upload sits first on purpose: people opening this page do not know
+       what the tool wants from them, and a form of empty fields answers that
+       badly. Show what to drop in, and the fields below arrive already filled. -->
+  <div class="card">
+    <div class="card-title">📎 <span data-i18n="setup.uploadTitle">Upload Project Context</span> <span style="font-size:12px;font-weight:600;color:var(--gray-500)" data-i18n="setup.uploadHint">— optional but recommended</span></div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;" data-i18n="setup.uploadDesc">Upload MoM, emails, briefs — PM Master will extract project data and auto-fill documents</p>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <!-- Audio is deliberately absent: nothing transcribes it yet, and listing a
+           format the app cannot read is a promise broken on the first click.
+           Put .mp3,.m4a,.wav back the day transcription is wired up, not before.
+           extractFilesText still handles audio, because a drag-and-drop ignores
+           this attribute and the user deserves a reason rather than silence. -->
+      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt" onchange="handleFiles(this.files)">
+      <div class="uz-icon">📂</div>
+      <div class="uz-title" data-i18n="setup.dropTitle">Drop files here or click to upload</div>
+      <div class="uz-sub" data-i18n="setup.dropSub">PDF · DOCX · TXT</div>
+    </div>
+    <div class="upload-files" id="uploadedFiles"></div>
+
+    <div class="paste-area" style="margin-top:14px;">
+      <label data-i18n="setup.pasteLabel">Or paste text (email, MoM, brief)</label>
+      <textarea id="pasteText" placeholder="Paste email from client, meeting notes, project brief..." data-i18n-ph="ph.pasteText"></textarea>
+    </div>
+
+    <button class="btn btn-ai" style="margin-top:12px;width:100%;" onclick="analyzeContext()">
+      <span>🔍</span> <span data-i18n="setup.analyzeBtn">Analyze & Auto-fill Documents</span>
+    </button>
+
+    <div class="ai-extract-result" id="extractResult">
+      <div class="aer-title" data-i18n="setup.aiFound">✅ PM Master found the following information:</div>
+      <div id="extractItems"></div>
+    </div>
   </div>
 
   <!-- Basic info -->
@@ -957,41 +995,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
   </div>
 
-  <!-- Upload documents -->
-  <div class="card">
-    <div class="card-title">📎 <span data-i18n="setup.uploadTitle">Upload Project Context</span> <span style="font-size:12px;font-weight:600;color:var(--gray-500)" data-i18n="setup.uploadHint">— optional but recommended</span></div>
-    <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;" data-i18n="setup.uploadDesc">Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents</p>
-
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
-         ondragover="event.preventDefault();this.classList.add('drag')"
-         ondragleave="this.classList.remove('drag')"
-         ondrop="handleDrop(event)">
-      <!-- Audio is deliberately absent: nothing transcribes it yet, and listing a
-           format the app cannot read is a promise broken on the first click.
-           Put .mp3,.m4a,.wav back the day transcription is wired up, not before.
-           extractFilesText still handles audio, because a drag-and-drop ignores
-           this attribute and the user deserves a reason rather than silence. -->
-      <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt" onchange="handleFiles(this.files)">
-      <div class="uz-icon">📂</div>
-      <div class="uz-title" data-i18n="setup.dropTitle">Drop files here or click to upload</div>
-      <div class="uz-sub" data-i18n="setup.dropSub">PDF · DOCX · TXT</div>
-    </div>
-    <div class="upload-files" id="uploadedFiles"></div>
-
-    <div class="paste-area" style="margin-top:14px;">
-      <label data-i18n="setup.pasteLabel">Or paste text (email, MoM, brief)</label>
-      <textarea id="pasteText" placeholder="Paste email from client, meeting notes, project brief..." data-i18n-ph="ph.pasteText"></textarea>
-    </div>
-
-    <button class="btn btn-ai" style="margin-top:12px;width:100%;" onclick="analyzeContext()">
-      <span>🔍</span> <span data-i18n="setup.analyzeBtn">Analyze & Auto-fill Documents</span>
-    </button>
-
-    <div class="ai-extract-result" id="extractResult">
-      <div class="aer-title" data-i18n="setup.aiFound">✅ AI found the following information:</div>
-      <div id="extractItems"></div>
-    </div>
-  </div>
 
   <!-- Document selection -->
   <div class="card">
@@ -1010,12 +1013,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
 
   <div class="field">
-    <label><span data-i18n="setup.descriptionLabel">Project Description</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.descriptionHint">(AI will use this for document generation)</span></label>
+    <label><span data-i18n="setup.descriptionLabel">Project Description</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.descriptionHint">(PM Master will use this for document generation)</span></label>
     <textarea id="s-description" rows="3" placeholder="Describe the project: what are we building, what problem does it solve, for whom..." data-i18n-ph="ph.description"></textarea>
   </div>
 
   <div class="field">
-    <label><span data-i18n="setup.objectivesLabel">Project Objectives</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.objectivesHint">(objectives — AI will insert them into every document)</span></label>
+    <label><span data-i18n="setup.objectivesLabel">Project Objectives</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.objectivesHint">(objectives — PM Master will insert them into every document)</span></label>
     <textarea id="s-objectives" rows="2" placeholder="1. Launch MVP by... 2. Achieve... 3. Integrate..." data-i18n-ph="ph.objectives"></textarea>
   </div>
 
@@ -1307,7 +1310,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <div class="update-item">
       <div class="update-dot" style="background:var(--green);"></div>
       <div>
-        <div class="update-text">Project created. AI is ready to generate documents.</div>
+        <div class="update-text">Project created. PM Master is ready to generate documents.</div>
         <div class="update-time" id="update-time-create">just now</div>
       </div>
     </div>
@@ -1341,7 +1344,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       </div>
       <div class="modal-header-actions">
         <button class="modal-btn modal-btn-pmbok" onclick="openPmbok(currentDocKey)">📖 PMBOK Ref</button>
-        <button class="modal-btn modal-btn-gen" onclick="generateDoc(currentDocKey)">✨ Generate with AI</button>
+        <button class="modal-btn modal-btn-gen" onclick="generateDoc(currentDocKey)">✨ Generate</button>
         <button class="modal-btn modal-btn-close" onclick="closeModal()">✕</button>
       </div>
     </div>
@@ -1665,7 +1668,7 @@ function analyzeContext_internal() {
 
   // Read text files + combine with paste
   function sendToAI(textContent) {
-    btn.innerHTML = '<span class="spinner-inline"></span> Analyzing with AI...';
+    btn.innerHTML = '<span class="spinner-inline"></span> PM Master is analyzing...';
     btn.disabled = true;
 
     fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-analyze-mom', {
@@ -2245,7 +2248,7 @@ function generateDoc(key) {
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
   btn.disabled = true;
   const modalBody = document.getElementById('modal-body');
-  if (modalBody) modalBody.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px;"><div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;"></div><div style="font-size:15px;font-weight:700;color:#1e3a8a;">Generating document with AI...</div><div style="font-size:13px;color:#64748b;">This may take 20–40 seconds</div></div>`;
+  if (modalBody) modalBody.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px;"><div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;"></div><div style="font-size:15px;font-weight:700;color:#1e3a8a;">PM Master is generating the document...</div><div style="font-size:13px;color:#64748b;">This may take 20–40 seconds</div></div>`;
 
   fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
     method: 'POST',
@@ -3182,7 +3185,7 @@ async function openPmbok(key) {
 
   const doc = DOCS.find(d => d.key === key);
   document.getElementById('pd-text').innerHTML =
-    '<div style="text-align:center;padding:30px 20px;color:#94a3b8;font-size:13px;">✨ AI is preparing a summary...</div>';
+    '<div style="text-align:center;padding:30px 20px;color:#94a3b8;font-size:13px;">✨ PM Master is preparing a summary...</div>';
 
   let summary = null;
   try {
@@ -3549,7 +3552,7 @@ function generateJira() {
 
 function openUploadUpdate() {
   // Still a teaser, but it no longer names the plumbing it is waiting on.
-  pmAlert('Upload Project Update — coming soon.\n\nUpload a MoM, email or audio file and AI will spot what changed, update the Risk Register, Scope and Schedule, and log it for Lessons Learned.', '📎');
+  pmAlert('Upload Project Update — coming soon.\n\nUpload a MoM or an email and PM Master will spot what changed, update the Risk Register, Scope and Schedule, and log it for Lessons Learned.', '📎');
 }
 
 // ══════════════════════════════════════════
@@ -3643,7 +3646,7 @@ function setLang(lang) {
   <!-- AI bar -->
   <div class="dm-ai-bar" id="dm-ai-bar" style="display:none;">
     <div class="dm-ai-dots"><div class="dm-ai-dot"></div><div class="dm-ai-dot"></div><div class="dm-ai-dot"></div></div>
-    <span id="dm-ai-text">AI is analyzing...</span>
+    <span id="dm-ai-text">PM Master is analyzing...</span>
   </div>
   <!-- Body -->
   <div class="dm-body" id="dm-body"></div>
@@ -3774,12 +3777,12 @@ SARAH: SAP integration — last time it took twice as long as planned. And scope
 ALEX: Both very manageable. I'll send you a Project Charter by end of week.
 
 SARAH: Perfect. Looking forward to it.`,
-    narr: '<strong>We held an 18-minute kickoff call with the client.</strong> The PM recorded the conversation and uploaded the transcript to PM Master. AI will now read it and extract all key project data — no manual input needed.',
-    nextLabel: 'AI fills the form →', stepLabel: 'Step 3 of 9 — Meeting transcript uploaded'
+    narr: '<strong>We held an 18-minute kickoff call with the client.</strong> The PM recorded the conversation and uploaded the transcript to PM Master, which now reads it and extract all key project data — no manual input needed.',
+    nextLabel: 'PM Master fills the form →', stepLabel: 'Step 3 of 9 — Meeting transcript uploaded'
   },
   {
     appName: 'PM Master — New Project', type: 'app',
-    docIcon: '🤖', docTitle: 'AI is extracting project data...',
+    docIcon: '🤖', docTitle: 'PM Master is extracting project data...',
     docSub: 'Reading email + transcript · PMBOK® 8 framework',
     showAI: true, aiText: 'Extracting: name, org, PM, budget, dates, team, KPIs, risks...',
     body: `Extracted from email (Jan 14) + transcript (Jan 17):
@@ -3871,15 +3874,15 @@ I'm signing off as Project Sponsor. Let's proceed with detailed planning.
 Sarah Mitchell
 VP of People, TechCorp Solutions`,
     narr: '<strong>The client approved the Charter.</strong> Sarah Mitchell signed off and gave the green light to start the project. PM Master can now auto-generate all 13 PMBOK® 8 documents.',
-    nextLabel: 'AI generates all documents →', stepLabel: 'Step 7 of 9 — Client approved the Charter ✅'
+    nextLabel: 'PM Master generates all documents →', stepLabel: 'Step 7 of 9 — Client approved the Charter ✅'
   },
   {
     appName: 'PM Master — Generating Documents', type: 'doc', isHTML: true,
-    docIcon: '🤖', docTitle: 'AI is generating all 13 documents...',
+    docIcon: '🤖', docTitle: 'PM Master is generating all 13 documents...',
     docSub: 'Using project data from email + transcript + approved Charter',
     showAI: true, aiText: 'Generating documents per PMBOK® 8 framework...',
     body: '',
-    narr: '<strong>AI is generating all 13 PMBOK® 8 documents in parallel.</strong> Based on the email, transcript, and approved Charter — the system builds a complete PM workspace: from Stakeholder Register to Lessons Learned.',
+    narr: '<strong>PM Master is generating all 13 PMBOK® 8 documents in parallel.</strong> Based on the email, transcript, and approved Charter — the system builds a complete PM workspace: from Stakeholder Register to Lessons Learned.',
     nextLabel: 'See all documents →', stepLabel: 'Step 8 of 9 — Generating 13 documents'
   },
   {
@@ -3984,7 +3987,7 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
     }
   },
   'setup.title': 'New Project',
-  'setup.subtitle': 'Fill in project details or upload documents — AI will auto-fill what it can',
+  'setup.subtitle': 'Fill in project details or upload documents — PM Master will auto-fill what it can',
   'setup.projectInfo': '📋 Project Information',
   'setup.projectName': 'Project Name *',
   'setup.org': 'Organization / Company',
@@ -3996,20 +3999,20 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'setup.approach': 'Development Approach',
   'setup.uploadTitle': 'Upload Project Context',
   'setup.uploadHint': '— optional but recommended',
-  'setup.uploadDesc': 'Upload MoM, emails, briefs, audio — AI will extract project data and auto-fill documents',
+  'setup.uploadDesc': 'Upload MoM, emails, briefs, audio — PM Master will extract project data and auto-fill documents',
   'setup.dropTitle': 'Drop files here or click to upload',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Or paste text (email, MoM, brief)',
   'setup.analyzeBtn': 'Analyze & Auto-fill Documents',
-  'setup.aiFound': '✅ AI found the following information:',
+  'setup.aiFound': '✅ PM Master found the following information:',
   'setup.selectDocsTitle': '📑 Select Documents to Generate',
   'setup.selectDocsSub': 'You can add or remove documents at any time from the dashboard',
   'setup.selectAll': 'Select All',
   'setup.clear': 'Clear',
   'setup.descriptionLabel': 'Project Description',
-  'setup.descriptionHint': '(AI will use this for document generation)',
+  'setup.descriptionHint': '(PM Master will use this for document generation)',
   'setup.objectivesLabel': 'Project Objectives',
-  'setup.objectivesHint': '(objectives — AI will insert them into every document)',
+  'setup.objectivesHint': '(objectives — PM Master will insert them into every document)',
   'setup.createBtn': 'Create Project & Open Dashboard',
   'setup.demoBtn': 'Load Demo Project',
   'dash.docsReady': 'Documents Ready',
@@ -4030,10 +4033,10 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
   'ph.pasteText': 'Paste email from client, meeting notes, project brief...',
   'ph.description': 'Describe the project: what are we building, what problem does it solve, for whom...',
   'ph.objectives': '1. Launch MVP by... 2. Achieve... 3. Integrate...',
-  'genAll.prompt': '🚀 AI successfully extracted your project data!\n\nGenerate all selected documents now?\n\nThis will create all your project documents in English using the AI. It takes ~2 minutes.',
+  'genAll.prompt': '🚀 PM Master successfully extracted your project data!\n\nGenerate all selected documents now?\n\nThis will create all your project documents in English using PM Master. It takes ~2 minutes.',
   'genAll.generating': '⏳ Generating documents...',
   'genAll.done': '✅ All documents generated!',
-  'genInit.prompt': '🚀 AI successfully extracted your project data!\n\nGenerate Initiation documents now?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nThe remaining documents can be generated manually at your own pace.',
+  'genInit.prompt': '🚀 PM Master successfully extracted your project data!\n\nGenerate Initiation documents now?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nThe remaining documents can be generated manually at your own pace.',
   'genInit.done': '✅ Initiation documents have been generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.',
   'modal.edit': '✏️ Edit',
   'modal.editSave': '💾 Save Changes',
@@ -4147,11 +4150,11 @@ ALEX: Обидва дуже керовані при правильному пі�
 
 SARAH: Чудово. Чекаю з нетерпінням.`,
     narr: '<strong>Ми провели 18-хвилинний дзвінок із замовником.</strong> PM записав розмову і завантажив транскрипт у PM Master. AI прочитає його і витягне всі ключові дані — без ручного введення.',
-    nextLabel: 'AI заповнює форму →', stepLabel: 'Крок 3 з 9 — Транскрипт зустрічі завантажено'
+    nextLabel: 'PM Master заповнює форму →', stepLabel: 'Крок 3 з 9 — Транскрипт зустрічі завантажено'
   },
   {
     appName: 'PM Master — Новий проєкт', type: 'app',
-    docIcon: '🤖', docTitle: 'AI витягує дані проєкту...',
+    docIcon: '🤖', docTitle: 'PM Master витягує дані проєкту...',
     docSub: 'Читає email + транскрипт · Фреймворк PMBOK® 8',
     showAI: true, aiText: 'Витягую: назву, організацію, PM, бюджет, дати, команду, KPI, ризики...',
     body: `Витягнуто з email (14 січ.) + транскрипту (17 січ.):
@@ -4174,7 +4177,7 @@ SARAH: Чудово. Чекаю з нетерпінням.`,
 ✅  KPI #3             →  Нуль ручного введення даних в SAP
 
 Заповнення форми проєкту та генерація документів...`,
-    narr: '<strong>AI витягнув 15 ключових параметрів із транскрипту.</strong> Назва проєкту, бюджет, дедлайн, технічні вимоги, обмеження, KPI — все автоматично заповнено у форму. PM лише перевіряє і підтверджує.'
+    narr: '<strong>PM Master витягнув 15 ключових параметрів із транскрипту.</strong> Назва проєкту, бюджет, дедлайн, технічні вимоги, обмеження, KPI — все автоматично заповнено у форму. PM лише перевіряє і підтверджує.'
   },
   {
     appName: 'PM Master — Project Charter', type: 'doc', isHTML: true,
@@ -4247,15 +4250,15 @@ Project Manager, PM Master`,
 Sarah Mitchell
 VP of People, TechCorp Solutions`,
     narr: '<strong>Замовник погодив Charter.</strong> Sarah Mitchell підписала документ і дала зелене світло. Тепер PM Master може автоматично згенерувати всі 13 документів PMBOK® 8.',
-    nextLabel: 'AI генерує всі документи →', stepLabel: 'Крок 7 з 9 — Клієнт погодив Charter ✅'
+    nextLabel: 'PM Master генерує всі документи →', stepLabel: 'Крок 7 з 9 — Клієнт погодив Charter ✅'
   },
   {
     appName: 'PM Master — Генерація документів', type: 'doc', isHTML: true,
-    docIcon: '🤖', docTitle: 'AI генерує всі 13 документів...',
+    docIcon: '🤖', docTitle: 'PM Master генерує всі 13 документів...',
     docSub: 'Використовує дані з email + транскрипту + погодженого Charter',
     showAI: true, aiText: 'Генерую документи згідно з фреймворком PMBOK® 8...',
     body: '',
-    narr: '<strong>AI генерує всі 13 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
+    narr: '<strong>PM Master генерує всі 13 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
     nextLabel: 'Переглянути документи →', stepLabel: 'Крок 8 з 9 — Генерація 13 документів'
   },
   {
@@ -4360,7 +4363,7 @@ VP of People, TechCorp Solutions`,
     }
   },
   'setup.title': 'Новий проєкт',
-  'setup.subtitle': 'Заповніть деталі або завантажте документи — AI автозаповнить що зможе',
+  'setup.subtitle': 'Заповніть деталі або завантажте документи — PM Master автозаповнить що зможе',
   'setup.projectInfo': '📋 Інформація про проєкт',
   'setup.projectName': 'Назва проєкту *',
   'setup.org': 'Організація / Компанія',
@@ -4372,20 +4375,20 @@ VP of People, TechCorp Solutions`,
   'setup.approach': 'Підхід до розробки',
   'setup.uploadTitle': 'Контекст проєкту',
   'setup.uploadHint': '— необов\'язково, але рекомендовано',
-  'setup.uploadDesc': 'Завантажте МоМ, листи, брифи — AI витягне дані і автозаповнить документи',
+  'setup.uploadDesc': 'Завантажте МоМ, листи, брифи — PM Master витягне дані і автозаповнить документи',
   'setup.dropTitle': 'Перетягніть файли або натисніть для завантаження',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Або вставте текст (email, МоМ, бриф)',
   'setup.analyzeBtn': 'Аналізувати та автозаповнити',
-  'setup.aiFound': '✅ AI знайшов наступну інформацію:',
+  'setup.aiFound': '✅ PM Master знайшов наступну інформацію:',
   'setup.selectDocsTitle': '📑 Оберіть документи для генерації',
   'setup.selectDocsSub': 'Ви можете додавати або видаляти документи в будь-який час з дашборду',
   'setup.selectAll': 'Обрати всі',
   'setup.clear': 'Очистити',
   'setup.descriptionLabel': 'Опис проєкту',
-  'setup.descriptionHint': '(AI використає це для генерації документів)',
+  'setup.descriptionHint': '(PM Master використає це для генерації документів)',
   'setup.objectivesLabel': 'Цілі проєкту',
-  'setup.objectivesHint': '(AI вставить їх у кожен документ)',
+  'setup.objectivesHint': '(PM Master вставить їх у кожен документ)',
   'setup.createBtn': 'Створити проєкт та відкрити дашборд',
   'setup.demoBtn': 'Завантажити демо-проєкт',
   'dash.docsReady': 'Документів готово',
@@ -4406,10 +4409,10 @@ VP of People, TechCorp Solutions`,
   'ph.pasteText': 'Вставте лист від клієнта, нотатки з наради, бриф проєкту...',
   'ph.description': 'Опишіть проєкт: що будуємо, яка проблема вирішується, для кого...',
   'ph.objectives': '1. Запустити MVP до... 2. Досягти... 3. Інтегрувати...',
-  'genAll.prompt': '🚀 ШІ успішно витягнув дані проєкту!\n\nСгенерувати всі обрані документи зараз?\n\nЦе створить усі документи проєкту українською. Займе ~2 хвилини.',
+  'genAll.prompt': '🚀 PM Master успішно витягнув дані проєкту!\n\nСгенерувати всі обрані документи зараз?\n\nЦе створить усі документи проєкту українською. Займе ~2 хвилини.',
   'genAll.generating': '⏳ Генерація документів...',
   'genAll.done': '✅ Усі документи згенеровано!',
-  'genInit.prompt': '🚀 ШІ успішно витягнув дані проєкту!\n\nЗгенерувати документи Initiation?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nРешту документів ви зможете згенерувати самостійно в будь-який час.',
+  'genInit.prompt': '🚀 PM Master успішно витягнув дані проєкту!\n\nЗгенерувати документи Initiation?\n(Project Charter, Assumption Log, Stakeholder Register)\n\nРешту документів ви зможете згенерувати самостійно в будь-який час.',
   'genInit.done': '✅ Документи Initiation згенеровано!\n\nТепер ви можете самостійно згенерувати решту документів на ваш вибір — натисніть кнопку Generate на картці відповідного документа.',
   'modal.edit': '✏️ Редагувати',
   'modal.editSave': '💾 Зберегти зміни',
@@ -4425,7 +4428,7 @@ VP of People, TechCorp Solutions`,
 de: {
   secBanner: '🔒 <strong>Ihre Daten sind 100% privat.</strong> Alle Dokumente werden sicher in Ihrem persönlichen Konto gespeichert — nur Sie haben Zugriff.<span class="sec-banner-detail">Gesichert durch Supabase Row Level Security · Niemand sonst sieht Ihre Daten</span>',
   'setup.title': 'Neues Projekt',
-  'setup.subtitle': 'Projektdetails eingeben oder Dokumente hochladen — KI füllt automatisch aus',
+  'setup.subtitle': 'Projektdetails eingeben oder Dokumente hochladen — PM Master füllt automatisch aus',
   'setup.projectInfo': '📋 Projektinformationen',
   'setup.projectName': 'Projektname *',
   'setup.org': 'Organisation / Unternehmen',
@@ -4437,20 +4440,20 @@ de: {
   'setup.approach': 'Entwicklungsansatz',
   'setup.uploadTitle': 'Projektkontext hochladen',
   'setup.uploadHint': '— optional, aber empfohlen',
-  'setup.uploadDesc': 'MoM, E-Mails, Briefings hochladen — KI extrahiert Daten und füllt Dokumente aus',
+  'setup.uploadDesc': 'MoM, E-Mails, Briefings hochladen — PM Master extrahiert Daten und füllt Dokumente aus',
   'setup.dropTitle': 'Dateien hier ablegen oder klicken',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Oder Text einfügen (E-Mail, MoM, Briefing)',
   'setup.analyzeBtn': 'Analysieren & Automatisch ausfüllen',
-  'setup.aiFound': '✅ KI hat folgende Informationen gefunden:',
+  'setup.aiFound': '✅ PM Master hat folgende Informationen gefunden:',
   'setup.selectDocsTitle': '📑 Dokumente zur Generierung auswählen',
   'setup.selectDocsSub': 'Dokumente können jederzeit im Dashboard hinzugefügt oder entfernt werden',
   'setup.selectAll': 'Alle auswählen',
   'setup.clear': 'Löschen',
   'setup.descriptionLabel': 'Projektbeschreibung',
-  'setup.descriptionHint': '(KI verwendet dies zur Dokumentengenerierung)',
+  'setup.descriptionHint': '(PM Master verwendet dies zur Dokumentengenerierung)',
   'setup.objectivesLabel': 'Projektziele',
-  'setup.objectivesHint': '(KI fügt diese in jedes Dokument ein)',
+  'setup.objectivesHint': '(PM Master fügt diese in jedes Dokument ein)',
   'setup.createBtn': 'Projekt erstellen & Dashboard öffnen',
   'setup.demoBtn': 'Demoprojekt laden',
   'dash.docsReady': 'Dokumente bereit',
@@ -4471,7 +4474,7 @@ de: {
   'ph.pasteText': 'E-Mail vom Kunden, Besprechungsnotizen, Projektbriefing einfügen...',
   'ph.description': 'Beschreiben Sie das Projekt: Was bauen wir, welches Problem löst es, für wen...',
   'ph.objectives': '1. MVP bis... starten 2. Erreichen... 3. Integrieren...',
-  'genAll.prompt': '🚀 KI hat Ihre Projektdaten erfolgreich extrahiert!\n\nAlle ausgewählten Dokumente jetzt generieren?\n\nDies erstellt alle Projektdokumente auf Deutsch. Dauert ~2 Minuten.',
+  'genAll.prompt': '🚀 PM Master hat Ihre Projektdaten erfolgreich extrahiert!\n\nAlle ausgewählten Dokumente jetzt generieren?\n\nDies erstellt alle Projektdokumente auf Deutsch. Dauert ~2 Minuten.',
   'genAll.generating': '⏳ Dokumente werden generiert...',
   'genAll.done': '✅ Alle Dokumente generiert!',
   'modal.edit': '✏️ Bearbeiten',
@@ -4488,7 +4491,7 @@ de: {
 fr: {
   secBanner: '🔒 <strong>Vos données sont 100% privées.</strong> Tous les documents sont stockés en sécurité dans votre compte personnel — vous seul y avez accès.<span class="sec-banner-detail">Protégé par Supabase Row Level Security · Personne d\'autre ne peut voir vos données</span>',
   'setup.title': 'Nouveau projet',
-  'setup.subtitle': 'Remplissez les détails du projet ou téléchargez des documents — l\'IA remplira automatiquement',
+  'setup.subtitle': 'Remplissez les détails du projet ou téléchargez des documents — PM Master remplira automatiquement',
   'setup.projectInfo': '📋 Informations sur le projet',
   'setup.projectName': 'Nom du projet *',
   'setup.org': 'Organisation / Entreprise',
@@ -4500,20 +4503,20 @@ fr: {
   'setup.approach': 'Approche de développement',
   'setup.uploadTitle': 'Contexte du projet',
   'setup.uploadHint': '— facultatif mais recommandé',
-  'setup.uploadDesc': 'Téléchargez MoM, e-mails, briefs — l\'IA extraira les données et remplira les documents',
+  'setup.uploadDesc': 'Téléchargez MoM, e-mails, briefs — PM Master extraira les données et remplira les documents',
   'setup.dropTitle': 'Déposez des fichiers ici ou cliquez pour télécharger',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Ou collez du texte (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analyser et remplir automatiquement',
-  'setup.aiFound': '✅ L\'IA a trouvé les informations suivantes :',
+  'setup.aiFound': '✅ PM Master a trouvé les informations suivantes :',
   'setup.selectDocsTitle': '📑 Sélectionner les documents à générer',
   'setup.selectDocsSub': 'Vous pouvez ajouter ou supprimer des documents à tout moment depuis le tableau de bord',
   'setup.selectAll': 'Tout sélectionner',
   'setup.clear': 'Effacer',
   'setup.descriptionLabel': 'Description du projet',
-  'setup.descriptionHint': '(l\'IA l\'utilisera pour générer des documents)',
+  'setup.descriptionHint': '(PM Master l\'utilisera pour générer des documents)',
   'setup.objectivesLabel': 'Objectifs du projet',
-  'setup.objectivesHint': '(l\'IA les insérera dans chaque document)',
+  'setup.objectivesHint': '(PM Master les insérera dans chaque document)',
   'setup.createBtn': 'Créer le projet & Ouvrir le tableau de bord',
   'setup.demoBtn': 'Charger le projet démo',
   'dash.docsReady': 'Documents prêts',
@@ -4534,7 +4537,7 @@ fr: {
   'ph.pasteText': 'Collez un e-mail client, des notes de réunion, un brief projet...',
   'ph.description': 'Décrivez le projet : que construisons-nous, quel problème résout-il, pour qui...',
   'ph.objectives': '1. Lancer le MVP avant... 2. Atteindre... 3. Intégrer...',
-  'genAll.prompt': '🚀 L\'IA a extrait les données du projet!\n\nGénérer tous les documents sélectionnés maintenant?\n\nCela créera tous les documents en Français. ~2 minutes.',
+  'genAll.prompt': '🚀 PM Master a extrait les données du projet!\n\nGénérer tous les documents sélectionnés maintenant?\n\nCela créera tous les documents en Français. ~2 minutes.',
   'genAll.generating': '⏳ Génération des documents...',
   'genAll.done': '✅ Tous les documents générés!',
   'modal.edit': '✏️ Modifier',
@@ -4551,7 +4554,7 @@ fr: {
 es: {
   secBanner: '🔒 <strong>Sus datos son 100% privados.</strong> Todos los documentos se almacenan de forma segura en su cuenta personal — solo usted tiene acceso.<span class="sec-banner-detail">Protegido por Supabase Row Level Security · Nadie más puede ver sus datos</span>',
   'setup.title': 'Nuevo proyecto',
-  'setup.subtitle': 'Complete los detalles del proyecto o cargue documentos — la IA rellenará automáticamente',
+  'setup.subtitle': 'Complete los detalles del proyecto o cargue documentos — PM Master rellenará automáticamente',
   'setup.projectInfo': '📋 Información del proyecto',
   'setup.projectName': 'Nombre del proyecto *',
   'setup.org': 'Organización / Empresa',
@@ -4563,20 +4566,20 @@ es: {
   'setup.approach': 'Enfoque de desarrollo',
   'setup.uploadTitle': 'Contexto del proyecto',
   'setup.uploadHint': '— opcional pero recomendado',
-  'setup.uploadDesc': 'Cargue MoM, correos, briefs — la IA extraerá datos y rellenará documentos',
+  'setup.uploadDesc': 'Cargue MoM, correos, briefs — PM Master extraerá datos y rellenará documentos',
   'setup.dropTitle': 'Arrastre archivos aquí o haga clic para cargar',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'O pegue texto (correo, MoM, brief)',
   'setup.analyzeBtn': 'Analizar y rellenar automáticamente',
-  'setup.aiFound': '✅ La IA encontró la siguiente información:',
+  'setup.aiFound': '✅ PM Master encontró la siguiente información:',
   'setup.selectDocsTitle': '📑 Seleccionar documentos a generar',
   'setup.selectDocsSub': 'Puede agregar o eliminar documentos en cualquier momento desde el panel',
   'setup.selectAll': 'Seleccionar todo',
   'setup.clear': 'Limpiar',
   'setup.descriptionLabel': 'Descripción del proyecto',
-  'setup.descriptionHint': '(la IA lo usará para generar documentos)',
+  'setup.descriptionHint': '(PM Master lo usará para generar documentos)',
   'setup.objectivesLabel': 'Objetivos del proyecto',
-  'setup.objectivesHint': '(la IA los insertará en cada documento)',
+  'setup.objectivesHint': '(PM Master los insertará en cada documento)',
   'setup.createBtn': 'Crear proyecto y abrir panel',
   'setup.demoBtn': 'Cargar proyecto demo',
   'dash.docsReady': 'Documentos listos',
@@ -4597,7 +4600,7 @@ es: {
   'ph.pasteText': 'Pegue un correo del cliente, notas de reunión, brief del proyecto...',
   'ph.description': 'Describa el proyecto: qué construimos, qué problema resuelve, para quién...',
   'ph.objectives': '1. Lanzar MVP antes de... 2. Lograr... 3. Integrar...',
-  'genAll.prompt': '🚀 ¡La IA extrajo los datos del proyecto!\n\n¿Generar todos los documentos ahora?\n\nSe crearán en Español. ~2 minutos.',
+  'genAll.prompt': '🚀 ¡PM Master extrajo los datos del proyecto!\n\n¿Generar todos los documentos ahora?\n\nSe crearán en Español. ~2 minutos.',
   'genAll.generating': '⏳ Generando documentos...',
   'genAll.done': '✅ ¡Todos los documentos generados!',
   'modal.edit': '✏️ Editar',
@@ -4614,7 +4617,7 @@ es: {
 pl: {
   secBanner: '🔒 <strong>Twoje dane są w 100% prywatne.</strong> Wszystkie dokumenty są bezpiecznie przechowywane na Twoim osobistym koncie — tylko Ty masz do nich dostęp.<span class="sec-banner-detail">Chronione przez Supabase Row Level Security · Nikt inny nie widzi Twoich danych</span>',
   'setup.title': 'Nowy projekt',
-  'setup.subtitle': 'Wypełnij szczegóły projektu lub prześlij dokumenty — AI wypełni automatycznie',
+  'setup.subtitle': 'Wypełnij szczegóły projektu lub prześlij dokumenty — PM Master wypełni automatycznie',
   'setup.projectInfo': '📋 Informacje o projekcie',
   'setup.projectName': 'Nazwa projektu *',
   'setup.org': 'Organizacja / Firma',
@@ -4626,20 +4629,20 @@ pl: {
   'setup.approach': 'Podejście do rozwoju',
   'setup.uploadTitle': 'Kontekst projektu',
   'setup.uploadHint': '— opcjonalne, ale zalecane',
-  'setup.uploadDesc': 'Prześlij MoM, e-maile, briefy — AI wyodrębni dane i wypełni dokumenty',
+  'setup.uploadDesc': 'Prześlij MoM, e-maile, briefy — PM Master wyodrębni dane i wypełni dokumenty',
   'setup.dropTitle': 'Upuść pliki tutaj lub kliknij, aby przesłać',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Lub wklej tekst (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analizuj i wypełnij automatycznie',
-  'setup.aiFound': '✅ AI znalazło następujące informacje:',
+  'setup.aiFound': '✅ PM Master znalazło następujące informacje:',
   'setup.selectDocsTitle': '📑 Wybierz dokumenty do wygenerowania',
   'setup.selectDocsSub': 'Możesz dodawać lub usuwać dokumenty w dowolnym momencie z panelu',
   'setup.selectAll': 'Zaznacz wszystkie',
   'setup.clear': 'Wyczyść',
   'setup.descriptionLabel': 'Opis projektu',
-  'setup.descriptionHint': '(AI użyje tego do generowania dokumentów)',
+  'setup.descriptionHint': '(PM Master użyje tego do generowania dokumentów)',
   'setup.objectivesLabel': 'Cele projektu',
-  'setup.objectivesHint': '(AI wstawi je do każdego dokumentu)',
+  'setup.objectivesHint': '(PM Master wstawi je do każdego dokumentu)',
   'setup.createBtn': 'Utwórz projekt i otwórz panel',
   'setup.demoBtn': 'Załaduj projekt demo',
   'dash.docsReady': 'Gotowe dokumenty',
@@ -4660,7 +4663,7 @@ pl: {
   'ph.pasteText': 'Wklej e-mail od klienta, notatki ze spotkania, brief projektu...',
   'ph.description': 'Opisz projekt: co budujemy, jaki problem rozwiązuje, dla kogo...',
   'ph.objectives': '1. Uruchomić MVP do... 2. Osiągnąć... 3. Zintegrować...',
-  'genAll.prompt': '🚀 AI pomyślnie wyodrębnił dane projektu!\n\nWygenerować wszystkie dokumenty teraz?\n\nDokumenty powstaną po polsku. ~2 minuty.',
+  'genAll.prompt': '🚀 PM Master pomyślnie wyodrębnił dane projektu!\n\nWygenerować wszystkie dokumenty teraz?\n\nDokumenty powstaną po polsku. ~2 minuty.',
   'genAll.generating': '⏳ Generowanie dokumentów...',
   'genAll.done': '✅ Wszystkie dokumenty wygenerowane!',
   'modal.edit': '✏️ Edytuj',
@@ -4677,7 +4680,7 @@ pl: {
 pt: {
   secBanner: '🔒 <strong>Seus dados são 100% privados.</strong> Todos os documentos são armazenados com segurança em sua conta pessoal — somente você tem acesso.<span class="sec-banner-detail">Protegido pelo Supabase Row Level Security · Ninguém mais pode ver seus dados</span>',
   'setup.title': 'Novo projeto',
-  'setup.subtitle': 'Preencha os detalhes do projeto ou faça upload de documentos — a IA preencherá automaticamente',
+  'setup.subtitle': 'Preencha os detalhes do projeto ou faça upload de documentos — PM Master preencherá automaticamente',
   'setup.projectInfo': '📋 Informações do projeto',
   'setup.projectName': 'Nome do projeto *',
   'setup.org': 'Organização / Empresa',
@@ -4689,20 +4692,20 @@ pt: {
   'setup.approach': 'Abordagem de desenvolvimento',
   'setup.uploadTitle': 'Contexto do projeto',
   'setup.uploadHint': '— opcional mas recomendado',
-  'setup.uploadDesc': 'Faça upload de MoM, e-mails, briefings — a IA extrairá dados e preencherá documentos',
+  'setup.uploadDesc': 'Faça upload de MoM, e-mails, briefings — PM Master extrairá dados e preencherá documentos',
   'setup.dropTitle': 'Arraste arquivos aqui ou clique para fazer upload',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Ou cole o texto (e-mail, MoM, briefing)',
   'setup.analyzeBtn': 'Analisar e preencher automaticamente',
-  'setup.aiFound': '✅ A IA encontrou as seguintes informações:',
+  'setup.aiFound': '✅ PM Master encontrou as seguintes informações:',
   'setup.selectDocsTitle': '📑 Selecionar documentos para gerar',
   'setup.selectDocsSub': 'Você pode adicionar ou remover documentos a qualquer momento no painel',
   'setup.selectAll': 'Selecionar tudo',
   'setup.clear': 'Limpar',
   'setup.descriptionLabel': 'Descrição do projeto',
-  'setup.descriptionHint': '(a IA usará isso para gerar documentos)',
+  'setup.descriptionHint': '(PM Master usará isso para gerar documentos)',
   'setup.objectivesLabel': 'Objetivos do projeto',
-  'setup.objectivesHint': '(a IA os inserirá em cada documento)',
+  'setup.objectivesHint': '(PM Master os inserirá em cada documento)',
   'setup.createBtn': 'Criar projeto e abrir painel',
   'setup.demoBtn': 'Carregar projeto demo',
   'dash.docsReady': 'Documentos prontos',
@@ -4723,7 +4726,7 @@ pt: {
   'ph.pasteText': 'Cole um e-mail do cliente, notas de reunião, briefing do projeto...',
   'ph.description': 'Descreva o projeto: o que estamos construindo, que problema resolve, para quem...',
   'ph.objectives': '1. Lançar MVP até... 2. Alcançar... 3. Integrar...',
-  'genAll.prompt': '🚀 A IA extraiu os dados do projeto!\n\nGerar todos os documentos agora?\n\nSerão criados em Português. ~2 minutos.',
+  'genAll.prompt': '🚀 PM Master extraiu os dados do projeto!\n\nGerar todos os documentos agora?\n\nSerão criados em Português. ~2 minutos.',
   'genAll.generating': '⏳ Gerando documentos...',
   'genAll.done': '✅ Todos os documentos gerados!',
   'modal.edit': '✏️ Editar',
@@ -4740,7 +4743,7 @@ pt: {
 it: {
   secBanner: '🔒 <strong>I tuoi dati sono 100% privati.</strong> Tutti i documenti sono archiviati in modo sicuro nel tuo account personale — solo tu puoi accedervi.<span class="sec-banner-detail">Protetto da Supabase Row Level Security · Nessun altro può vedere i tuoi dati</span>',
   'setup.title': 'Nuovo progetto',
-  'setup.subtitle': 'Inserisci i dettagli del progetto o carica documenti — l\'AI compilerà automaticamente',
+  'setup.subtitle': 'Inserisci i dettagli del progetto o carica documenti — l\'PM Master compilerà automaticamente',
   'setup.projectInfo': '📋 Informazioni sul progetto',
   'setup.projectName': 'Nome del progetto *',
   'setup.org': 'Organizzazione / Azienda',
@@ -4752,20 +4755,20 @@ it: {
   'setup.approach': 'Approccio di sviluppo',
   'setup.uploadTitle': 'Contesto del progetto',
   'setup.uploadHint': '— facoltativo ma consigliato',
-  'setup.uploadDesc': 'Carica MoM, e-mail, brief — l\'AI estrarrà i dati e compilerà i documenti',
+  'setup.uploadDesc': 'Carica MoM, e-mail, brief — l\'PM Master estrarrà i dati e compilerà i documenti',
   'setup.dropTitle': 'Trascina file qui o clicca per caricare',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'O incolla il testo (e-mail, MoM, brief)',
   'setup.analyzeBtn': 'Analizza e compila automaticamente',
-  'setup.aiFound': '✅ L\'AI ha trovato le seguenti informazioni:',
+  'setup.aiFound': '✅ L\'PM Master ha trovato le seguenti informazioni:',
   'setup.selectDocsTitle': '📑 Seleziona i documenti da generare',
   'setup.selectDocsSub': 'Puoi aggiungere o rimuovere documenti in qualsiasi momento dalla dashboard',
   'setup.selectAll': 'Seleziona tutto',
   'setup.clear': 'Cancella',
   'setup.descriptionLabel': 'Descrizione del progetto',
-  'setup.descriptionHint': '(l\'AI lo userà per generare documenti)',
+  'setup.descriptionHint': '(l\'PM Master lo userà per generare documenti)',
   'setup.objectivesLabel': 'Obiettivi del progetto',
-  'setup.objectivesHint': '(l\'AI li inserirà in ogni documento)',
+  'setup.objectivesHint': '(l\'PM Master li inserirà in ogni documento)',
   'setup.createBtn': 'Crea progetto e apri dashboard',
   'setup.demoBtn': 'Carica progetto demo',
   'dash.docsReady': 'Documenti pronti',
@@ -4786,7 +4789,7 @@ it: {
   'ph.pasteText': 'Incolla un\'e-mail del cliente, note di riunione, brief del progetto...',
   'ph.description': 'Descrivi il progetto: cosa stiamo costruendo, quale problema risolve, per chi...',
   'ph.objectives': '1. Lanciare MVP entro... 2. Raggiungere... 3. Integrare...',
-  'genAll.prompt': '🚀 L\'AI ha estratto i dati del progetto!\n\nGenerare tutti i documenti ora?\n\nSaranno creati in Italiano. ~2 minuti.',
+  'genAll.prompt': '🚀 L\'PM Master ha estratto i dati del progetto!\n\nGenerare tutti i documenti ora?\n\nSaranno creati in Italiano. ~2 minuti.',
   'genAll.generating': '⏳ Generazione documenti...',
   'genAll.done': '✅ Tutti i documenti generati!',
   'modal.edit': '✏️ Modifica',
@@ -4803,7 +4806,7 @@ it: {
 tr: {
   secBanner: '🔒 <strong>Verileriniz %100 özeldir.</strong> Tüm belgeler kişisel hesabınızda güvenle saklanır — yalnızca siz erişebilirsiniz.<span class="sec-banner-detail">Supabase Row Level Security ile korunmaktadır · Başka kimse verilerinizi göremez</span>',
   'setup.title': 'Yeni proje',
-  'setup.subtitle': 'Proje detaylarını doldurun veya belge yükleyin — yapay zeka otomatik dolduracak',
+  'setup.subtitle': 'Proje detaylarını doldurun veya belge yükleyin — PM Master otomatik dolduracak',
   'setup.projectInfo': '📋 Proje Bilgileri',
   'setup.projectName': 'Proje Adı *',
   'setup.org': 'Kuruluş / Şirket',
@@ -4815,20 +4818,20 @@ tr: {
   'setup.approach': 'Geliştirme Yaklaşımı',
   'setup.uploadTitle': 'Proje Bağlamı',
   'setup.uploadHint': '— isteğe bağlı ama önerilir',
-  'setup.uploadDesc': 'MoM, e-posta, brief yükleyin — yapay zeka verileri çıkarıp belgeleri dolduracak',
+  'setup.uploadDesc': 'MoM, e-posta, brief yükleyin — PM Master verileri çıkarıp belgeleri dolduracak',
   'setup.dropTitle': 'Dosyaları buraya sürükleyin veya yüklemek için tıklayın',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'Veya metin yapıştırın (e-posta, MoM, brief)',
   'setup.analyzeBtn': 'Analiz Et ve Otomatik Doldur',
-  'setup.aiFound': '✅ Yapay zeka şu bilgileri buldu:',
+  'setup.aiFound': '✅ PM Master şu bilgileri buldu:',
   'setup.selectDocsTitle': '📑 Oluşturulacak Belgeleri Seçin',
   'setup.selectDocsSub': 'Belgeleri istediğiniz zaman panodan ekleyip kaldırabilirsiniz',
   'setup.selectAll': 'Tümünü Seç',
   'setup.clear': 'Temizle',
   'setup.descriptionLabel': 'Proje Açıklaması',
-  'setup.descriptionHint': '(yapay zeka bunu belge oluşturmak için kullanacak)',
+  'setup.descriptionHint': '(PM Master bunu belge oluşturmak için kullanacak)',
   'setup.objectivesLabel': 'Proje Hedefleri',
-  'setup.objectivesHint': '(yapay zeka bunları her belgeye ekleyecek)',
+  'setup.objectivesHint': '(PM Master bunları her belgeye ekleyecek)',
   'setup.createBtn': 'Proje Oluştur ve Panoyu Aç',
   'setup.demoBtn': 'Demo Proje Yükle',
   'dash.docsReady': 'Hazır Belgeler',
@@ -4849,7 +4852,7 @@ tr: {
   'ph.pasteText': 'Müşteri e-postası, toplantı notları, proje brifingi yapıştırın...',
   'ph.description': 'Projeyi açıklayın: ne inşa ediyoruz, hangi sorunu çözüyor, kimin için...',
   'ph.objectives': '1. MVP\'yi ... tarihine kadar başlat 2. Ulaş... 3. Entegre et...',
-  'genAll.prompt': '🚀 AI proje verilerini başarıyla çıkardı!\n\nTüm seçili belgeleri şimdi oluştur?\n\nTürkçe olarak oluşturulacak. ~2 dakika.',
+  'genAll.prompt': '🚀 PM Master proje verilerini başarıyla çıkardı!\n\nTüm seçili belgeleri şimdi oluştur?\n\nTürkçe olarak oluşturulacak. ~2 dakika.',
   'genAll.generating': '⏳ Belgeler oluşturuluyor...',
   'genAll.done': '✅ Tüm belgeler oluşturuldu!',
   'modal.edit': '✏️ Düzenle',
@@ -4866,7 +4869,7 @@ tr: {
 zh: {
   secBanner: '🔒 <strong>您的数据100%私密。</strong>所有文件安全存储在您的个人账户中 — 只有您可以访问。<span class="sec-banner-detail">受Supabase行级安全保护 · 其他人无法查看您的数据</span>',
   'setup.title': '新项目',
-  'setup.subtitle': '填写项目详情或上传文件 — AI将自动填写',
+  'setup.subtitle': '填写项目详情或上传文件 — PM Master将自动填写',
   'setup.projectInfo': '📋 项目信息',
   'setup.projectName': '项目名称 *',
   'setup.org': '组织 / 公司',
@@ -4878,20 +4881,20 @@ zh: {
   'setup.approach': '开发方法',
   'setup.uploadTitle': '项目背景资料',
   'setup.uploadHint': '— 可选但推荐',
-  'setup.uploadDesc': '上传会议纪要、邮件、简报 — AI将提取数据并填写文件',
+  'setup.uploadDesc': '上传会议纪要、邮件、简报 — PM Master将提取数据并填写文件',
   'setup.dropTitle': '将文件拖放至此处或点击上传',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': '或粘贴文本（邮件、会议纪要、简报）',
   'setup.analyzeBtn': '分析并自动填写',
-  'setup.aiFound': '✅ AI找到以下信息：',
+  'setup.aiFound': '✅ PM Master找到以下信息：',
   'setup.selectDocsTitle': '📑 选择要生成的文件',
   'setup.selectDocsSub': '您可以随时在仪表板中添加或删除文件',
   'setup.selectAll': '全选',
   'setup.clear': '清除',
   'setup.descriptionLabel': '项目描述',
-  'setup.descriptionHint': '（AI将使用此内容生成文件）',
+  'setup.descriptionHint': '（PM Master将使用此内容生成文件）',
   'setup.objectivesLabel': '项目目标',
-  'setup.objectivesHint': '（AI将在每个文件中插入这些内容）',
+  'setup.objectivesHint': '（PM Master将在每个文件中插入这些内容）',
   'setup.createBtn': '创建项目并打开仪表板',
   'setup.demoBtn': '加载演示项目',
   'dash.docsReady': '已完成文件',
@@ -4912,7 +4915,7 @@ zh: {
   'ph.pasteText': '粘贴客户邮件、会议记录、项目简报...',
   'ph.description': '描述项目：我们在构建什么，解决什么问题，为谁服务...',
   'ph.objectives': '1. 在...之前启动MVP 2. 实现... 3. 整合...',
-  'genAll.prompt': '🚀 AI成功提取了项目数据！\n\n现在生成所有选定的文档？\n\n将以中文创建。约2分钟。',
+  'genAll.prompt': '🚀 PM Master成功提取了项目数据！\n\n现在生成所有选定的文档？\n\n将以中文创建。约2分钟。',
   'genAll.generating': '⏳ 正在生成文档...',
   'genAll.done': '✅ 所有文档已生成！',
   'modal.edit': '✏️ 编辑',
@@ -4929,7 +4932,7 @@ zh: {
 ja: {
   secBanner: '🔒 <strong>データは100%プライベートです。</strong>すべてのドキュメントはあなたの個人アカウントに安全に保存されます — アクセスできるのはあなただけです。<span class="sec-banner-detail">Supabase Row Level Securityで保護 · 他の誰もデータを見ることができません</span>',
   'setup.title': '新しいプロジェクト',
-  'setup.subtitle': 'プロジェクトの詳細を入力するか、ドキュメントをアップロードしてください — AIが自動入力します',
+  'setup.subtitle': 'プロジェクトの詳細を入力するか、ドキュメントをアップロードしてください — PM Masterが自動入力します',
   'setup.projectInfo': '📋 プロジェクト情報',
   'setup.projectName': 'プロジェクト名 *',
   'setup.org': '組織 / 会社',
@@ -4941,20 +4944,20 @@ ja: {
   'setup.approach': '開発アプローチ',
   'setup.uploadTitle': 'プロジェクトコンテキスト',
   'setup.uploadHint': '— 任意ですが推奨',
-  'setup.uploadDesc': 'MoM、メール、ブリーフをアップロード — AIがデータを抽出してドキュメントを入力します',
+  'setup.uploadDesc': 'MoM、メール、ブリーフをアップロード — PM Masterがデータを抽出してドキュメントを入力します',
   'setup.dropTitle': 'ファイルをここにドロップまたはクリックしてアップロード',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'またはテキストを貼り付け（メール、MoM、ブリーフ）',
   'setup.analyzeBtn': '分析して自動入力',
-  'setup.aiFound': '✅ AIが次の情報を見つけました：',
+  'setup.aiFound': '✅ PM Masterが次の情報を見つけました：',
   'setup.selectDocsTitle': '📑 生成するドキュメントを選択',
   'setup.selectDocsSub': 'ダッシュボードからいつでもドキュメントを追加または削除できます',
   'setup.selectAll': 'すべて選択',
   'setup.clear': 'クリア',
   'setup.descriptionLabel': 'プロジェクト説明',
-  'setup.descriptionHint': '（AIがドキュメント生成に使用します）',
+  'setup.descriptionHint': '（PM Masterがドキュメント生成に使用します）',
   'setup.objectivesLabel': 'プロジェクト目標',
-  'setup.objectivesHint': '（AIが各ドキュメントに挿入します）',
+  'setup.objectivesHint': '（PM Masterが各ドキュメントに挿入します）',
   'setup.createBtn': 'プロジェクトを作成してダッシュボードを開く',
   'setup.demoBtn': 'デモプロジェクトを読み込む',
   'dash.docsReady': '完成ドキュメント',
@@ -4975,7 +4978,7 @@ ja: {
   'ph.pasteText': 'クライアントのメール、会議メモ、プロジェクトブリーフを貼り付け...',
   'ph.description': 'プロジェクトを説明してください：何を構築するか、どんな問題を解決するか、誰のために...',
   'ph.objectives': '1. ...までにMVPを開始 2. 達成... 3. 統合...',
-  'genAll.prompt': '🚀 AIがプロジェクトデータを正常に抽出しました！\n\n今すぐすべてのドキュメントを生成しますか？\n\n日本語で作成されます。約2分。',
+  'genAll.prompt': '🚀 PM Masterがプロジェクトデータを正常に抽出しました！\n\n今すぐすべてのドキュメントを生成しますか？\n\n日本語で作成されます。約2分。',
   'genAll.generating': '⏳ ドキュメントを生成中...',
   'genAll.done': '✅ すべてのドキュメントが生成されました！',
   'modal.edit': '✏️ 編集',
@@ -4992,7 +4995,7 @@ ja: {
 ko: {
   secBanner: '🔒 <strong>데이터는 100% 비공개입니다.</strong>모든 문서는 개인 계정에 안전하게 저장됩니다 — 본인만 접근할 수 있습니다.<span class="sec-banner-detail">Supabase Row Level Security로 보호 · 다른 사람은 데이터를 볼 수 없습니다</span>',
   'setup.title': '새 프로젝트',
-  'setup.subtitle': '프로젝트 세부 정보를 입력하거나 문서를 업로드하세요 — AI가 자동으로 채웁니다',
+  'setup.subtitle': '프로젝트 세부 정보를 입력하거나 문서를 업로드하세요 — PM Master가 자동으로 채웁니다',
   'setup.projectInfo': '📋 프로젝트 정보',
   'setup.projectName': '프로젝트 이름 *',
   'setup.org': '조직 / 회사',
@@ -5004,20 +5007,20 @@ ko: {
   'setup.approach': '개발 접근 방식',
   'setup.uploadTitle': '프로젝트 컨텍스트',
   'setup.uploadHint': '— 선택 사항이지만 권장',
-  'setup.uploadDesc': 'MoM, 이메일, 브리프 업로드 — AI가 데이터를 추출하고 문서를 채웁니다',
+  'setup.uploadDesc': 'MoM, 이메일, 브리프 업로드 — PM Master가 데이터를 추출하고 문서를 채웁니다',
   'setup.dropTitle': '파일을 여기에 드롭하거나 클릭하여 업로드',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': '또는 텍스트 붙여넣기 (이메일, MoM, 브리프)',
   'setup.analyzeBtn': '분석하고 자동으로 채우기',
-  'setup.aiFound': '✅ AI가 다음 정보를 찾았습니다:',
+  'setup.aiFound': '✅ PM Master가 다음 정보를 찾았습니다:',
   'setup.selectDocsTitle': '📑 생성할 문서 선택',
   'setup.selectDocsSub': '대시보드에서 언제든지 문서를 추가하거나 제거할 수 있습니다',
   'setup.selectAll': '모두 선택',
   'setup.clear': '지우기',
   'setup.descriptionLabel': '프로젝트 설명',
-  'setup.descriptionHint': '(AI가 문서 생성에 사용합니다)',
+  'setup.descriptionHint': '(PM Master가 문서 생성에 사용합니다)',
   'setup.objectivesLabel': '프로젝트 목표',
-  'setup.objectivesHint': '(AI가 모든 문서에 삽입합니다)',
+  'setup.objectivesHint': '(PM Master가 모든 문서에 삽입합니다)',
   'setup.createBtn': '프로젝트 만들기 및 대시보드 열기',
   'setup.demoBtn': '데모 프로젝트 불러오기',
   'dash.docsReady': '완성된 문서',
@@ -5038,7 +5041,7 @@ ko: {
   'ph.pasteText': '클라이언트 이메일, 회의 노트, 프로젝트 브리프 붙여넣기...',
   'ph.description': '프로젝트를 설명하세요: 무엇을 구축하는지, 어떤 문제를 해결하는지, 누구를 위해...',
   'ph.objectives': '1. ...까지 MVP 출시 2. 달성... 3. 통합...',
-  'genAll.prompt': '🚀 AI가 프로젝트 데이터를 성공적으로 추출했습니다!\n\n지금 모든 문서를 생성하시겠습니까?\n\n한국어로 생성됩니다. 약 2분.',
+  'genAll.prompt': '🚀 PM Master가 프로젝트 데이터를 성공적으로 추출했습니다!\n\n지금 모든 문서를 생성하시겠습니까?\n\n한국어로 생성됩니다. 약 2분.',
   'genAll.generating': '⏳ 문서 생성 중...',
   'genAll.done': '✅ 모든 문서 생성 완료!',
   'modal.edit': '✏️ 편집',
@@ -5055,7 +5058,7 @@ ko: {
 hi: {
   secBanner: '🔒 <strong>आपका डेटा 100% निजी है।</strong>सभी दस्तावेज़ आपके व्यक्तिगत खाते में सुरक्षित रूप से संग्रहीत हैं — केवल आप ही उन्हें एक्सेस कर सकते हैं।<span class="sec-banner-detail">Supabase Row Level Security द्वारा सुरक्षित · कोई और आपका डेटा नहीं देख सकता</span>',
   'setup.title': 'नया प्रोजेक्ट',
-  'setup.subtitle': 'प्रोजेक्ट विवरण भरें या दस्तावेज़ अपलोड करें — AI स्वचालित रूप से भरेगा',
+  'setup.subtitle': 'प्रोजेक्ट विवरण भरें या दस्तावेज़ अपलोड करें — PM Master स्वचालित रूप से भरेगा',
   'setup.projectInfo': '📋 प्रोजेक्ट जानकारी',
   'setup.projectName': 'प्रोजेक्ट का नाम *',
   'setup.org': 'संगठन / कंपनी',
@@ -5067,20 +5070,20 @@ hi: {
   'setup.approach': 'विकास दृष्टिकोण',
   'setup.uploadTitle': 'प्रोजेक्ट संदर्भ',
   'setup.uploadHint': '— वैकल्पिक लेकिन अनुशंसित',
-  'setup.uploadDesc': 'MoM, ईमेल, ब्रीफ अपलोड करें — AI डेटा निकालकर दस्तावेज़ भरेगा',
+  'setup.uploadDesc': 'MoM, ईमेल, ब्रीफ अपलोड करें — PM Master डेटा निकालकर दस्तावेज़ भरेगा',
   'setup.dropTitle': 'फ़ाइलें यहाँ खींचें या अपलोड करने के लिए क्लिक करें',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'या टेक्स्ट पेस्ट करें (ईमेल, MoM, ब्रीफ)',
   'setup.analyzeBtn': 'विश्लेषण करें और स्वचालित भरें',
-  'setup.aiFound': '✅ AI को निम्नलिखित जानकारी मिली:',
+  'setup.aiFound': '✅ PM Master को निम्नलिखित जानकारी मिली:',
   'setup.selectDocsTitle': '📑 जनरेट करने के लिए दस्तावेज़ चुनें',
   'setup.selectDocsSub': 'आप डैशबोर्ड से कभी भी दस्तावेज़ जोड़ या हटा सकते हैं',
   'setup.selectAll': 'सभी चुनें',
   'setup.clear': 'साफ़ करें',
   'setup.descriptionLabel': 'प्रोजेक्ट विवरण',
-  'setup.descriptionHint': '(AI इसका उपयोग दस्तावेज़ बनाने के लिए करेगा)',
+  'setup.descriptionHint': '(PM Master इसका उपयोग दस्तावेज़ बनाने के लिए करेगा)',
   'setup.objectivesLabel': 'प्रोजेक्ट उद्देश्य',
-  'setup.objectivesHint': '(AI इन्हें हर दस्तावेज़ में डालेगा)',
+  'setup.objectivesHint': '(PM Master इन्हें हर दस्तावेज़ में डालेगा)',
   'setup.createBtn': 'प्रोजेक्ट बनाएं और डैशबोर्ड खोलें',
   'setup.demoBtn': 'डेमो प्रोजेक्ट लोड करें',
   'dash.docsReady': 'तैयार दस्तावेज़',
@@ -5101,7 +5104,7 @@ hi: {
   'ph.pasteText': 'क्लाइंट का ईमेल, मीटिंग नोट्स, प्रोजेक्ट ब्रीफ पेस्ट करें...',
   'ph.description': 'प्रोजेक्ट का वर्णन करें: हम क्या बना रहे हैं, कौन सी समस्या हल हो रही है, किसके लिए...',
   'ph.objectives': '1. MVP को... तक लॉन्च करें 2. हासिल करें... 3. एकीकृत करें...',
-  'genAll.prompt': '🚀 AI ने प्रोजेक्ट डेटा सफलतापूर्वक निकाला!\n\nअभी सभी दस्तावेज़ बनाएं?\n\nहिंदी में बनाए जाएंगे। ~2 मिनट।',
+  'genAll.prompt': '🚀 PM Master ने प्रोजेक्ट डेटा सफलतापूर्वक निकाला!\n\nअभी सभी दस्तावेज़ बनाएं?\n\nहिंदी में बनाए जाएंगे। ~2 मिनट।',
   'genAll.generating': '⏳ दस्तावेज़ बनाए जा रहे हैं...',
   'genAll.done': '✅ सभी दस्तावेज़ बन गए!',
   'modal.edit': '✏️ संपादित करें',
@@ -5118,7 +5121,7 @@ hi: {
 ar: {
   secBanner: '🔒 <strong>بياناتك خاصة 100%.</strong> يتم تخزين جميع المستندات بأمان في حسابك الشخصي — أنت فقط من يمكنه الوصول إليها.<span class="sec-banner-detail">محمي بواسطة Supabase Row Level Security · لا أحد آخر يمكنه رؤية بياناتك</span>',
   'setup.title': 'مشروع جديد',
-  'setup.subtitle': 'أدخل تفاصيل المشروع أو ارفع المستندات — سيملأ الذكاء الاصطناعي تلقائياً',
+  'setup.subtitle': 'أدخل تفاصيل المشروع أو ارفع المستندات — سيملأ PM Master تلقائياً',
   'setup.projectInfo': '📋 معلومات المشروع',
   'setup.projectName': 'اسم المشروع *',
   'setup.org': 'المنظمة / الشركة',
@@ -5130,20 +5133,20 @@ ar: {
   'setup.approach': 'نهج التطوير',
   'setup.uploadTitle': 'سياق المشروع',
   'setup.uploadHint': '— اختياري لكن موصى به',
-  'setup.uploadDesc': 'ارفع MoM أو بريد إلكتروني أو موجز — سيستخرج الذكاء الاصطناعي البيانات ويملأ المستندات',
+  'setup.uploadDesc': 'ارفع MoM أو بريد إلكتروني أو موجز — سيستخرج PM Master البيانات ويملأ المستندات',
   'setup.dropTitle': 'اسحب الملفات هنا أو انقر للرفع',
   'setup.dropSub': 'PDF · DOCX · TXT',
   'setup.pasteLabel': 'أو الصق النص (بريد إلكتروني، MoM، موجز)',
   'setup.analyzeBtn': 'تحليل وملء تلقائي',
-  'setup.aiFound': '✅ وجد الذكاء الاصطناعي المعلومات التالية:',
+  'setup.aiFound': '✅ وجد PM Master المعلومات التالية:',
   'setup.selectDocsTitle': '📑 اختر المستندات للإنشاء',
   'setup.selectDocsSub': 'يمكنك إضافة أو إزالة المستندات في أي وقت من لوحة التحكم',
   'setup.selectAll': 'تحديد الكل',
   'setup.clear': 'مسح',
   'setup.descriptionLabel': 'وصف المشروع',
-  'setup.descriptionHint': '(سيستخدم الذكاء الاصطناعي هذا لإنشاء المستندات)',
+  'setup.descriptionHint': '(سيستخدم PM Master هذا لإنشاء المستندات)',
   'setup.objectivesLabel': 'أهداف المشروع',
-  'setup.objectivesHint': '(سيدرج الذكاء الاصطناعي هذه في كل مستند)',
+  'setup.objectivesHint': '(سيدرج PM Master هذه في كل مستند)',
   'setup.createBtn': 'إنشاء المشروع وفتح لوحة التحكم',
   'setup.demoBtn': 'تحميل المشروع التجريبي',
   'dash.docsReady': 'المستندات الجاهزة',
@@ -5164,7 +5167,7 @@ ar: {
   'ph.pasteText': 'الصق بريداً إلكترونياً أو ملاحظات اجتماع أو موجز مشروع...',
   'ph.description': 'صف المشروع: ماذا نبني، ما المشكلة التي يحلها، لمن...',
   'ph.objectives': '1. إطلاق MVP بحلول... 2. تحقيق... 3. دمج...',
-  'genAll.prompt': '🚀 استخرج الذكاء الاصطناعي بيانات المشروع بنجاح!\n\nإنشاء جميع المستندات الآن؟\n\nستُنشأ باللغة العربية. ~دقيقتان.',
+  'genAll.prompt': '🚀 استخرج PM Master بيانات المشروع بنجاح!\n\nإنشاء جميع المستندات الآن؟\n\nستُنشأ باللغة العربية. ~دقيقتان.',
   'genAll.generating': '⏳ جارٍ إنشاء المستندات...',
   'genAll.done': '✅ تم إنشاء جميع المستندات!',
   'modal.edit': '✏️ تعديل',
@@ -5319,7 +5322,7 @@ function renderDemo() {
 
   // AI bar
   const aiBar = document.getElementById('dm-ai-bar');
-  if (s.showAI) { aiBar.style.display = 'flex'; document.getElementById('dm-ai-text').textContent = s.aiText || 'AI is processing...'; }
+  if (s.showAI) { aiBar.style.display = 'flex'; document.getElementById('dm-ai-text').textContent = s.aiText || 'PM Master is processing...'; }
   else aiBar.style.display = 'none';
 
   // Body
