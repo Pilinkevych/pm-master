@@ -2918,7 +2918,11 @@ async function fetchQuizBatch(count) {
 // A batch takes about forty seconds to generate and lasts a reader under a
 // minute, so fetching them strictly one after another can never get ahead. Keep
 // two in flight: the reader gains roughly a batch of headroom per batch spent.
-const QUIZ_PARALLEL = 2;
+// Three at once, not two. Generation takes about forty-five seconds whatever the
+// batch size, and five questions last a reader under a minute — with two in
+// flight the queue is only ever a few seconds ahead, and any pause for thought
+// puts the reader in front of the generator.
+const QUIZ_PARALLEL = 3;
 
 async function prefetchNextBatch() {
   if (quizState.done) return;
@@ -2998,7 +3002,9 @@ async function startQuiz() {
     // Fill the queue straight away — two batches in flight from the first
     // question, so the reader never catches up with the generator.
     quizState.inFlight = 0;
-    if (quizState.questions.length < totalTarget) { prefetchNextBatch(); prefetchNextBatch(); }
+    if (quizState.questions.length < totalTarget) {
+      for (let i = 0; i < QUIZ_PARALLEL; i++) prefetchNextBatch();
+    }
   } catch(err) {
     session.style.display = 'none';
     console.error('[PM Master] quiz generation failed:', err);
@@ -3146,7 +3152,10 @@ function nextQuestion() {
     if (!quizState.prefetching) { quizState.prefetchFails = 0; quizState.prefetchFailed = false; prefetchNextBatch(); }
     const btn = document.getElementById('btn-next');
     btn.disabled = true;
-    btn.textContent = '⏳ Loading...';
+    // Say what is happening. A bare spinner at question six looks like a hang;
+    // "writing questions 6-10" looks like work.
+    const from = loaded + 1, to = Math.min(loaded + QUIZ_BATCH, target);
+    btn.textContent = `⏳ Writing ${from}–${to}...`;
 
     // Give up after 30s rather than spin forever behind a dead button: hand the
     // question back so they can retry, and let them stop with what they have.
