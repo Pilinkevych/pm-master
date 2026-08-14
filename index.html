@@ -1032,7 +1032,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       <!-- Filled by JS -->
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:13px;color:var(--gray-500);" id="selCount">13 of 13 selected</span>
+      <span style="font-size:13px;color:var(--gray-500);" id="selCount">14 of 14 selected</span>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(true)" data-i18n="setup.selectAll">Select All</button>
         <button class="btn btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selAllDocs(false)" data-i18n="setup.clear">Clear</button>
@@ -1206,7 +1206,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-value" id="stat-docs">0/12</div>
+      <div class="stat-value" id="stat-docs">0/14</div>
       <div class="stat-label" data-i18n="dash.docsReady">Documents Ready</div>
     </div>
     <div class="stat-card">
@@ -1423,6 +1423,7 @@ const DOCS = [
   // PLANNING
   { key:'approach',     icon:'🔀', name:'Development Approach',         phase:'Planning · PMBOK 8 New',     pmbok8:true  },
   { key:'scope',        icon:'🎯', name:'Scope Statement + WBS',        phase:'Planning · Scope',           pmbok8:false },
+  { key:'mvp',          icon:'🚀', name:'MVP Definition',               phase:'Planning · Delivery',        pmbok8:false },
   { key:'schedule',     icon:'📅', name:'Schedule + Milestones',        phase:'Planning · Schedule',        pmbok8:false },
   { key:'budget',       icon:'💰', name:'Cost / Budget Plan',           phase:'Planning · Cost',            pmbok8:false },
   { key:'risk',         icon:'⚠️', name:'Risk Register',               phase:'Planning · Uncertainty',     pmbok8:false },
@@ -1440,6 +1441,7 @@ const PMBOK_CONTENT = {
   stakeholders: { section:'2.5 Stakeholders Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.5', text:'' },
   approach:     { section:'4.2 Project Development Approaches', ref:'PMBOK® 8 · Section 4 · Life Cycles', text:'' },
   scope:        { section:'2.2 Scope Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.2', text:'' },
+  mvp:          { section:'2.8 Delivery Performance Domain — Minimum Viable Product', ref:'PMBOK® 8 · Performance Domain 2.8', text:'' },
   schedule:     { section:'2.3 Schedule Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.3', text:'' },
   budget:       { section:'2.4 Finance Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.4', text:'' },
   risk:         { section:'2.7 Risk Performance Domain', ref:'PMBOK® 8 · Performance Domain 2.7', text:'' },
@@ -2005,7 +2007,7 @@ function buildDocsGrid() {
   // Group by phase
   const phases = [
     { label:'🚀 Initiation', keys:['charter','assumptions','stakeholders'] },
-    { label:'📋 Planning', keys:['approach','scope','schedule','budget','risk','team','comms','quality','sla'] },
+    { label:'📋 Planning', keys:['approach','scope','mvp','schedule','budget','risk','team','comms','quality','sla'] },
     { label:'🏁 Closing', keys:['lessons'] },
   ];
 
@@ -3257,6 +3259,7 @@ const PMBOK_SEARCH = {
   stakeholders: ['Stakeholders Performance Domain'],
   approach:     ['Development Approach'],
   scope:        ['Scope Performance Domain'],
+  mvp:          ['Minimum Viable Product', 'Delivery Performance Domain'],
   schedule:     ['Schedule Performance Domain'],
   budget:       ['Finance Performance Domain'],
   risk:         ['Risk Performance Domain'],
@@ -4209,21 +4212,21 @@ I'm signing off as Project Sponsor. Let's proceed with detailed planning.
 
 Sarah Mitchell
 VP of People, TechCorp Solutions`,
-    narr: '<strong>The client approved the Charter.</strong> Sarah Mitchell signed off and gave the green light to start the project. PM Master can now auto-generate all 13 PMBOK® 8 documents.',
+    narr: '<strong>The client approved the Charter.</strong> Sarah Mitchell signed off and gave the green light to start the project. PM Master can now auto-generate all 14 PMBOK® 8 documents.',
     nextLabel: 'PM Master generates all documents →', stepLabel: 'Step 7 of 9 — Client approved the Charter ✅'
   },
   {
     appName: 'PM Master — Generating Documents', type: 'doc', isHTML: true,
-    docIcon: '🤖', docTitle: 'PM Master is generating all 13 documents...',
+    docIcon: '🤖', docTitle: 'PM Master is generating all 14 documents...',
     docSub: 'Using project data from email + transcript + approved Charter',
     showAI: true, aiText: 'Generating documents per PMBOK® 8 framework...',
     body: '',
-    narr: '<strong>PM Master is generating all 13 PMBOK® 8 documents in parallel.</strong> Based on the email, transcript, and approved Charter — the system builds a complete PM workspace: from Stakeholder Register to Lessons Learned.',
-    nextLabel: 'See all documents →', stepLabel: 'Step 8 of 9 — Generating 13 documents'
+    narr: '<strong>PM Master is generating all 14 PMBOK® 8 documents in parallel.</strong> Based on the email, transcript, and approved Charter — the system builds a complete PM workspace: from Stakeholder Register to Lessons Learned.',
+    nextLabel: 'See all documents →', stepLabel: 'Step 8 of 9 — Generating 14 documents'
   },
   {
     appName: 'PM Master — Dashboard', type: 'doc',
-    docIcon: '🎉', docTitle: 'All 13 documents ready — open any to review',
+    docIcon: '🎉', docTitle: 'All 14 documents ready — open any to review',
     docSub: 'Every document is filled with your project data. Click any card on the dashboard.',
     body: `All documents were generated from the same source data — the email, the meeting transcript, and the approved Charter. Nothing was entered twice.
 
@@ -4314,6 +4317,7 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
     team: { content: 'TEAM MANAGEMENT PLAN — HR Portal Redesign 2025\n\nTEAM (8 members):\nProject Manager         | Alex Kovalenko, PMP   | 100% | Remote (Kyiv)\nBusiness Analyst        | Olena Petrenko        | 100% | Remote (Lviv)\nLead Developer          | Ivan Shevchenko       | 100% | Remote (Kyiv)\nFrontend Developer      | Sofia Melnyk          | 100% | Remote (Warsaw)\nBackend Developer       | Dmytro Kravchenko     | 100% | Remote (Kyiv)\nQA Engineer             | Anna Bondarenko       | 100% | Remote (Kharkiv)\nUX Designer             | Taras Hrytsenko       |  80% | Remote (Kyiv)\nDevOps Engineer         | Viktor Moroz          |  60% | Remote (Kyiv)\n\nWORKING AGREEMENTS:\n• Daily standup: 9:30 AM CET · 15 minutes max\n• Sprint reviews: every 2 weeks, Fridays 14:00 CET\n• Response time: within 4 hours during work hours\n• Code review required before any merge to main\n• No deployment on Fridays\n\nSERVANT LEADERSHIP (PMBOK 8): PM commits to removing blockers within 24h and shielding the team from scope disruptions.' },
     comms: { content: 'COMMUNICATION PLAN — HR Portal Redesign 2025\n\nSTAKEHOLDERS: 14 total · CHANNELS: 14×13/2 = 91\n\nCOMMUNICATION MATRIX:\nProject Sponsor    | Status Report + EVM      | Bi-weekly | Email + PDF | PM\nProject Sponsor    | Steering Committee       | Monthly   | Zoom call   | PM\nIT Director        | Technical Updates        | Weekly    | Slack/Email | Tech Lead\nHR Manager         | Requirements Review      | Weekly    | Zoom        | BA\nFull Team          | Daily Standup            | Daily     | Zoom 15m    | PM\nFull Team          | Sprint Review            | Bi-weekly | Zoom        | PM\nBeta Testers (10)  | UAT Instructions         | Phase 5   | Email       | QA Lead\nBoard of Directors | Executive Summary        | Monthly   | PDF         | Sponsor\nSAP Vendor         | Integration Status       | Weekly    | Email       | Tech Lead\n\nESCALATION: PM (24h) → PM+TechLead (48h) → PM+Sponsor (72h) → Board\nTOOLS: Slack · Jira · Confluence · Zoom · Email' },
     quality: { content: 'QUALITY MANAGEMENT PLAN — HR Portal Redesign 2025\n\nSTANDARDS:\n• ISO 27001:2022 — Information Security\n• GDPR (EU) 2016/679 — Data Protection\n• WCAG 2.1 AA — Web Accessibility\n• OWASP Top 10 — Web Security\n\nQUALITY OBJECTIVES:\n1. Zero critical security vulnerabilities at launch\n2. Page load < 2 seconds (Lighthouse > 90)\n3. 320 concurrent users with no degradation\n4. SAP sync accuracy 100%\n5. UAT sign-off from HR Manager and 8/10 beta testers\n\nQUALITY ACTIVITIES BY PHASE:\nPhase 1: Requirements review checklist, stakeholder sign-off\nPhase 2: UX prototype review with 5 end users\nPhase 3: Code review (mandatory PR), unit tests > 80% coverage\nPhase 4: Integration testing matrix (30 SAP scenarios)\nPhase 5: UAT (45 test cases), load test, pen test\nPhase 6: Post-go-live monitoring (48h hypercare)\n\nCOST OF QUALITY: Prevention $8,000 + Appraisal $6,000 = $14,000 (6.4% of budget)' },
+    mvp: { content: 'MVP DEFINITION — HR Portal Redesign 2025\n\nTHE BET WE ARE TESTING:\nEmployees will file leave requests themselves, in under two minutes, without HR chasing paper forms.\nIf that does not happen, no amount of extra features will save the portal.\n\nIN THE MVP:\n• SSO login (Azure AD) — no new password to remember\n• Leave request: submit, approve, reject, with the balance visible\n• Manager approval queue with email notification\n• Employee profile, read-only, synced from SAP SuccessFactors\n• Mobile-responsive web (no native app)\n\nDELIBERATELY OUT:\n✗ Payroll integration — V1.1, needs finance sign-off\n✗ Performance reviews — V2.0, a separate process to redesign first\n✗ Custom report builder — the three standard reports cover 90% of asks\n✗ Native mobile app — responsive web first, measure demand\n✗ Multi-language — Polish only until the Czech rollout is approved\n\nDONE MEANS:\n1. An employee files leave without opening a manual\n2. A manager approves from an email link in under 30 seconds\n3. Balances match SAP to the day, no reconciliation by hand\n4. Page load under 2s, 320 concurrent users\n\nWHAT WOULD PROVE IT WORKED (30 days after launch):\n• 60% of leave requests filed through the portal, not by email\n• HR time on leave admin down from 12h to under 4h per week\n• Under 5 support tickets per week about the request flow\n• Employee NPS above 20 (baseline: −14 on the old portal)\n\nIF THE NUMBERS DO NOT COME:\nStop and interview 10 non-users before building V1.1. A portal nobody files leave in does not need more features — it needs a different flow.\n\nPILOT: 40 employees, 2 departments, 2 weeks before company-wide rollout.' },
     sla: { content: 'SERVICE LEVEL AGREEMENT — HR Portal Redesign 2025\n\nPARTIES: TechCorp Solutions Ltd. (Provider) ⇄ HR Department (Customer)\nEFFECTIVE: Aug 1, 2025 (go-live) · REVIEW: Quarterly · OWNER: Alex Kovalenko, PMP\n\nSERVICE HOURS:\nStandard support    | Mon–Fri 08:00–19:00 CET\nCritical incidents  | 24/7\nPlanned maintenance | Sundays 02:00–06:00 CET, announced 5 days ahead\n\nAVAILABILITY: 99.5% monthly uptime, excluding planned maintenance\nPERFORMANCE: Page load < 2s (p95) · SAP sync within 15 minutes\n\nINCIDENT PRIORITIES — RESPONSE / RESOLUTION:\nP1 Critical | Portal down, payroll data at risk | 30 min  | 4 hours\nP2 High     | SAP sync failing, login degraded  | 2 hours | 1 business day\nP3 Medium   | Feature broken, workaround exists | 1 day   | 5 business days\nP4 Low      | Cosmetic, content, questions      | 2 days  | Next release\n\nESCALATION: Support desk → Tech Lead (Ivan Shevchenko) → PM → IT Director\n\nCHANGE REQUESTS: Assessed within 5 business days; anything over 16 hours of effort goes to the Change Control Board.\n\nREPORTING: Monthly service report to HR Manager and IT Director — uptime, incident counts by priority, SLA breaches with root cause.\n\nREVIEW: SLA reviewed quarterly; targets may be revised by written agreement of both parties.' },
     lessons: {
       well: '1. Kickoff transcript captured all requirements in one session\n2. Risk register populated from day 1 — saved 3 hours of planning\n3. SAP vendor engaged in Week 1 — avoided integration surprises\n4. Daily standups kept team aligned across 4 time zones',
@@ -4617,21 +4621,21 @@ Project Manager, PM Master`,
 
 Sarah Mitchell
 VP of People, TechCorp Solutions`,
-    narr: '<strong>Замовник погодив Charter.</strong> Sarah Mitchell підписала документ і дала зелене світло. Тепер PM Master може автоматично згенерувати всі 13 документів PMBOK® 8.',
+    narr: '<strong>Замовник погодив Charter.</strong> Sarah Mitchell підписала документ і дала зелене світло. Тепер PM Master може автоматично згенерувати всі 14 документів PMBOK® 8.',
     nextLabel: 'PM Master генерує всі документи →', stepLabel: 'Крок 7 з 9 — Клієнт погодив Charter ✅'
   },
   {
     appName: 'PM Master — Генерація документів', type: 'doc', isHTML: true,
-    docIcon: '🤖', docTitle: 'PM Master генерує всі 13 документів...',
+    docIcon: '🤖', docTitle: 'PM Master генерує всі 14 документів...',
     docSub: 'Використовує дані з email + транскрипту + погодженого Charter',
     showAI: true, aiText: 'Генерую документи згідно з фреймворком PMBOK® 8...',
     body: '',
-    narr: '<strong>PM Master генерує всі 13 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
-    nextLabel: 'Переглянути документи →', stepLabel: 'Крок 8 з 9 — Генерація 13 документів'
+    narr: '<strong>PM Master генерує всі 14 документів PMBOK® 8 паралельно.</strong> На основі email, транскрипту та погодженого Charter — система формує повний PM workspace: від Stakeholder Register до Lessons Learned.',
+    nextLabel: 'Переглянути документи →', stepLabel: 'Крок 8 з 9 — Генерація 14 документів'
   },
   {
     appName: 'PM Master — Панель керування', type: 'doc',
-    docIcon: '🎉', docTitle: 'Усі 13 документів готові — відкрийте будь-який',
+    docIcon: '🎉', docTitle: 'Усі 14 документів готові — відкрийте будь-який',
     docSub: 'Кожен документ заповнено даними вашого проєкту. Натисніть на будь-яку картку.',
     body: `Всі документи згенеровано з одного джерела — email, транскрипту зустрічі та погодженого Charter. Нічого не вводилося двічі.
 
@@ -4722,6 +4726,7 @@ VP of People, TechCorp Solutions`,
     team: { content: 'ПЛАН УПРАВЛІННЯ КОМАНДОЮ — HR Portal Redesign 2025\n\nСКЛАД КОМАНДИ (8 осіб):\nProject Manager         | Alex Kovalenko, PMP   | 100% | Remote (Київ)\nБізнес-аналітик        | Olena Petrenko        | 100% | Remote (Львів)\nLead Developer          | Ivan Shevchenko       | 100% | Remote (Київ)\nФронтенд-розробник     | Sofia Melnyk          | 100% | Remote (Варшава)\nБекенд-розробник       | Dmytro Kravchenko     | 100% | Remote (Київ)\nQA-інженер             | Anna Bondarenko       | 100% | Remote (Харків)\nUX-дизайнер            | Taras Hrytsenko       |  80% | Remote (Київ)\nDevOps-інженер         | Viktor Moroz          |  60% | Remote (Київ)\n\nРОБОЧІ ДОМОВЛЕНОСТІ:\n• Щоденний standup: 9:30 CET · 15 хвилин максимум\n• Sprint review: кожні 2 тижні, п\'ятниці 14:00 CET\n• Час відповіді: до 4 годин в робочий час\n• Code review обов\'язковий перед злиттям у main\n• Заборона деплойментів по п\'ятницях\n\nСЛУЖІННЯ ЛІДЕРСТВОМ (PMBOK 8): PM зобов\'язується усувати блокери протягом 24 годин і захищати команду від порушень обсягу.' },
     comms: { content: 'ПЛАН КОМУНІКАЦІЙ — HR Portal Redesign 2025\n\nСТЕЙКХОЛДЕРИ: 14 осіб · КАНАЛИ: 14×13/2 = 91\n\nМАТРИЦЯ КОМУНІКАЦІЙ:\nСпонсор проєкту      | Статус-звіт + EVM         | Раз на 2 тижні | Email + PDF | PM\nСпонсор проєкту      | Steering Committee        | Щомісяця       | Zoom        | PM\nIT Director          | Технічні оновлення        | Щотижня        | Slack/Email | Tech Lead\nHR Manager           | Огляд вимог               | Щотижня        | Zoom        | BA\nВся команда          | Daily Standup             | Щодня          | Zoom 15хв   | PM\nВся команда          | Sprint Review             | Раз на 2 тижні | Zoom        | PM\nБета-тестери (10)    | Інструкції UAT            | Тільки Фаза 5  | Email       | QA Lead\nРада директорів      | Executive Summary         | Щомісяця       | PDF         | Спонсор\nSAP Vendor           | Статус інтеграції         | Щотижня        | Email       | Tech Lead\n\nЕСКАЛАЦІЯ: PM (24г) → PM+TechLead (48г) → PM+Спонсор (72г) → Рада\nІНСТРУМЕНТИ: Slack · Jira · Confluence · Zoom · Email' },
     quality: { content: 'ПЛАН УПРАВЛІННЯ ЯКІСТЮ — HR Portal Redesign 2025\n\nСТАНДАРТИ:\n• ISO 27001:2022 — Інформаційна безпека\n• GDPR (EU) 2016/679 — Захист даних\n• WCAG 2.1 AA — Веб-доступність\n• OWASP Top 10 — Безпека веб-додатків\n\nЦІЛІ ЯКОСТІ:\n1. Нуль критичних вразливостей безпеки на запуску\n2. Час завантаження < 2 секунди (Lighthouse > 90)\n3. 320 одночасних користувачів без деградації\n4. Точність SAP-синхронізації 100%\n5. Підписання UAT HR Manager та 8/10 бета-тестерів\n\nДІЇ ЩОДО ЯКОСТІ ПО ФАЗАХ:\nФаза 1: Чеклист огляду вимог, підписання стейкхолдерами\nФаза 2: Огляд прототипу UX з 5 кінцевими користувачами\nФаза 3: Обов\'язковий code review, покриття юніт-тестами > 80%\nФаза 4: Матриця тестування інтеграції (30 SAP-сценаріїв)\nФаза 5: UAT (45 тест-кейсів), тест навантаження, пен-тест\nФаза 6: Моніторинг після запуску (48г гіперкеру)\n\nВАРТІСТЬ ЯКОСТІ: Попередження $8,000 + Оцінка $6,000 = $14,000 (6,4% бюджету)' },
+    mvp: { content: 'ВИЗНАЧЕННЯ MVP — HR Portal Redesign 2025\n\nГІПОТЕЗА, ЯКУ ПЕРЕВІРЯЄМО:\nСпівробітники подаватимуть заявки на відпустку самі, менш ніж за дві хвилини, без того щоб HR бігав за паперами.\nЯкщо це не спрацює, жодна кількість додаткових функцій портал не врятує.\n\nВХОДИТЬ У MVP:\n• Вхід через SSO (Azure AD) — без нового пароля\n• Заявка на відпустку: подати, погодити, відхилити, із залишком днів\n• Черга погоджень для керівника з email-сповіщенням\n• Профіль співробітника, лише для читання, синхронізація з SAP SuccessFactors\n• Адаптивний веб (без нативного застосунку)\n\nСВІДОМО НЕ ВХОДИТЬ:\n✗ Інтеграція з зарплатою — V1.1, потрібне погодження фінансів\n✗ Оцінка ефективності — V2.0, спершу треба переробити сам процес\n✗ Конструктор звітів — три стандартні звіти покривають 90% запитів\n✗ Нативний застосунок — спершу адаптивний веб, далі дивимось на попит\n✗ Багатомовність — лише польська до погодження чеського запуску\n\nКРИТЕРІЇ ГОТОВНОСТІ:\n1. Співробітник подає заявку, не відкриваючи інструкцію\n2. Керівник погоджує з листа менш ніж за 30 секунд\n3. Залишки збігаються з SAP день у день, без ручної звірки\n4. Завантаження до 2 с, 320 одночасних користувачів\n\nЩО ДОВЕДЕ, ЩО СПРАЦЮВАЛО (через 30 днів після запуску):\n• 60% заявок подано через портал, а не поштою\n• Час HR на адміністрування відпусток — з 12 до менш ніж 4 год на тиждень\n• Менше 5 звернень на тиждень щодо процесу подання\n• NPS співробітників вище 20 (базове значення: −14 на старому порталі)\n\nЯКЩО ЦИФР НЕ БУДЕ:\nЗупинитись і поговорити з 10 тими, хто не користується, перш ніж робити V1.1. Портал, у якому ніхто не подає заявок, потребує не функцій, а іншого процесу.\n\nПІЛОТ: 40 співробітників, 2 відділи, 2 тижні до запуску на всю компанію.' },
     sla: { content: 'УГОДА ПРО РІВЕНЬ ОБСЛУГОВУВАННЯ (SLA) — HR Portal Redesign 2025\n\nСТОРОНИ: TechCorp Solutions Ltd. (Виконавець) ⇄ HR-департамент (Замовник)\nЧИННА З: 1 серпня 2025 (запуск) · ПЕРЕГЛЯД: щоквартально · ВЛАСНИК: Alex Kovalenko, PMP\n\nГОДИНИ ОБСЛУГОВУВАННЯ:\nСтандартна підтримка | Пн–Пт 08:00–19:00 CET\nКритичні інциденти   | 24/7\nПланові роботи       | Неділя 02:00–06:00 CET, попередження за 5 днів\n\nДОСТУПНІСТЬ: 99,5% на місяць, без урахування планових робіт\nШВИДКОДІЯ: Завантаження сторінки < 2с (p95) · SAP-синхронізація до 15 хвилин\n\nПРІОРИТЕТИ ІНЦИДЕНТІВ — РЕАКЦІЯ / УСУНЕННЯ:\nP1 Критичний | Портал недоступний, ризик для даних ЗП | 30 хв  | 4 години\nP2 Високий   | SAP-синхронізація падає, вхід деградує  | 2 год  | 1 робочий день\nP3 Середній  | Функція зламана, є обхідний шлях       | 1 день | 5 робочих днів\nP4 Низький   | Косметика, контент, питання            | 2 дні  | Наступний реліз\n\nЕСКАЛАЦІЯ: Служба підтримки → Tech Lead (Ivan Shevchenko) → PM → IT Director\n\nЗАПИТИ НА ЗМІНИ: Оцінка протягом 5 робочих днів; усе, що перевищує 16 годин роботи, передається до Ради з контролю змін.\n\nЗВІТНІСТЬ: Щомісячний звіт для HR Manager та IT Director — доступність, кількість інцидентів за пріоритетами, порушення SLA з першопричиною.\n\nПЕРЕГЛЯД: SLA переглядається щокварталу; цільові показники можуть змінюватися за письмовою згодою обох сторін.' },
     lessons: {
       well: '1. Транскрипт стартового дзвінка захопив всі вимоги за одну сесію\n2. Реєстр ризиків заповнено з першого дня — зекономило 3 години планування\n3. SAP-вендор залучений на 1-му тижні — уникнули несподіванок з інтеграцією\n4. Щоденні standups тримали команду в узгодженні попри 4 часові зони',
@@ -5591,9 +5596,9 @@ const STEP_ACTIONS = {
       }, 300);
     },
     buildBody: () => {
-      const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','sla','lessons'];
-      const names = {charter:'Project Charter',assumptions:'Assumption Log',stakeholders:'Stakeholder Register',approach:'Development Approach',scope:'Scope Statement + WBS',schedule:'Schedule + Milestones',budget:'Cost / Budget Plan',risk:'Risk Register',team:'Team Management Plan',comms:'Communication Plan',quality:'Quality Management Plan',sla:'Service Level Agreement',lessons:'Lessons Learned'};
-      const icons = {charter:'📄',assumptions:'📝',stakeholders:'👥',approach:'🔀',scope:'🎯',schedule:'📅',budget:'💰',risk:'⚠️',team:'👤',comms:'📡',quality:'✅',sla:'📋',lessons:'📚'};
+      const keys = ['charter','assumptions','stakeholders','approach','scope','mvp','schedule','budget','risk','team','comms','quality','sla','lessons'];
+      const names = {charter:'Project Charter',assumptions:'Assumption Log',stakeholders:'Stakeholder Register',approach:'Development Approach',scope:'Scope Statement + WBS',mvp:'MVP Definition',schedule:'Schedule + Milestones',budget:'Cost / Budget Plan',risk:'Risk Register',team:'Team Management Plan',comms:'Communication Plan',quality:'Quality Management Plan',sla:'Service Level Agreement',lessons:'Lessons Learned'};
+      const icons = {charter:'📄',assumptions:'📝',stakeholders:'👥',approach:'🔀',scope:'🎯',mvp:'🚀',schedule:'📅',budget:'💰',risk:'⚠️',team:'👤',comms:'📡',quality:'✅',sla:'📋',lessons:'📚'};
       return keys.map(k => `<div id="gendoc-${k}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#64748b;"><span style="font-size:16px;">${icons[k]}</span><span style="flex:1;">${names[k]}</span><span id="genstatus-${k}" style="font-size:12px;font-weight:700;color:#94a3b8;">...</span></div>`).join('');
     }
   }
@@ -5711,7 +5716,7 @@ function fillAllDemoDocs() {
   project.docData = dl().docs;
   DOCS.forEach(d => { project.docStatus[d.key] = 'done'; });
   buildDashboard();
-  const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','sla','lessons'];
+  const keys = ['charter','assumptions','stakeholders','approach','scope','mvp','schedule','budget','risk','team','comms','quality','sla','lessons'];
   const readyLabel = tr('gen.ready');
   keys.forEach((k, i) => {
     setTimeout(() => {
