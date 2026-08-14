@@ -2915,21 +2915,33 @@ async function fetchQuizBatch(count) {
   throw new Error('Timeout: questions took too long to generate');
 }
 
+// A batch takes about forty seconds to generate and lasts a reader under a
+// minute, so fetching them strictly one after another can never get ahead. Keep
+// two in flight: the reader gains roughly a batch of headroom per batch spent.
+const QUIZ_PARALLEL = 2;
+
 async function prefetchNextBatch() {
-  if (quizState.prefetching || quizState.done) return;
+  if (quizState.done) return;
   const target = quizState.totalTarget || quizState.count;
-  if (quizState.questions.length >= target) { quizState.done = true; return; }
+  quizState.inFlight = quizState.inFlight || 0;
+  const pending = quizState.questions.length + quizState.inFlight * QUIZ_BATCH;
+  if (pending >= target) { if (!quizState.inFlight) quizState.done = true; return; }
+  if (quizState.inFlight >= QUIZ_PARALLEL) return;
+
+  quizState.inFlight++;
   quizState.prefetching = true;
   try {
-    const remaining = target - quizState.questions.length;
+    const remaining = target - pending;
     const q = await fetchQuizBatch(Math.min(QUIZ_BATCH, remaining));
     quizState.questions.push(...q);
-    quizState.prefetching = false;
-    // keep prefetching until we have all questions
+    quizState.inFlight--;
+    quizState.prefetching = quizState.inFlight > 0;
+    quizState.prefetchFails = 0;
     if (quizState.questions.length < target) prefetchNextBatch();
-    else quizState.done = true;
+    else if (!quizState.inFlight) quizState.done = true;
   } catch(e) {
-    quizState.prefetching = false;
+    quizState.inFlight--;
+    quizState.prefetching = quizState.inFlight > 0;
     console.error('[PM Master] quiz prefetch failed:', e);
     // Retry, but not forever: an endless 3s loop against a broken workflow left
     // the Next button disabled with no way out and no explanation.
@@ -2971,6 +2983,9 @@ async function startQuiz() {
     quizState.selected    = [];
     quizState.answered    = false;
     quizState.prefetching = false;
+    quizState.inFlight    = 0;
+    quizState.prefetchFails = 0;
+    quizState.prefetchFailed = false;
     quizState.done        = false;
     quizState.section     = 1;
     quizState.score       = { total:0, correct:0, people:0, peopleTotal:0, process:0, processTotal:0, business:0, businessTotal:0 };
@@ -2980,8 +2995,10 @@ async function startQuiz() {
       startQuizTimer();
     }
     renderQuestion();
-    // prefetch next batch in background
-    if (quizState.questions.length < totalTarget) prefetchNextBatch();
+    // Fill the queue straight away — two batches in flight from the first
+    // question, so the reader never catches up with the generator.
+    quizState.inFlight = 0;
+    if (quizState.questions.length < totalTarget) { prefetchNextBatch(); prefetchNextBatch(); }
   } catch(err) {
     session.style.display = 'none';
     console.error('[PM Master] quiz generation failed:', err);
@@ -3009,7 +3026,9 @@ function startQuizTimer() {
 function renderQuestion() {
   const q   = quizState.questions[quizState.current];
   const idx = quizState.current;
-  const total = quizState.questions.length;
+  // Count against what was asked for. Showing the loaded count turned "15 of 25,
+  // ten still loading" into "15 of 15", which reads as a finished quiz.
+  const total = quizState.totalTarget || quizState.questions.length;
   const pct = Math.round(idx / total * 100);
 
   document.getElementById('qs-progress-bar').style.width = pct + '%';
@@ -3139,7 +3158,12 @@ function nextQuestion() {
         renderQuestion();
         return;
       }
-      if (quizState.prefetchFailed || Date.now() - startedAt > 30000) {
+      // A batch needs about forty seconds, so a thirty-second ceiling declared
+      // failure while the generator was still working. Wait as long as something
+      // is actually in flight; give up only when nothing is coming.
+      const stillComing = quizState.inFlight > 0 || quizState.prefetching;
+      if (quizState.prefetchFailed || (!stillComing && Date.now() - startedAt > 8000)
+          || Date.now() - startedAt > 150000) {
         clearInterval(quizState._waitInterval);
         quizState._waitInterval = null;
         quizState.current--;              // stay on the question they finished
@@ -3155,8 +3179,9 @@ function nextQuestion() {
 
   // Prefetch next batch when user is halfway through current loaded set
   if (!quizState.prefetching && !quizState.done && loaded < target) {
-    const halfway = loaded - Math.floor(QUIZ_BATCH_INIT / 2);
-    if (quizState.current >= halfway) prefetchNextBatch();
+    // Start early: at ten seconds a question, five loaded questions are gone in
+    // less time than one batch takes to arrive.
+    if (loaded - quizState.current <= QUIZ_BATCH) prefetchNextBatch();
   }
 
   renderQuestion();
