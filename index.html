@@ -1002,6 +1002,19 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   </div>
 
 
+  <!-- Description and objectives belong with the rest of the project detail:
+       they feed every generated document, so they are answered before choosing
+       which documents to generate, not after. -->
+  <div class="field">
+    <label><span data-i18n="setup.descriptionLabel">Project Description</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.descriptionHint">(PM Master will use this for document generation)</span></label>
+    <textarea id="s-description" rows="3" placeholder="Describe the project: what are we building, what problem does it solve, for whom..." data-i18n-ph="ph.description"></textarea>
+  </div>
+
+  <div class="field">
+    <label><span data-i18n="setup.objectivesLabel">Project Objectives</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.objectivesHint">(objectives — PM Master will insert them into every document)</span></label>
+    <textarea id="s-objectives" rows="2" placeholder="1. Launch MVP by... 2. Achieve... 3. Integrate..." data-i18n-ph="ph.objectives"></textarea>
+  </div>
+
   <!-- Document selection -->
   <div class="card">
     <div class="card-title" data-i18n="setup.selectDocsTitle">📑 Select Documents to Generate</div>
@@ -1018,15 +1031,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     </div>
   </div>
 
-  <div class="field">
-    <label><span data-i18n="setup.descriptionLabel">Project Description</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.descriptionHint">(PM Master will use this for document generation)</span></label>
-    <textarea id="s-description" rows="3" placeholder="Describe the project: what are we building, what problem does it solve, for whom..." data-i18n-ph="ph.description"></textarea>
-  </div>
-
-  <div class="field">
-    <label><span data-i18n="setup.objectivesLabel">Project Objectives</span> <span style="font-weight:400;color:#94a3b8;font-size:12px;" data-i18n="setup.objectivesHint">(objectives — PM Master will insert them into every document)</span></label>
-    <textarea id="s-objectives" rows="2" placeholder="1. Launch MVP by... 2. Achieve... 3. Integrate..." data-i18n-ph="ph.objectives"></textarea>
-  </div>
 
   <div style="display:flex;gap:12px;flex-wrap:wrap;">
     <button class="btn btn-primary" style="flex:1;" onclick="createProject()">🚀 <span data-i18n="setup.createBtn">Create Project & Open Dashboard</span></button>
@@ -1784,7 +1788,7 @@ function applyExtractedData(data) {
     const detName = LANG_NAMES[detected];
     const curName = LANG_NAMES[current] || current.toUpperCase();
     pmConfirm(
-      `🌐 Виявлена мова: <strong>${detName}</strong>\n\nВаш документ написаний ${detName}, але проєкт налаштований на ${curName}.\n\nПерейти на ${detName}?`,
+      tr('lang.detected', { det: detName, cur: curName }),
       () => { document.getElementById('langSelect').value = detected; setLang(detected); },
       () => {
         setTimeout(() => {
@@ -1792,12 +1796,12 @@ function applyExtractedData(data) {
           if (el) el.insertAdjacentHTML('beforeend', `
             <div class="aer-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #bbf7d0;">
               <div class="aer-dot" style="background:#f59e0b;"></div>
-              <span class="aer-label">⚠️ Мова:</span>
-              <span class="aer-val">МоМ залишається ${detName}. Документи будуть згенеровані ${curName}.</span>
+              <span class="aer-label">${tr('lang.label')}</span>
+              <span class="aer-val">${tr('lang.momNote', { det: detName, cur: curName })}</span>
             </div>`);
         }, 50);
       },
-      '🌐', 'Так, перейти', 'Залишити ' + curName
+      '🌐', tr('lang.switch'), tr('lang.keep', { cur: curName })
     );
   }
 
@@ -1841,7 +1845,7 @@ function applyExtractedData(data) {
   if (data.pm || data.org)
     affectedDocs.push({ icon: '📡', name: 'Communication Plan', reason: 'PM & stakeholder context' });
 
-  const docsLabel = curLang() === 'ua' ? '📝 Документи з pre-filled даними:' : '📝 Documents with pre-filled data:';
+  const docsLabel = tr('gen.prefilled');
   const docsHtml = affectedDocs.length ? `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid #bbf7d0;">
       <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">${docsLabel}</div>
@@ -2320,7 +2324,7 @@ async function generateInitiationDocs() {
   let done = 0, succeeded = 0;
   for (const key of INIT_KEYS) {
     const doc = DOCS.find(d => d.key === key);
-    banner.innerHTML = `<div class="gen-banner-inner"><div class="gen-spinner"></div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.generating'] || 'Генерую...'}</div><div class="gen-banner-doc">${doc?.icon || '📄'} ${doc?.name || key}</div><div class="gen-banner-count">${done + 1} / ${INIT_KEYS.length}</div></div></div>`;
+    banner.innerHTML = `<div class="gen-banner-inner"><div class="gen-spinner"></div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.generating'] || tr('gen.busy')}</div><div class="gen-banner-doc">${doc?.icon || '📄'} ${doc?.name || key}</div><div class="gen-banner-count">${done + 1} / ${INIT_KEYS.length}</div></div></div>`;
     try {
       const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
         method: 'POST', headers: n8nHeaders(),
@@ -2345,7 +2349,7 @@ async function generateInitiationDocs() {
   updateStats();
   await saveCurrentProject(true);
   banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
-  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${succeeded} / ${INIT_KEYS.length} документів</div></div></div>`;
+  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || tr('gen.ready')}</div><div class="gen-banner-doc">${succeeded} / ${INIT_KEYS.length} документів</div></div></div>`;
   setTimeout(() => {
     banner.remove();
     pmAlert(t['genInit.done'] || '✅ Initiation documents generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.', '🚀');
@@ -2368,7 +2372,7 @@ async function generateAllDocs() {
     banner.innerHTML = `<div class="gen-banner-inner">
       <div class="gen-spinner"></div>
       <div class="gen-banner-text">
-        <div class="gen-banner-title">${t['genAll.generating'] || 'Генерую...'}</div>
+        <div class="gen-banner-title">${t['genAll.generating'] || tr('gen.busy')}</div>
         <div class="gen-banner-doc">${docIcon} ${docName}</div>
         <div class="gen-banner-count">${count} / ${total}</div>
       </div>
@@ -2402,7 +2406,7 @@ async function generateAllDocs() {
   updateStats();
   await saveCurrentProject(true);
   banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
-  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || 'Готово!'}</div><div class="gen-banner-doc">${done} документів згенеровано</div></div></div>`;
+  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || tr('gen.ready')}</div><div class="gen-banner-doc">${tr('gen.docsDone', { n: done })}</div></div></div>`;
   setTimeout(() => banner.remove(), 4000);
 }
 
@@ -2422,20 +2426,20 @@ function editDocContent(key) {
       <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','h3')">H3</button>
       <button class="edit-tb-btn" onclick="document.execCommand('formatBlock','','p')">¶ Text</button>
       <div style="flex:1"></div>
-      <button onclick="saveEditedDoc('${key}')" style="padding:6px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${t['modal.editSave'] || '💾 Зберегти'}</button>
+      <button onclick="saveEditedDoc('${key}')" style="padding:6px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">${tr('modal.editSave')}</button>
       <button onclick="openDoc('${key}','generated')" style="padding:6px 12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;cursor:pointer;">${t['modal.editCancel'] || '✕'}</button>
     </div>
     <div id="table-toolbar">
-      <span class="tbl-label">📊 Таблиця:</span>
-      <button class="edit-tb-btn tbl" onclick="tableAddRowBelow()" title="Add row below">+ Рядок ↓</button>
-      <button class="edit-tb-btn tbl" onclick="tableAddRowAbove()" title="Add row above">+ Рядок ↑</button>
-      <button class="edit-tb-btn tbl" onclick="tableDeleteRow()" title="Delete current row">− Рядок</button>
+      <span class="tbl-label">${tr('tbl.label')}</span>
+      <button class="edit-tb-btn tbl" onclick="tableAddRowBelow()" title="Add row below">${tr('tbl.rowBelow')}</button>
+      <button class="edit-tb-btn tbl" onclick="tableAddRowAbove()" title="Add row above">${tr('tbl.rowAbove')}</button>
+      <button class="edit-tb-btn tbl" onclick="tableDeleteRow()" title="Delete current row">${tr('tbl.rowDel')}</button>
       <div class="edit-tb-sep"></div>
-      <button class="edit-tb-btn tbl" onclick="tableAddColAfter()" title="Add column after">+ Колонка →</button>
-      <button class="edit-tb-btn tbl" onclick="tableAddColBefore()" title="Add column before">← + Колонка</button>
-      <button class="edit-tb-btn tbl" onclick="tableDeleteCol()" title="Delete current column">− Колонка</button>
+      <button class="edit-tb-btn tbl" onclick="tableAddColAfter()" title="Add column after">${tr('tbl.colAfter')}</button>
+      <button class="edit-tb-btn tbl" onclick="tableAddColBefore()" title="Add column before">${tr('tbl.colBefore')}</button>
+      <button class="edit-tb-btn tbl" onclick="tableDeleteCol()" title="Delete current column">${tr('tbl.colDel')}</button>
       <div class="edit-tb-sep"></div>
-      <button class="edit-tb-btn tbl" onclick="tableCellDropdown()" title="Convert cell to impact dropdown">🔽 Вибір</button>
+      <button class="edit-tb-btn tbl" onclick="tableCellDropdown()" title="Convert cell to impact dropdown">${tr('tbl.dropdown')}</button>
     </div>
     <div id="doc-edit-area" contenteditable="true" spellcheck="true"
       style="min-height:420px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;overflow-y:auto;font-size:14px;line-height:1.7;color:#1e293b;"
@@ -2513,7 +2517,7 @@ function tableDeleteRow() {
   if (!cell) return;
   const row = cell.closest('tr');
   const table = row.closest('table');
-  if (table.querySelectorAll('tr').length <= 1) { pmAlert('Не можна видалити єдиний рядок.'); return; }
+  if (table.querySelectorAll('tr').length <= 1) { pmAlert(tr('tbl.lastRow')); return; }
   row.remove();
   _updateTableToolbar();
 }
@@ -2557,7 +2561,7 @@ function tableDeleteCol() {
   if (!cell) return;
   const row = cell.closest('tr');
   const table = row.closest('table');
-  if (row.querySelectorAll('td,th').length <= 1) { pmAlert('Не можна видалити єдину колонку.'); return; }
+  if (row.querySelectorAll('td,th').length <= 1) { pmAlert(tr('tbl.lastCol')); return; }
   const colIdx = Array.from(row.children).indexOf(cell);
   table.querySelectorAll('tr').forEach(r => {
     const cells = r.querySelectorAll('td,th');
@@ -3170,7 +3174,7 @@ async function openPmbok(key) {
   document.getElementById('pd-section').textContent = ref.section;
   document.getElementById('pd-ref').textContent = ref.ref;
   document.getElementById('pd-text').innerHTML =
-    '<div style="text-align:center;padding:40px 20px;color:#94a3b8;font-size:14px;">📖 Завантаження з PMBOK® 8...</div>';
+    '<div style="text-align:center;padding:40px 20px;color:#94a3b8;font-size:14px;">' + tr('pmbok.loading') + '</div>';
   document.getElementById('pmbokDrawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('active');
 
@@ -3202,7 +3206,7 @@ async function openPmbok(key) {
 
   if (!chunks || !chunks.length) {
     document.getElementById('pd-text').innerHTML = ref.text ||
-      '<p style="color:#94a3b8;font-size:13px;">Розділ не знайдено в базі PMBOK® 8.</p>';
+      '<p style="color:#94a3b8;font-size:13px;">' + tr('pmbok.notFound') + '</p>';
     return;
   }
 
@@ -3760,9 +3764,54 @@ function setLang(lang) {
 function curLang() { return document.getElementById('langSelect')?.value || 'en'; }
 function dl() { const l = curLang(); return DL[l] || DL.en; }
 
+// Falls back to English rather than to whatever language the string happened to
+// be written in. Placeholders are {name}-style so translations can reorder them.
+function tr(key, vars) {
+  let s = dl()[key];
+  if (s === undefined) s = DL.en[key];
+  if (s === undefined) return key;
+  if (vars) for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+
 // ── Demo Localization ─────────────────────────────────────────
 const DL = {
 en: {
+  // Strings that used to sit hardcoded in Ukrainian in the app code, so an English
+  // user deleting a project was asked to confirm in a language they had not chosen.
+  // tr() falls back to these for every language that has not translated them yet.
+  'proj.deleteTitle': 'Delete project',
+  'proj.archiveTitle': 'Archive project',
+  'proj.delete': 'Delete',
+  'proj.archive': 'Archive',
+  'proj.cancel': 'Cancel',
+  'proj.deleteConfirm': 'Delete project "<strong>{name}</strong>"?\n\nThis cannot be undone.',
+  'proj.deleteLastChance': '🚨 Last chance!\n\nThe project and all of its documents will be permanently deleted.',
+  'proj.deleteForever': 'Yes, delete permanently',
+  'proj.deleteError': 'Could not delete: ',
+  'proj.archiveConfirm': 'Archive project "<strong>{name}</strong>"?\n\nThe project will be saved as a JSON file and removed from your workspace.',
+  'lang.detected': '🌐 Language detected: <strong>{det}</strong>\n\nYour document is written in {det}, but the project is set to {cur}.\n\nSwitch to {det}?',
+  'lang.switch': 'Yes, switch',
+  'lang.keep': 'Keep {cur}',
+  'lang.label': '⚠️ Language:',
+  'lang.momNote': 'The MoM stays in {det}. Documents will be generated in {cur}.',
+  'gen.busy': '⏳ Generating...',
+  'gen.ready': '✅ Ready',
+  'gen.docsDone': '{n} documents generated',
+  'gen.prefilled': '📝 Documents with pre-filled data:',
+  'modal.editSave': '💾 Save',
+  'tbl.label': '📊 Table:',
+  'tbl.rowBelow': '+ Row ↓',
+  'tbl.rowAbove': '+ Row ↑',
+  'tbl.rowDel': '− Row',
+  'tbl.colAfter': '+ Column →',
+  'tbl.colBefore': '← + Column',
+  'tbl.colDel': '− Column',
+  'tbl.dropdown': '🔽 Choice',
+  'tbl.lastRow': 'You cannot delete the only row.',
+  'tbl.lastCol': 'You cannot delete the only column.',
+  'pmbok.loading': '📖 Loading from PMBOK® 8...',
+  'pmbok.notFound': 'Section not found in the PMBOK® 8 reference.',
   secBanner: '🔒 <strong>Your data is 100% private.</strong> All documents are stored securely in your personal account — only you can access them.<span class="sec-banner-detail">Protected by Supabase Row Level Security · No one else can see your data</span>',
   steps: [
   {
@@ -4135,6 +4184,38 @@ Click any document card on the dashboard to open, review, edit, or export as PDF
 },
 
 ua: {
+  'proj.deleteTitle': 'Видалити проєкт',
+  'proj.archiveTitle': 'Архівувати проєкт',
+  'proj.delete': 'Видалити',
+  'proj.archive': 'Архівувати',
+  'proj.cancel': 'Скасувати',
+  'proj.deleteConfirm': 'Видалити проєкт "<strong>{name}</strong>"?\n\nЦю дію неможливо скасувати.',
+  'proj.deleteLastChance': '🚨 Останній шанс!\n\nПроєкт та всі його документи будуть НАЗАВЖДИ видалені.',
+  'proj.deleteForever': 'Так, видалити назавжди',
+  'proj.deleteError': 'Помилка видалення: ',
+  'proj.archiveConfirm': 'Архівувати проєкт "<strong>{name}</strong>"?\n\nПроєкт буде збережено як JSON-файл і видалено з кабінету.',
+  'lang.detected': '🌐 Виявлена мова: <strong>{det}</strong>\n\nВаш документ написаний {det}, але проєкт налаштований на {cur}.\n\nПерейти на {det}?',
+  'lang.switch': 'Так, перейти',
+  'lang.keep': 'Залишити {cur}',
+  'lang.label': '⚠️ Мова:',
+  'lang.momNote': 'МоМ залишається {det}. Документи будуть згенеровані {cur}.',
+  'gen.busy': '⏳ Генерую...',
+  'gen.ready': '✅ Готово',
+  'gen.docsDone': 'документів згенеровано: {n}',
+  'gen.prefilled': '📝 Документи з pre-filled даними:',
+  'modal.editSave': '💾 Зберегти',
+  'tbl.label': '📊 Таблиця:',
+  'tbl.rowBelow': '+ Рядок ↓',
+  'tbl.rowAbove': '+ Рядок ↑',
+  'tbl.rowDel': '− Рядок',
+  'tbl.colAfter': '+ Колонка →',
+  'tbl.colBefore': '← + Колонка',
+  'tbl.colDel': '− Колонка',
+  'tbl.dropdown': '🔽 Вибір',
+  'tbl.lastRow': 'Не можна видалити єдиний рядок.',
+  'tbl.lastCol': 'Не можна видалити єдину колонку.',
+  'pmbok.loading': '📖 Завантаження з PMBOK® 8...',
+  'pmbok.notFound': 'Розділ не знайдено в базі PMBOK® 8.',
   secBanner: '🔒 <strong>Ваші дані на 100% приватні.</strong> Всі документи зберігаються захищено у вашому особистому акаунті — тільки ви маєте до них доступ.<span class="sec-banner-detail">Захищено Supabase Row Level Security · Ніхто інший не бачить ваших даних</span>',
   steps: [
   {
@@ -5429,7 +5510,7 @@ function fillAllDemoDocs() {
   DOCS.forEach(d => { project.docStatus[d.key] = 'done'; });
   buildDashboard();
   const keys = ['charter','assumptions','stakeholders','approach','scope','schedule','budget','risk','team','comms','quality','sla','lessons'];
-  const readyLabel = curLang() === 'ua' ? '✅ Готово' : '✅ Ready';
+  const readyLabel = tr('gen.ready');
   keys.forEach((k, i) => {
     setTimeout(() => {
       const el = document.getElementById('genstatus-' + k);
@@ -6002,8 +6083,8 @@ function renderProjectsList(projects) {
       </div>
       <div class="proj-card-status">${p.status}</div>
       <div class="proj-card-actions" onclick="event.stopPropagation()">
-        <button class="proj-act-btn arch" title="Архівувати проєкт" onclick="archiveProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">📦 Архів</button>
-        <button class="proj-act-btn del" title="Видалити проєкт" onclick="deleteProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
+        <button class="proj-act-btn arch" title="${tr('proj.archiveTitle')}" onclick="archiveProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">📦 Архів</button>
+        <button class="proj-act-btn del" title="${tr('proj.deleteTitle')}" onclick="deleteProject('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑️ ${tr('proj.delete')}</button>
       </div>
     </div>
   `).join('');
@@ -6099,24 +6180,24 @@ async function saveCurrentProject(silent) {
 
 function deleteProject(id, name) {
   pmConfirm(
-    `Видалити проєкт "<strong>${name}</strong>"?\n\nЦю дію неможливо скасувати.`,
+    tr('proj.deleteConfirm', { name }),
     () => pmConfirm(
-      `🚨 Останній шанс!\n\nПроєкт та всі його документи будуть НАЗАВЖДИ видалені.`,
+      tr('proj.deleteLastChance'),
       async () => {
         await sb.from('project_documents').delete().eq('project_id', id);
         const { error } = await sb.from('projects').delete().eq('id', id);
-        if (error) { pmAlert('Помилка видалення: ' + error.message, '❌'); return; }
+        if (error) { pmAlert(tr('proj.deleteError') + error.message, '❌'); return; }
         loadProjects();
       },
-      null, '⚠️', 'Так, видалити назавжди', 'Скасувати'
+      null, '⚠️', tr('proj.deleteForever'), tr('proj.cancel')
     ),
-    null, '🗑️', 'Видалити', 'Скасувати'
+    null, '🗑️', tr('proj.delete'), tr('proj.cancel')
   );
 }
 
 function archiveProject(id, name) {
   pmConfirm(
-    `Архівувати проєкт "<strong>${name}</strong>"?\n\nПроєкт буде збережено як JSON-файл і видалено з кабінету.`,
+    tr('proj.archiveConfirm', { name }),
     async () => {
 
       const { data: p } = await sb.from('projects').select('*').eq('id', id).single();
@@ -6134,7 +6215,7 @@ function archiveProject(id, name) {
       await sb.from('projects').delete().eq('id', id);
       loadProjects();
     },
-    null, '📦', 'Архівувати', 'Скасувати'
+    null, '📦', tr('proj.archive'), tr('proj.cancel')
   );
 }
 
