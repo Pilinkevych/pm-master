@@ -3294,10 +3294,16 @@ function toggleCalc(id) {
 // parseFloat wants it: "$1,250,000", "1 250 000 USD", "€980.000". Read the first
 // amount in the string and decide the decimal separator by whichever of . and ,
 // comes last — 1.250.000,50 and 1,250,000.50 are the same number.
+// An amount is a run of digits with group separators in threes, plus an optional
+// two-digit fraction — and nothing else. Letting the pattern swallow any run of
+// digits, spaces and punctuation is what once turned "$187,500" followed by the
+// heading "8. Earned Value Management" into 187.5008, and then into a BAC of 188.
+const MONEY_RE = /\d{1,3}(?:[.,  ]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?/;
+
 function parseMoney(text) {
-  const m = String(text || '').match(/(\d[\d\s.,]*\d|\d)/);
+  const m = String(text || '').match(MONEY_RE);
   if (!m) return null;
-  const raw = m[1].replace(/\s/g, '');
+  const raw = m[0].replace(/\s/g, '');
   const dots = (raw.match(/\./g) || []).length;
   const commas = (raw.match(/,/g) || []).length;
 
@@ -3335,10 +3341,12 @@ function prefillEVMFromBudget(opts) {
   const text = html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
 
   let bac = null;
-  const labelled = text.match(/(?:Budget at Completion|\bBAC\b)[^0-9]{0,40}([\d\s.,]{3,})/i);
+  const near = new RegExp('(?:Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
+  const labelled = text.match(near);
   if (labelled) bac = parseMoney(labelled[1]);
   if (!bac) {
-    const total = text.match(/(?:Total (?:approved )?(?:project )?budget)[^0-9]{0,40}([\d\s.,]{3,})/i);
+    const totalRe = new RegExp('(?:Total (?:approved )?(?:project )?budget)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
+    const total = text.match(totalRe);
     if (total) bac = parseMoney(total[1]);
   }
   if (!bac) bac = parseMoney(project.budget);
@@ -3397,14 +3405,39 @@ function calcEVM() {
   const warnings = [];
   const goods = [];
 
+  // Cost performance needs EV and AC; schedule needs EV and PV. Without them the
+  // indices come out as 0, which used to read as CPI 0.00 — "over budget, action
+  // required" — on a project that had merely recorded its budget and not yet
+  // spent a penny. Missing data is not bad news; say so instead of raising alarm.
+  const costKnown  = ev > 0 && ac > 0;
+  const schedKnown = ev > 0 && pv > 0;
+
+  if (!costKnown && !schedKnown) {
+    const need = [];
+    if (!ev) need.push('EV');
+    if (!ac) need.push('AC');
+    if (!pv) need.push('PV');
+    statusEl.style.background = 'var(--gray-50)';
+    statusEl.style.border = '2px solid var(--gray-200)';
+    statusEl.innerHTML =
+      '<div style="font-size:16px;margin-bottom:10px;">⚪ <b>Project Health: not measured yet</b></div>' +
+      '<div style="font-size:13px;line-height:1.6;">' +
+      (bac ? 'Budget at Completion is recorded (' + fmtM(bac) + '). ' : '') +
+      'Add ' + need.join(', ') + ' once the project has delivered and spent something — ' +
+      'performance cannot be judged before there is performance.</div>';
+    return;
+  }
+
   // Cost analysis
-  if (cpi >= 1.1)       goods.push('💰 Cost: <b>Under budget</b> (CPI=' + cpi.toFixed(2) + '). You are spending efficiently.');
+  if (!costKnown)       goods.push('⚪ Cost: <b>not measured yet</b> — enter EV and AC to see CPI.');
+  else if (cpi >= 1.1)  goods.push('💰 Cost: <b>Under budget</b> (CPI=' + cpi.toFixed(2) + '). You are spending efficiently.');
   else if (cpi >= 0.95) goods.push('💰 Cost: <b>On budget</b> (CPI=' + cpi.toFixed(2) + '). Cost performance is acceptable.');
   else if (cpi >= 0.85) warnings.push('⚠️ Cost: <b>Slightly over budget</b> (CPI=' + cpi.toFixed(2) + '). Monitor costs closely.');
   else                  issues.push('🔴 Cost: <b>Over budget — action required</b> (CPI=' + cpi.toFixed(2) + '). EAC exceeds BAC by ' + (eac && bac ? '$'+Math.abs(Math.round(eac-bac)).toLocaleString() : '?') + '.');
 
   // Schedule analysis
-  if (spi >= 1.1)       goods.push('📅 Schedule: <b>Ahead of plan</b> (SPI=' + spi.toFixed(2) + '). Project is delivering faster than planned.');
+  if (!schedKnown)      goods.push('⚪ Schedule: <b>not measured yet</b> — enter EV and PV to see SPI.');
+  else if (spi >= 1.1)  goods.push('📅 Schedule: <b>Ahead of plan</b> (SPI=' + spi.toFixed(2) + '). Project is delivering faster than planned.');
   else if (spi >= 0.95) goods.push('📅 Schedule: <b>On schedule</b> (SPI=' + spi.toFixed(2) + '). Schedule performance is acceptable.');
   else if (spi >= 0.85) warnings.push('⚠️ Schedule: <b>Slightly behind plan</b> (SPI=' + spi.toFixed(2) + '). Review critical path activities.');
   else                  issues.push('🔴 Schedule: <b>Behind schedule — action required</b> (SPI=' + spi.toFixed(2) + '). Consider crashing or fast-tracking critical path.');
