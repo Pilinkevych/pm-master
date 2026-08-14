@@ -260,7 +260,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .doc-check-name{font-size:13px;font-weight:800;color:var(--gray-900);}
 .doc-check-phase{font-size:11px;color:var(--gray-500);margin-top:1px;}
 .doc-check.selected .doc-check-name{color:var(--blue);}
-.badge-new{background:var(--purple-50);color:var(--purple);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:4px;}
+.badge-new{background:var(--purple-50);color:var(--purple);font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;white-space:nowrap;vertical-align:middle;letter-spacing:.02em;}
 
 /* Upload zone */
 .upload-zone{border:2px dashed var(--gray-300,#d1d5db);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--gray-50);}
@@ -2032,9 +2032,12 @@ function buildDocsGrid() {
       card.innerHTML = `
         <div class="doc-card-top">
           <div class="doc-card-icon">${d.icon}</div>
-          <span class="doc-status-badge ${badgeClass}">${badgeText}${d.pmbok8 ? ' <span class="badge-new">NEW</span>':''}</span>
+          <span class="doc-status-badge ${badgeClass}">${badgeText}</span>
         </div>
-        <div class="doc-card-name">${d.name}</div>
+        <!-- The NEW badge marks a document PMBOK 8 introduced, so it belongs to the
+             document's name. Sitting inside the status pill it read as "Done NEW",
+             which looks like a state the project can be in. -->
+        <div class="doc-card-name">${d.name}${d.pmbok8 ? ' <span class="badge-new" title="Introduced in PMBOK 8th Edition">NEW IN PMBOK 8</span>':''}</div>
         <div class="doc-card-phase">${d.phase}</div>
         <div class="doc-card-actions">
           <button class="doc-btn doc-btn-gen" onclick="openDoc('${d.key}')">✨ Generate</button>
