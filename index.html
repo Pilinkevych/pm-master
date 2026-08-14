@@ -404,6 +404,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .evm-intro li{font-size:13px;line-height:1.6;color:var(--gray-600);margin-bottom:5px;}
 .evm-intro strong{color:var(--gray-700);}
 .evm-intro-note{font-size:12px !important;color:var(--gray-500) !important;margin-bottom:0 !important;}
+.evm-gate{background:#fffbeb;border-left:3px solid #f59e0b;padding:10px 12px;border-radius:0 8px 8px 0;color:var(--gray-700) !important;}
+.evm-sources{width:100%;border-collapse:collapse;margin:0 0 10px;font-size:13px;}
+.evm-sources th{text-align:left;padding:7px 10px 7px 0;font-weight:900;color:var(--gray-700);width:46px;vertical-align:top;}
+.evm-sources td{padding:7px 10px 7px 0;color:var(--gray-600);vertical-align:top;line-height:1.5;}
+.evm-sources tr+tr th,.evm-sources tr+tr td{border-top:1px solid var(--gray-200);}
+.src{font-size:11px;font-weight:800;padding:1px 7px;border-radius:20px;margin-right:6px;white-space:nowrap;}
+.src-auto{background:#dcfce7;color:#166534;}
+.src-manual{background:#e0e7ff;color:#3730a3;}
+@media(max-width:620px){.evm-sources,.evm-sources tbody,.evm-sources tr,.evm-sources th,.evm-sources td{display:block;width:auto;}.evm-sources td{padding-top:0;border-top:0 !important;}.evm-sources tr+tr th{border-top:1px solid var(--gray-200);margin-top:8px;padding-top:8px;}}
 .evm-inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);}
 .evm-input-wrap label{font-size:11px;}
 .evm-input-wrap input{padding:8px 10px;font-size:13px;}
@@ -1231,14 +1240,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
            cannot exist yet on a project that has not started spending. -->
       <div class="evm-intro">
         <p><strong>What this is for.</strong> Earned Value Management puts three things side by side — what you planned to spend, what you actually spent, and what you actually delivered. A project that looks on budget while quietly falling behind on delivery has nowhere to hide once these are filled in.</p>
+        <p class="evm-gate"><strong>Two of the four arrive on their own — but only once you generate the Cost&nbsp;/&nbsp;Budget Plan.</strong> Until that document exists this section stays blank, and so do the eight figures under it.</p>
         <p><strong>What to enter.</strong> Four figures; PM Master derives the other eight.</p>
-        <ul>
-          <li><strong>BAC</strong> — the total approved budget. Filled in from your Cost&nbsp;/&nbsp;Budget Plan as soon as that document is generated.</li>
-          <li><strong>PV</strong> — what the schedule said should have been delivered by today, priced at budget.</li>
-          <li><strong>EV</strong> — the budgeted value of what has actually been delivered.</li>
-          <li><strong>AC</strong> — what has actually been spent to deliver it.</li>
-        </ul>
-        <p class="evm-intro-note">On a project that has not started spending yet, leave EV and AC empty — there is nothing to measure. Come back once the first invoices and the first delivered scope are in.</p>
+        <table class="evm-sources">
+          <tr><th>BAC</th><td>Total approved budget</td><td><span class="src src-auto">automatic</span> from the budget in your MoM — editable by hand</td></tr>
+          <tr><th>PV</th><td>Planned value to date</td><td><span class="src src-auto">automatic</span> from the plan's phased spend curve, as of today</td></tr>
+          <tr><th>EV</th><td>Value of work delivered</td><td><span class="src src-manual">by hand</span> — from your status report, each reporting period</td></tr>
+          <tr><th>AC</th><td>Actually spent</td><td><span class="src src-manual">by hand</span> — from your invoices, each reporting period</td></tr>
+        </table>
+        <p class="evm-intro-note">EV and AC cannot come from any document — no plan knows what a project has really delivered or really spent. Those two you bring, and the eight figures below fill in the moment you do.</p>
       </div>
 
       <!-- INPUTS -->
@@ -3417,29 +3427,82 @@ function parseMoney(text) {
 // The Cost / Budget Plan is the document that fixes the total budget, so the
 // moment it exists the EVM block should not still be asking for it. PV, EV and
 // AC are actuals — no document can know them on day one, so they are left alone.
+function readPlanBaseline() {
+  const html = (project.docContent && project.docContent.budget) || '';
+  // The plan closes with a machine-readable baseline, so the figures arrive exact
+  // instead of being scraped out of prose. Plans written before that block
+  // existed fall back to reading the text.
+  const m = html.match(/<!--\s*EVM-BASELINE\s*([\s\S]*?)-->/i);
+  if (m) { try { return JSON.parse(m[1].trim()); } catch (e) { console.warn('[PM Master] EVM baseline block is not valid JSON'); } }
+  return null;
+}
+
+// Planned Value is not one number — it is a point on the spend curve, so it means
+// nothing without a date. Periods that have finished count in full; the period
+// under way counts pro rata, because on the 14th of a month-long phase the plan
+// did expect part of it to be done, and calling that zero reads as "behind".
+function plannedValueOn(schedule, asOf) {
+  if (!Array.isArray(schedule)) return null;
+  const on = asOf ? new Date(asOf) : new Date();
+  const rows = schedule
+    .filter(r => r && r.end && !isNaN(new Date(r.end)) && isFinite(Number(r.cumulative)))
+    .sort((a, b) => new Date(a.end) - new Date(b.end));
+  if (!rows.length) return null;
+
+  let done = 0, prevEnd = null;
+  for (const r of rows) {
+    const rowEnd = new Date(r.end);
+    const cum = Number(r.cumulative);
+    if (rowEnd <= on) { done = cum; prevEnd = rowEnd; continue; }
+
+    const rowStart = r.start && !isNaN(new Date(r.start)) ? new Date(r.start) : prevEnd;
+    if (!rowStart || on <= rowStart) break;
+    const span = rowEnd - rowStart;
+    if (span <= 0) break;
+    const share = Math.min(1, Math.max(0, (on - rowStart) / span));
+    done += (cum - done) * share;
+    break;
+  }
+  return done > 0 ? Math.round(done) : null;
+}
+
 function prefillEVMFromBudget(opts) {
   const bacEl = document.getElementById('inp-bac');
-  if (!bacEl || bacEl.value.trim()) return false;   // не перетираємо введене вручну
+  const pvEl  = document.getElementById('inp-pv');
+  if (!bacEl) return false;
 
+  const plan = readPlanBaseline();
   const html = (project.docContent && project.docContent.budget) || '';
   const text = html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const filled = [];
 
-  let bac = null;
-  const near = new RegExp('(?:Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
-  const labelled = text.match(near);
-  if (labelled) bac = parseMoney(labelled[1]);
-  if (!bac) {
-    const totalRe = new RegExp('(?:Total (?:approved )?(?:project )?budget)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
-    const total = text.match(totalRe);
-    if (total) bac = parseMoney(total[1]);
+  // BAC: the budget approved in the MoM wins. The plan derives everything from
+  // that figure, so where the two disagree the MoM is the one that was signed.
+  if (!bacEl.value.trim()) {
+    let bac = parseMoney(project.budget);
+    if (!bac && plan) bac = Number(plan.bac) || null;
+    if (!bac) {
+      const near = new RegExp('(?:Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
+      const labelled = text.match(near);
+      if (labelled) bac = parseMoney(labelled[1]);
+    }
+    if (!bac) {
+      const totalRe = new RegExp('(?:Total (?:approved )?(?:project )?budget)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
+      const total = text.match(totalRe);
+      if (total) bac = parseMoney(total[1]);
+    }
+    if (bac) { bacEl.value = String(Math.round(bac)); filled.push('BAC'); }
   }
-  if (!bac) bac = parseMoney(project.budget);
-  if (!bac) return false;
 
-  bacEl.value = String(Math.round(bac));
+  if (pvEl && !pvEl.value.trim() && plan) {
+    const pv = plannedValueOn(plan.schedule);
+    if (pv) { pvEl.value = String(Math.round(pv)); filled.push('PV'); }
+  }
+
+  if (!filled.length) return false;
   calcEVM();
   if (!opts || !opts.quiet) {
-    pmToast('BAC filled in from the Cost / Budget Plan. Add PV, EV and AC as the project runs.');
+    pmToast(filled.join(' and ') + ' filled in from the Cost / Budget Plan. Enter EV and AC as the project runs.');
   }
   return true;
 }
