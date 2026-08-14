@@ -1253,10 +1253,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
       <!-- INPUTS -->
       <div class="evm-inputs" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid var(--gray-200);">
-        <div class="evm-input-wrap field"><label>PV — Planned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work scheduled</span></label><input type="text" inputmode="numeric" id="inp-pv" placeholder="e.g. 80000" oninput="calcEVM()"></div>
-        <div class="evm-input-wrap field"><label>EV — Earned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ev" placeholder="e.g. 65000" oninput="calcEVM()"></div>
-        <div class="evm-input-wrap field"><label>AC — Actual Cost ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Actual cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ac" placeholder="e.g. 75000" oninput="calcEVM()"></div>
-        <div class="evm-input-wrap field"><label>BAC — Budget at Completion ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Total approved project budget</span></label><input type="text" inputmode="numeric" id="inp-bac" placeholder="e.g. 220000" oninput="calcEVM()"></div>
+        <div class="evm-input-wrap field"><label>PV — Planned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work scheduled</span></label><input type="text" inputmode="numeric" id="inp-pv" placeholder="e.g. 80000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
+        <div class="evm-input-wrap field"><label>EV — Earned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ev" placeholder="e.g. 65000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
+        <div class="evm-input-wrap field"><label>AC — Actual Cost ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Actual cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ac" placeholder="e.g. 75000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
+        <div class="evm-input-wrap field"><label>BAC — Budget at Completion ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Total approved project budget</span></label><input type="text" inputmode="numeric" id="inp-bac" placeholder="e.g. 220000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
       </div>
 
       <!-- STATUS -->
@@ -1903,6 +1903,7 @@ function createProject() {
   if (!name) { document.getElementById('s-name').focus(); return; }
 
   project.supabaseId  = null;
+  project.evm         = null;   // a new project starts with no measurements
   project.name        = name;
   project.org         = document.getElementById('s-org').value.trim();
   project.pm          = document.getElementById('s-pm').value.trim();
@@ -3507,6 +3508,22 @@ function prefillEVMFromBudget(opts) {
   return true;
 }
 
+// The four inputs lived only in the DOM, so a reload wiped them and the BAC that
+// had just been carried over from the plan vanished with it. Keep them on the
+// project and they travel with everything else.
+function captureEVMInputs() {
+  const g = id => (document.getElementById(id) || {}).value || '';
+  project.evm = { pv: g('inp-pv'), ev: g('inp-ev'), ac: g('inp-ac'), bac: g('inp-bac') };
+  return project.evm;
+}
+
+function restoreEVMInputs() {
+  const e = project.evm || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('inp-pv', e.pv); set('inp-ev', e.ev); set('inp-ac', e.ac); set('inp-bac', e.bac);
+  calcEVM();
+}
+
 function calcEVM() {
   const pv  = parseFloat(document.getElementById('inp-pv').value)||0;
   const ev  = parseFloat(document.getElementById('inp-ev').value)||0;
@@ -3539,6 +3556,8 @@ function calcEVM() {
   set('evm-etc', etc?'$'+etc.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null);
   set('evm-vac', vac?fmtM(vac):'—', vac>0?true:vac<0?false:null);
   set('evm-tcpi',tcpi?tcpi.toFixed(2):'—', null);
+
+  captureEVMInputs();
 
   // Update dashboard CPI
   if (cpi) document.getElementById('stat-cpi').textContent = cpi.toFixed(2);
@@ -5813,6 +5832,7 @@ function onSignIn(user) {
   checkPaymentReturn(user);
 }
 
+const EVM_DOC_KEY = '_evm';
 const TRIAL_DAYS = 7;
 
 // 'trial' and 'expired' both close the door; they differ only in what we say.
@@ -6340,6 +6360,19 @@ async function saveCurrentProject(silent) {
   if (result.error) { updateAutosaveIndicator('error'); return; }
   project.supabaseId = result.data.id;
 
+  // EVM figures ride along in the documents table under a reserved key. The
+  // projects table has no column for them, and a schema migration is a worse
+  // trade than one row that openProject knows to unpack rather than render.
+  if (project.evm && Object.values(project.evm).some(v => String(v || '').trim())) {
+    await sb.from('project_documents').upsert({
+      project_id: project.supabaseId,
+      user_id: currentUser.id,
+      doc_type: EVM_DOC_KEY,
+      content: JSON.stringify(project.evm),
+      version: 1
+    }, { onConflict: 'project_id,doc_type,version' });
+  }
+
   // Save documents
   const docKeys = Object.keys(project.docContent || {});
   for (const key of docKeys) {
@@ -6416,13 +6449,20 @@ async function openProject(id) {
   project.docStatus = {};
 
   DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
+  project.evm = null;
   if (docs) docs.forEach(d => {
+    if (d.doc_type === EVM_DOC_KEY) {
+      try { project.evm = JSON.parse(d.content); }
+      catch (e) { console.warn('[PM Master] stored EVM figures could not be read'); }
+      return;                                   // not a document — never render it
+    }
     project.docContent[d.doc_type] = d.content;
     project.docStatus[d.doc_type] = 'done';
   });
 
   buildDashboard();
   showPage('dashboard');
+  restoreEVMInputs();
 }
 
 function pmToast(text, kind) {
