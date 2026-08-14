@@ -2349,7 +2349,7 @@ async function generateInitiationDocs() {
   updateStats();
   await saveCurrentProject(true);
   banner.style.background = 'linear-gradient(135deg,#166534,#15803d)';
-  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || tr('gen.ready')}</div><div class="gen-banner-doc">${succeeded} / ${INIT_KEYS.length} документів</div></div></div>`;
+  banner.innerHTML = `<div class="gen-banner-inner"><div style="font-size:24px">✅</div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.done'] || tr('gen.ready')}</div><div class="gen-banner-doc">${tr('gen.docsDone', { n: succeeded + ' / ' + INIT_KEYS.length })}</div></div></div>`;
   setTimeout(() => {
     banner.remove();
     pmAlert(t['genInit.done'] || '✅ Initiation documents generated!\n\nYou can now generate the remaining documents at your own pace — use the Generate button on each document card.', '🚀');
