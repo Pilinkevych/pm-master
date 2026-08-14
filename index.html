@@ -1264,8 +1264,28 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
         <div class="evm-metric"><div class="evm-metric-name">TCPI — To-Complete Performance</div><div class="evm-metric-val evm-blue" id="evm-tcpi">—</div><div class="evm-metric-formula">(BAC−EV) ÷ (BAC−AC)</div></div>
       </div>
 
-      <!-- COMMUNICATION CHANNELS -->
-      <div style="background:var(--gray-50);border-radius:10px;padding:14px 16px;margin-top:20px;border-top:2px solid var(--gray-200);padding-top:16px;">
+
+    </div>
+  </div>
+
+  <!-- Communication channels are a stakeholder question, not a financial one.
+       They lived inside the EVM panel purely because both are calculators, which
+       put a headcount field under a budget verdict and made neither easier to read. -->
+  <div class="calc-section">
+    <div class="calc-header" onclick="toggleCalc('comms')">
+      <div class="calc-header-left">
+        👥 Team Communication Channels
+        <span style="font-size:11px;font-weight:600;color:var(--gray-400);">PMBOK 8 · Communication Management</span>
+      </div>
+      <span class="calc-toggle" id="comms-toggle">▼</span>
+    </div>
+    <div class="calc-body" id="comms-body">
+      <p style="font-size:13px;color:var(--gray-600);line-height:1.6;margin:0 0 14px;">
+        Every stakeholder you add creates a path to every other one, so the number of
+        channels grows far faster than the team does — six people already means fifteen.
+        This is the number that justifies the effort in your Communication Plan.
+        Formula: <strong>n × (n−1) / 2</strong>
+      </p>
         <div style="font-size:13px;font-weight:800;color:var(--gray-700);margin-bottom:4px;">👥 Team Communication Channels</div>
         <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">With every new stakeholder, the number of communication paths grows significantly. Use this to justify your Communication Plan complexity. Formula: <b>n × (n−1) / 2</b></div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -1273,8 +1293,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
           <div style="font-size:22px;color:var(--gray-400);padding-top:8px;">→</div>
           <div style="flex:1;min-width:160px;" class="field"><label>Total Communication Channels</label><input type="text" id="out-channels" readonly style="background:var(--blue-50);color:var(--blue);font-weight:800;font-size:16px;text-align:center;"></div>
         </div>
-      </div>
-
     </div>
   </div>
 
