@@ -5800,10 +5800,50 @@ function n8nHeaders() {
   return h;
 }
 
+// getSession() only reads localStorage. It never asks whether the account still
+// exists, so a user deleted in Supabase keeps signing themselves in from the
+// cached token — for as long as an hour, until that token expires. getUser()
+// makes the round trip and fails when the account is gone, disabled, or its
+// sessions were revoked, so that is what decides whether the session is real.
+let _verifying = null;
+async function verifySession(reason) {
+  if (!_accessToken || _verifying) return;
+  _verifying = (async () => {
+    try {
+      const { data, error } = await sb.auth.getUser();
+      if (error || !data || !data.user) {
+        console.warn('[PM] session rejected by the server (' + (reason || 'boot') + '):',
+                     (error && error.message) || 'no user returned');
+        try { await sb.auth.signOut(); } catch (e) { /* the account may already be gone */ }
+        _accessToken = null;
+        currentUser = null;
+        onSignOut();
+        pmToast('That account no longer exists. Please sign in again.', 'error');
+      }
+    } catch (e) {
+      // A network failure is not proof the account is gone — leave them alone.
+      console.warn('[PM] could not verify the session:', e.message);
+    } finally {
+      _verifying = null;
+    }
+  })();
+  return _verifying;
+}
+
 // Init — check session on load (also handles OAuth redirect hash)
 sb.auth.getSession().then(({ data: { session } }) => {
   console.log('[PM] getSession:', session ? 'found' : 'null');
-  if (session) { _accessToken = session.access_token; onSignIn(session.user); }
+  if (session) { _accessToken = session.access_token; onSignIn(session.user); verifySession('boot'); }
+});
+
+// A tab left open all day is the other way a revoked account keeps working.
+// Re-check when it comes back to the foreground, at most once a minute.
+let _lastVerify = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !_accessToken) return;
+  if (Date.now() - _lastVerify < 60000) return;
+  _lastVerify = Date.now();
+  verifySession('tab focus');
 });
 
 // Listen for auth state changes
@@ -5811,7 +5851,7 @@ sb.auth.onAuthStateChange((event, session) => {
   console.log('[PM] onAuthStateChange:', event, session ? session.user.email : 'null');
   if (session) {
     _accessToken = session.access_token;
-    if (!currentUser) onSignIn(session.user); // тільки перший раз
+    if (!currentUser) { onSignIn(session.user); verifySession(event); } // тільки перший раз
     else currentUser = session.user; // просто оновлюємо юзера без редіректу
   } else { _accessToken = null; onSignOut(); }
 });
