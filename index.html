@@ -1723,6 +1723,11 @@ function analyzeContext_internal() {
 
   // Read text files + combine with paste
   function sendToAI(textContent) {
+    // Keep the source. Everything downstream was being written from six extracted
+    // fields, so a budget breakdown, a milestone list and a scope-out section
+    // that the MoM spelled out were simply not there when the documents were
+    // generated — and the model filled the gaps with plausible invention.
+    project.sourceText = String(textContent || '').slice(0, 60000);
     btn.innerHTML = '<span class="spinner-inline"></span> PM Master is analyzing...';
     btn.disabled = true;
 
@@ -1906,6 +1911,8 @@ function createProject() {
 
   project.supabaseId  = null;
   project.evm         = null;   // a new project starts with no measurements
+  // sourceText is deliberately NOT cleared: analyzeContext set it moments ago,
+  // and this is the same project being created from that very document.
   project.name        = name;
   project.org         = document.getElementById('s-org').value.trim();
   project.pm          = document.getElementById('s-pm').value.trim();
@@ -5915,6 +5922,7 @@ function onSignIn(user) {
 }
 
 const EVM_DOC_KEY = '_evm';
+const SOURCE_DOC_KEY = '_source';   // the MoM the project was read from
 const TRIAL_DAYS = 7;
 
 // 'trial' and 'expired' both close the door; they differ only in what we say.
@@ -6474,6 +6482,16 @@ async function saveCurrentProject(silent) {
   // EVM figures ride along in the documents table under a reserved key. The
   // projects table has no column for them, and a schema migration is a worse
   // trade than one row that openProject knows to unpack rather than render.
+  if (project.sourceText && project.sourceText.trim()) {
+    await sb.from('project_documents').upsert({
+      project_id: project.supabaseId,
+      user_id: currentUser.id,
+      doc_type: SOURCE_DOC_KEY,
+      content: project.sourceText,
+      version: 1
+    }, { onConflict: 'project_id,doc_type,version' });
+  }
+
   if (project.evm && Object.values(project.evm).some(v => String(v || '').trim())) {
     await sb.from('project_documents').upsert({
       project_id: project.supabaseId,
@@ -6561,7 +6579,9 @@ async function openProject(id) {
 
   DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
   project.evm = null;
+  project.sourceText = '';
   if (docs) docs.forEach(d => {
+    if (d.doc_type === SOURCE_DOC_KEY) { project.sourceText = d.content; return; }
     if (d.doc_type === EVM_DOC_KEY) {
       try { project.evm = JSON.parse(d.content); }
       catch (e) { console.warn('[PM Master] stored EVM figures could not be read'); }
