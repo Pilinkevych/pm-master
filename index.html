@@ -1253,10 +1253,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
       <!-- INPUTS -->
       <div class="evm-inputs" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid var(--gray-200);">
-        <div class="evm-input-wrap field"><label>PV — Planned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work scheduled</span></label><input type="text" inputmode="numeric" id="inp-pv" placeholder="e.g. 80000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
+        <div class="evm-input-wrap field"><label>PV — Planned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work scheduled</span></label><input type="text" inputmode="numeric" id="inp-pv" placeholder="e.g. 80000" oninput="claimEVMField('pv');calcEVM()" onchange="saveCurrentProject(true)"></div>
         <div class="evm-input-wrap field"><label>EV — Earned Value ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Budgeted cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ev" placeholder="e.g. 65000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
         <div class="evm-input-wrap field"><label>AC — Actual Cost ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Actual cost of work performed</span></label><input type="text" inputmode="numeric" id="inp-ac" placeholder="e.g. 75000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
-        <div class="evm-input-wrap field"><label>BAC — Budget at Completion ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Total approved project budget</span></label><input type="text" inputmode="numeric" id="inp-bac" placeholder="e.g. 220000" oninput="calcEVM()" onchange="saveCurrentProject(true)"></div>
+        <div class="evm-input-wrap field"><label>BAC — Budget at Completion ($)<span style="font-size:10px;font-weight:600;color:var(--gray-400);display:block;">Total approved project budget</span></label><input type="text" inputmode="numeric" id="inp-bac" placeholder="e.g. 220000" oninput="claimEVMField('bac');calcEVM()" onchange="saveCurrentProject(true)"></div>
       </div>
 
       <!-- STATUS -->
@@ -3592,7 +3592,11 @@ function prefillEVMFromBudget(opts) {
 
   // BAC: the budget approved in the MoM wins. The plan derives everything from
   // that figure, so where the two disagree the MoM is the one that was signed.
-  if (!bacEl.value.trim()) {
+  project.evmAuto = project.evmAuto || {};
+  // Overwrite what the app filled in, never what a person typed. Without this a
+  // figure derived by a version with a bug stayed pinned for good: the field was
+  // no longer empty, so nothing would replace it.
+  if (!bacEl.value.trim() || project.evmAuto.bac) {
     let bac = parseMoney(project.budget);
     if (!bac && plan) bac = Number(plan.bac) || null;
     if (!bac) {
@@ -3605,10 +3609,10 @@ function prefillEVMFromBudget(opts) {
       const total = text.match(totalRe);
       if (total) bac = parseMoney(total[1]);
     }
-    if (bac) { bacEl.value = String(Math.round(bac)); filled.push('BAC'); }
+    if (bac) { bacEl.value = String(Math.round(bac)); project.evmAuto.bac = true; filled.push('BAC'); }
   }
 
-  if (pvEl && !pvEl.value.trim()) {
+  if (pvEl && (!pvEl.value.trim() || project.evmAuto.pv)) {
     const schedule = (plan && plan.schedule) || scheduleFromFundingTable(html);
     // The first period has no predecessor to start from, so without this the
     // whole first phase reports nothing — the very weeks a PM is most anxious.
@@ -3616,7 +3620,7 @@ function prefillEVMFromBudget(opts) {
       schedule[0].start = project.start;
     }
     const pv = plannedValueOn(schedule);
-    if (pv) { pvEl.value = String(Math.round(pv)); filled.push('PV'); }
+    if (pv) { pvEl.value = String(Math.round(pv)); project.evmAuto.pv = true; filled.push('PV'); }
     else if (schedule && schedule.length) {
       // A project that has not started has a planned value of nothing. Say that,
       // or an empty field reads as a feature that failed rather than a date that
@@ -3639,14 +3643,23 @@ function prefillEVMFromBudget(opts) {
 // The four inputs lived only in the DOM, so a reload wiped them and the BAC that
 // had just been carried over from the plan vanished with it. Keep them on the
 // project and they travel with everything else.
+// A keystroke in one of these fields makes it the PM's number, and the app stops
+// deriving it. Called from the inputs themselves, so it only fires on real typing.
+function claimEVMField(which) {
+  project.evmAuto = project.evmAuto || {};
+  project.evmAuto[which] = false;
+}
+
 function captureEVMInputs() {
   const g = id => (document.getElementById(id) || {}).value || '';
-  project.evm = { pv: g('inp-pv'), ev: g('inp-ev'), ac: g('inp-ac'), bac: g('inp-bac') };
+  project.evm = { pv: g('inp-pv'), ev: g('inp-ev'), ac: g('inp-ac'), bac: g('inp-bac'),
+                  auto: project.evmAuto || {} };
   return project.evm;
 }
 
 function restoreEVMInputs() {
   const e = project.evm || {};
+  project.evmAuto = e.auto || {};
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
   set('inp-pv', e.pv); set('inp-ev', e.ev); set('inp-ac', e.ac); set('inp-bac', e.bac);
   calcEVM();
