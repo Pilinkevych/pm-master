@@ -5992,6 +5992,7 @@ function onSignIn(user) {
 
 const EVM_DOC_KEY = '_evm';
 const SOURCE_DOC_KEY = '_source';   // the MoM the project was read from
+const META_DOC_KEY   = '_meta';     // whatever the projects table cannot hold
 const TRIAL_DAYS = 7;
 
 // 'trial' and 'expired' both close the door; they differ only in what we say.
@@ -6551,6 +6552,20 @@ async function saveCurrentProject(silent) {
   // EVM figures ride along in the documents table under a reserved key. The
   // projects table has no column for them, and a schema migration is a worse
   // trade than one row that openProject knows to unpack rather than render.
+  // projects.budget is numeric, so "€240,000" reaches it as 240000 and the
+  // currency is gone. Keep the text the user actually wrote next to the project;
+  // without it every euro project silently became dollars on the next reload,
+  // and every document generated afterwards said so.
+  if (project.budget && /[^\d\s.,]/.test(project.budget)) {
+    await sb.from('project_documents').upsert({
+      project_id: project.supabaseId,
+      user_id: currentUser.id,
+      doc_type: META_DOC_KEY,
+      content: JSON.stringify({ budgetText: project.budget }),
+      version: 1
+    }, { onConflict: 'project_id,doc_type,version' });
+  }
+
   if (project.sourceText && project.sourceText.trim()) {
     await sb.from('project_documents').upsert({
       project_id: project.supabaseId,
@@ -6642,7 +6657,9 @@ async function openProject(id) {
   project.type    = p.type || 'IT / Software';
   project.start   = p.start_date || '';
   project.end     = p.end_date_plan || '';
-  project.budget  = p.budget ? '$' + p.budget : '';
+  // No currency symbol is invented here. The number is what the column holds;
+  // the text the user wrote comes back from the meta row below, if it exists.
+  project.budget  = p.budget ? String(p.budget) : '';
   project.docContent = {};
   project.docStatus = {};
 
@@ -6651,6 +6668,11 @@ async function openProject(id) {
   project.sourceText = '';
   if (docs) docs.forEach(d => {
     if (d.doc_type === SOURCE_DOC_KEY) { project.sourceText = d.content; return; }
+    if (d.doc_type === META_DOC_KEY) {
+      try { const m = JSON.parse(d.content); if (m.budgetText) project.budget = m.budgetText; }
+      catch (e) { console.warn('[PM Master] project meta could not be read'); }
+      return;
+    }
     if (d.doc_type === EVM_DOC_KEY) {
       try { project.evm = JSON.parse(d.content); }
       catch (e) { console.warn('[PM Master] stored EVM figures could not be read'); }
