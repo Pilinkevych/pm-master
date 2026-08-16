@@ -1856,6 +1856,30 @@ function applyExtractedData(data) {
     project.risks = data.risks;
   }
 
+  // Money arrives as numbers, once, from the document — not as prose to be
+  // re-derived later by something that may misread it. Everything downstream
+  // reproduces these; nothing recomputes them.
+  const num = v => { const n = Number(v); return isFinite(n) && n > 0 ? n : null; };
+  const plan = {
+    currency: (data.currency || '').trim(),
+    total: num(data.budgetTotal),
+    breakdown: Array.isArray(data.budgetBreakdown)
+      ? data.budgetBreakdown.map(r => ({ item: String(r.item || '').trim(), amount: num(r.amount) }))
+          .filter(r => r.item && r.amount) : [],
+    schedule: Array.isArray(data.fundingSchedule)
+      ? data.fundingSchedule.map(r => ({ period: String(r.period || '').trim(),
+          end: String(r.end || '').slice(0, 10), cumulative: num(r.cumulative) }))
+          .filter(r => r.end && !isNaN(new Date(r.end)) && r.cumulative) : []
+  };
+  const sum = plan.breakdown.reduce((a, r) => a + r.amount, 0);
+  // A breakdown that does not add up to the stated total is a misreading, and a
+  // misread budget is worse than none: it looks authoritative.
+  plan.reconciles = !!(plan.total && sum && Math.abs(sum - plan.total) <= 1);
+  if (plan.breakdown.length && !plan.reconciles) {
+    console.warn('[PM Master] budget lines sum to ' + sum + ' but the document states ' + plan.total);
+  }
+  if (plan.total || plan.breakdown.length || plan.schedule.length) project.budgetPlan = plan;
+
   // Store full context
   project.context = { ...project.context, ...data };
 
@@ -2342,6 +2366,50 @@ async function requestDocument(key, onProgress) {
   throw new Error('Timed out waiting for the document');
 }
 
+// Money gets checked, not trusted. The writer is told exactly what the approved
+// budget is; this reads the document back and says so plainly when the two do
+// not agree, because a cost plan that quietly disagrees with the budget it was
+// built from is the one mistake in this product that costs somebody real money.
+function auditBudgetDocument(html) {
+  const plan = project.budgetPlan;
+  if (!plan || !plan.total || !html) return null;
+
+  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  const problems = [];
+
+  const bacRe = new RegExp('(?:Total Project Budget|Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
+  const m = text.match(bacRe);
+  const stated = m ? parseMoney(m[1]) : null;
+  if (stated && Math.abs(stated - plan.total) > 1) {
+    problems.push('the document states a total of ' + stated.toLocaleString() +
+                  ', the approved budget is ' + plan.total.toLocaleString());
+  }
+
+  // Every approved line must appear with its own amount, unchanged.
+  const missing = plan.breakdown.filter(r => {
+    const amount = r.amount.toLocaleString();
+    const plainAmount = String(r.amount);
+    return !text.includes(amount) && !text.includes(plainAmount);
+  });
+  if (plan.breakdown.length && missing.length) {
+    problems.push(missing.length + ' of ' + plan.breakdown.length +
+                  ' approved cost lines do not appear with their amount (' +
+                  missing.slice(0, 3).map(r => r.item).join('; ') + (missing.length > 3 ? '; …' : '') + ')');
+  }
+  return problems.length ? problems : null;
+}
+
+function showBudgetAudit(problems) {
+  const el = document.getElementById('modal-body');
+  if (!el || !problems) return;
+  el.insertAdjacentHTML('afterbegin',
+    '<div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:12px;padding:14px 16px;margin-bottom:16px;">' +
+    '<div style="font-weight:900;color:#b91c1c;margin-bottom:6px;">⚠️ These figures do not match your approved budget</div>' +
+    '<ul style="margin:0 0 8px 18px;padding:0;color:#7f1d1d;font-size:13px;line-height:1.6;">' +
+    problems.map(p => '<li>' + p + '</li>').join('') + '</ul>' +
+    '<div style="font-size:12px;color:#7f1d1d;">Generate the document again, or correct it by hand before anyone relies on it.</div></div>');
+}
+
 function generateDoc(key) {
   if (_accessBlocked) { showRenewalPopup(); return; }
   const btn = event.target;
@@ -2368,9 +2436,11 @@ function generateDoc(key) {
       project.docContent[key] = sanitizeDocHTML(content);
       updateStats();
       buildDocsGrid();
-      if (key === 'budget') prefillEVMFromBudget();
+      let audit = null;
+      if (key === 'budget') { prefillEVMFromBudget(); audit = auditBudgetDocument(content); }
       saveCurrentProject(true);
       openDoc(key);
+      if (audit) { showBudgetAudit(audit); pmToast('The cost plan does not reconcile with your approved budget.', 'error'); }
     })
     .catch(err => {
       btn.innerHTML = orig;
@@ -3605,7 +3675,9 @@ function prefillEVMFromBudget(opts) {
   // figure derived by a version with a bug stayed pinned for good: the field was
   // no longer empty, so nothing would replace it.
   if (!bacEl.value.trim() || project.evmAuto.bac) {
-    let bac = parseMoney(project.budget);
+    // The figure extracted from the document as a number beats the same figure
+    // read back out of a sentence. Money should travel as money.
+    let bac = (project.budgetPlan && project.budgetPlan.total) || parseMoney(project.budget);
     if (!bac && plan) bac = Number(plan.bac) || null;
     if (!bac) {
       const near = new RegExp('(?:Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
@@ -3621,7 +3693,9 @@ function prefillEVMFromBudget(opts) {
   }
 
   if (pvEl && (!pvEl.value.trim() || project.evmAuto.pv)) {
-    const schedule = (plan && plan.schedule) || scheduleFromFundingTable(html);
+    const fromMoM = project.budgetPlan && project.budgetPlan.schedule && project.budgetPlan.schedule.length
+      ? project.budgetPlan.schedule : null;
+    const schedule = fromMoM || (plan && plan.schedule) || scheduleFromFundingTable(html);
     // The first period has no predecessor to start from, so without this the
     // whole first phase reports nothing — the very weeks a PM is most anxious.
     if (schedule && schedule.length && !schedule[0].start && project.start) {
@@ -6589,12 +6663,12 @@ async function saveCurrentProject(silent) {
   // currency is gone. Keep the text the user actually wrote next to the project;
   // without it every euro project silently became dollars on the next reload,
   // and every document generated afterwards said so.
-  if (project.budget && /[^\d\s.,]/.test(project.budget)) {
+  if ((project.budget && /[^\d\s.,]/.test(project.budget)) || project.budgetPlan) {
     await sb.from('project_documents').upsert({
       project_id: project.supabaseId,
       user_id: currentUser.id,
       doc_type: META_DOC_KEY,
-      content: JSON.stringify({ budgetText: project.budget }),
+      content: JSON.stringify({ budgetText: project.budget, budgetPlan: project.budgetPlan || null }),
       version: 1
     }, { onConflict: 'project_id,doc_type,version' });
   }
@@ -6699,10 +6773,13 @@ async function openProject(id) {
   DOCS.forEach(d => { project.docStatus[d.key] = 'empty'; });
   project.evm = null;
   project.sourceText = '';
+  project.budgetPlan = null;
   if (docs) docs.forEach(d => {
     if (d.doc_type === SOURCE_DOC_KEY) { project.sourceText = d.content; return; }
     if (d.doc_type === META_DOC_KEY) {
-      try { const m = JSON.parse(d.content); if (m.budgetText) project.budget = m.budgetText; }
+      try { const m = JSON.parse(d.content);
+             if (m.budgetText) project.budget = m.budgetText;
+             if (m.budgetPlan) project.budgetPlan = m.budgetPlan; }
       catch (e) { console.warn('[PM Master] project meta could not be read'); }
       return;
     }
