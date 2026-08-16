@@ -2371,8 +2371,11 @@ async function requestDocument(key, onProgress) {
 // not agree, because a cost plan that quietly disagrees with the budget it was
 // built from is the one mistake in this product that costs somebody real money.
 function auditBudgetDocument(html) {
-  const plan = project.budgetPlan;
-  if (!plan || !plan.total || !html) return null;
+  const plan = project.budgetPlan || {};
+  // Without an extracted breakdown there is still one number worth defending:
+  // the approved total. Checking only that is far better than checking nothing.
+  const approved = plan.total || parseMoney(project.budget);
+  if (!approved || !html) return null;
 
   const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
   const problems = [];
@@ -2380,19 +2383,20 @@ function auditBudgetDocument(html) {
   const bacRe = new RegExp('(?:Total Project Budget|Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
   const m = text.match(bacRe);
   const stated = m ? parseMoney(m[1]) : null;
-  if (stated && Math.abs(stated - plan.total) > 1) {
+  if (stated && Math.abs(stated - approved) > 1) {
     problems.push('the document states a total of ' + stated.toLocaleString() +
-                  ', the approved budget is ' + plan.total.toLocaleString());
+                  ', the approved budget is ' + approved.toLocaleString());
   }
 
   // Every approved line must appear with its own amount, unchanged.
-  const missing = plan.breakdown.filter(r => {
+  const breakdown = plan.breakdown || [];
+  const missing = breakdown.filter(r => {
     const amount = r.amount.toLocaleString();
     const plainAmount = String(r.amount);
     return !text.includes(amount) && !text.includes(plainAmount);
   });
-  if (plan.breakdown.length && missing.length) {
-    problems.push(missing.length + ' of ' + plan.breakdown.length +
+  if (breakdown.length && missing.length) {
+    problems.push(missing.length + ' of ' + breakdown.length +
                   ' approved cost lines do not appear with their amount (' +
                   missing.slice(0, 3).map(r => r.item).join('; ') + (missing.length > 3 ? '; …' : '') + ')');
   }
@@ -3657,6 +3661,39 @@ function scheduleFromFundingTable(html) {
   return null;
 }
 
+// A zero next to a green "automatic" badge reads as a failure, even when it is
+// the right answer. Say which day of the plan it is and what the figure becomes,
+// so the number is visibly derived rather than visibly missing.
+function describePV(schedule, value) {
+  if (!Array.isArray(schedule) || !schedule.length) return '';
+  const today = new Date();
+  const fmt = d => new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const money = n => (project.budgetPlan && project.budgetPlan.currency ? project.budgetPlan.currency : '') + Math.round(n).toLocaleString();
+  const next = schedule.find(r => new Date(r.end) > today);
+  if (value === 0) {
+    return 'Nothing was scheduled to be spent yet — the plan begins today.' +
+           (next ? ' By ' + fmt(next.end) + ' it should be ' + money(next.cumulative) + '.' : '');
+  }
+  return next
+    ? 'Planned spend to today. By ' + fmt(next.end) + ' it should be ' + money(next.cumulative) + '.'
+    : 'Planned spend to today — the last planned period has passed.';
+}
+
+function showPVNote(text) {
+  const el = document.getElementById('inp-pv');
+  if (!el) return;
+  const wrap = el.parentElement;
+  let note = document.getElementById('pv-note');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'pv-note';
+    note.style.cssText = 'font-size:11px;color:var(--gray-500);line-height:1.45;margin-top:5px;';
+    wrap.appendChild(note);
+  }
+  note.textContent = text || '';
+  note.style.display = text ? 'block' : 'none';
+}
+
 function prefillEVMFromBudget(opts) {
   const bacEl = document.getElementById('inp-bac');
   const pvEl  = document.getElementById('inp-pv');
@@ -3702,7 +3739,10 @@ function prefillEVMFromBudget(opts) {
       schedule[0].start = project.start;
     }
     const pv = plannedValueOn(schedule);
-    if (pv !== null) { pvEl.value = String(pv); project.evmAuto.pv = true; filled.push('PV'); }
+    if (pv !== null) {
+      pvEl.value = String(pv); project.evmAuto.pv = true; filled.push('PV');
+      showPVNote(describePV(schedule, pv));
+    }
     else if (schedule && schedule.length) {   // null means the plan has not started
       // A project that has not started has a planned value of nothing. Say that,
       // or an empty field reads as a feature that failed rather than a date that
