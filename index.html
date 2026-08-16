@@ -6469,7 +6469,7 @@ async function authSubmit() {
   btn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
 
   if (result.error) {
-    setAuthMsg(inviteAwareMessage(result.error.message), 'error');
+    setAuthMsg(signupErrorMessage(result.error.message), 'error');
   } else if (authMode === 'register' && !result.data.session) {
     setAuthMsg('✅ Check your email to confirm your account.', 'success');
   }
@@ -6478,12 +6478,19 @@ async function authSubmit() {
 // The invite gate lives in a database trigger, so a refusal comes back as
 // whatever GoTrue makes of a failed insert — "Database error saving new user"
 // on a good day. Nobody should have to read that and guess.
-function inviteAwareMessage(raw) {
+// Signup failures arrive as whatever GoTrue makes of them — "Database error
+// saving new user" on a good day — which tells the person nothing and makes the
+// product look broken. Translate the ones we can recognise.
+function signupErrorMessage(raw) {
   const m = String(raw || '');
-  if (/not_invited|invite/i.test(m) ||
-      /database error (saving|creating) new user/i.test(m) ||
-      /signups? not allowed/i.test(m)) {
-    return 'PM Master is invite-only at the moment. Write to support@pm-master.club and we will add you.';
+  if (/not_invited/i.test(m) || /signups? not allowed/i.test(m)) {
+    return 'Registration is closed at the moment. Write to support@pm-master.club and we will help.';
+  }
+  if (/database error (saving|creating) new user/i.test(m)) {
+    return 'Something went wrong creating the account. Please try again, or write to support@pm-master.club.';
+  }
+  if (/already registered|already exists/i.test(m)) {
+    return 'That address already has an account — use Sign In instead.';
   }
   return m;
 }
@@ -6500,7 +6507,7 @@ function inviteAwareMessage(raw) {
   history.replaceState(null, '', window.location.pathname + window.location.search);
   setTimeout(() => {
     openAuth();
-    setAuthMsg(inviteAwareMessage(decodeURIComponent(detail.replace(/\+/g, ' '))), 'error');
+    setAuthMsg(signupErrorMessage(decodeURIComponent(detail.replace(/\+/g, ' '))), 'error');
   }, 400);
 })();
 
