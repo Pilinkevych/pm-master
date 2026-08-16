@@ -3497,31 +3497,39 @@ function readPlanBaseline() {
 
 // Planned Value is not one number — it is a point on the spend curve, so it means
 // nothing without a date. Periods that have finished count in full; the period
-// under way counts pro rata, because on the 14th of a month-long phase the plan
-// did expect part of it to be done, and calling that zero reads as "behind".
+// under way counts pro rata by whole days, because PV is a reporting-period
+// figure and an hourly one is false precision: three hours into a project it
+// produced $383, which is arithmetically right and useless to a PM.
+// Returns null only when the plan has not started; once it has, zero is an
+// answer — nothing was due yet — and saying so beats an empty box.
 function plannedValueOn(schedule, asOf) {
   if (!Array.isArray(schedule)) return null;
-  const on = asOf ? new Date(asOf) : new Date();
+  const day = 86400000;
+  const floorDay = d => Math.floor(new Date(d).getTime() / day);
+  const on = floorDay(asOf ? new Date(asOf) : new Date());
+
   const rows = schedule
     .filter(r => r && r.end && !isNaN(new Date(r.end)) && isFinite(Number(r.cumulative)))
     .sort((a, b) => new Date(a.end) - new Date(b.end));
   if (!rows.length) return null;
 
-  let done = 0, prevEnd = null;
+  const firstStart = rows[0].start && !isNaN(new Date(rows[0].start)) ? floorDay(rows[0].start) : null;
+  if (firstStart !== null && on < firstStart) return null;
+
+  let done = 0, prevEnd = firstStart;
   for (const r of rows) {
-    const rowEnd = new Date(r.end);
+    const rowEnd = floorDay(r.end);
     const cum = Number(r.cumulative);
     if (rowEnd <= on) { done = cum; prevEnd = rowEnd; continue; }
 
-    const rowStart = r.start && !isNaN(new Date(r.start)) ? new Date(r.start) : prevEnd;
-    if (!rowStart || on <= rowStart) break;
+    const rowStart = r.start && !isNaN(new Date(r.start)) ? floorDay(r.start) : prevEnd;
+    if (rowStart === null || on <= rowStart) break;
     const span = rowEnd - rowStart;
     if (span <= 0) break;
-    const share = Math.min(1, Math.max(0, (on - rowStart) / span));
-    done += (cum - done) * share;
+    done += (cum - done) * Math.min(1, (on - rowStart) / span);
     break;
   }
-  return done > 0 ? Math.round(done) : null;
+  return Math.round(done);
 }
 
 // The model was asked twice to close the budget plan with a machine-readable
@@ -3620,8 +3628,8 @@ function prefillEVMFromBudget(opts) {
       schedule[0].start = project.start;
     }
     const pv = plannedValueOn(schedule);
-    if (pv) { pvEl.value = String(Math.round(pv)); project.evmAuto.pv = true; filled.push('PV'); }
-    else if (schedule && schedule.length) {
+    if (pv !== null) { pvEl.value = String(pv); project.evmAuto.pv = true; filled.push('PV'); }
+    else if (schedule && schedule.length) {   // null means the plan has not started
       // A project that has not started has a planned value of nothing. Say that,
       // or an empty field reads as a feature that failed rather than a date that
       // has not arrived.
