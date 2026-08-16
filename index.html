@@ -6471,13 +6471,20 @@ async function authSubmit() {
   if (result.error) {
     setAuthMsg(signupErrorMessage(result.error.message), 'error');
   } else if (authMode === 'register' && !result.data.session) {
-    setAuthMsg('✅ Check your email to confirm your account.', 'success');
+    // Signing up an address that already exists is not an error: to stop anyone
+    // probing which addresses are registered, Supabase answers with a hollow
+    // user and sends no mail. Telling that person "check your email" would send
+    // them to wait for a letter that is never coming. The tell is an empty
+    // identities array, and it is the only one we get.
+    const ident = result.data.user && result.data.user.identities;
+    if (Array.isArray(ident) && ident.length === 0) {
+      setAuthMsg('That address already has an account. Sign in instead — with your password, or with Google if that is how you signed up.', 'error');
+    } else {
+      setAuthMsg('✅ Check your email to confirm your account. If it is not there in a minute, look in Spam.', 'success');
+    }
   }
 }
 
-// The invite gate lives in a database trigger, so a refusal comes back as
-// whatever GoTrue makes of a failed insert — "Database error saving new user"
-// on a good day. Nobody should have to read that and guess.
 // Signup failures arrive as whatever GoTrue makes of them — "Database error
 // saving new user" on a good day — which tells the person nothing and makes the
 // product look broken. Translate the ones we can recognise.
