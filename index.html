@@ -3524,12 +3524,56 @@ function plannedValueOn(schedule, asOf) {
   return done > 0 ? Math.round(done) : null;
 }
 
+// The model was asked twice to close the budget plan with a machine-readable
+// baseline and did not do it either time, so stop asking. The Funding
+// Requirements table is in every plan it has produced, it carries the period
+// names and the running total, and a table is a far steadier thing to read than
+// a sentence. Reserves held centrally are skipped: they are not spend on a date.
+function scheduleFromFundingTable(html) {
+  if (!html) return null;
+  const MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const doc = new DOMParser().parseFromString(String(html), 'text/html');
+
+  for (const table of doc.querySelectorAll('table')) {
+    const rows = [...table.querySelectorAll('tr')];
+    if (rows.length < 2) continue;
+    const head = [...rows[0].querySelectorAll('th,td')].map(c => c.textContent.toLowerCase());
+    const col = head.findIndex(h => h.includes('cumulative'));
+    if (col === -1) continue;
+
+    const out = [];
+    for (const row of rows.slice(1)) {
+      const cells = [...row.querySelectorAll('td,th')];
+      if (cells.length <= col) continue;
+      const label = cells[0].textContent.replace(/\s+/g, ' ').trim();
+      if (/reserve/i.test(label) || /^total\b/i.test(label)) continue;
+
+      const cumulative = parseMoney(cells[col].textContent);
+      if (!cumulative) continue;
+
+      // "Phase 2 — Platform Config (Nov–Dec 2026)" ends when its last month does.
+      const found = [...label.toLowerCase().matchAll(/([a-z]{3})[a-z]*\.?\s*(\d{4})?/g)]
+        .map(m => ({ month: MONTHS.indexOf(m[1]), year: m[2] ? +m[2] : null }))
+        .filter(m => m.month > -1);
+      if (!found.length) continue;
+      const last = found[found.length - 1];
+      const year = last.year || (found.find(f => f.year) || {}).year;
+      if (!year) continue;
+
+      out.push({ period: label, end: new Date(Date.UTC(year, last.month + 1, 0)).toISOString().slice(0, 10), cumulative });
+    }
+    if (out.length) return out;
+  }
+  return null;
+}
+
 function prefillEVMFromBudget(opts) {
   const bacEl = document.getElementById('inp-bac');
   const pvEl  = document.getElementById('inp-pv');
   if (!bacEl) return false;
 
   const plan = readPlanBaseline();
+  let pvNote = '';
   const html = (project.docContent && project.docContent.budget) || '';
   const text = html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
   const filled = [];
@@ -3552,15 +3596,30 @@ function prefillEVMFromBudget(opts) {
     if (bac) { bacEl.value = String(Math.round(bac)); filled.push('BAC'); }
   }
 
-  if (pvEl && !pvEl.value.trim() && plan) {
-    const pv = plannedValueOn(plan.schedule);
+  if (pvEl && !pvEl.value.trim()) {
+    const schedule = (plan && plan.schedule) || scheduleFromFundingTable(html);
+    // The first period has no predecessor to start from, so without this the
+    // whole first phase reports nothing — the very weeks a PM is most anxious.
+    if (schedule && schedule.length && !schedule[0].start && project.start) {
+      schedule[0].start = project.start;
+    }
+    const pv = plannedValueOn(schedule);
     if (pv) { pvEl.value = String(Math.round(pv)); filled.push('PV'); }
+    else if (schedule && schedule.length) {
+      // A project that has not started has a planned value of nothing. Say that,
+      // or an empty field reads as a feature that failed rather than a date that
+      // has not arrived.
+      const first = schedule[0].start || schedule[0].end;
+      pvNote = 'PV stays empty until the plan says spending begins' +
+               (first ? ' (' + first + ')' : '') + '.';
+    }
   }
 
   if (!filled.length) return false;
   calcEVM();
   if (!opts || !opts.quiet) {
-    pmToast(filled.join(' and ') + ' filled in from the Cost / Budget Plan. Enter EV and AC as the project runs.');
+    pmToast(filled.join(' and ') + ' filled in from the Cost / Budget Plan. ' +
+            (pvNote || 'Enter EV and AC as the project runs.'));
   }
   return true;
 }
