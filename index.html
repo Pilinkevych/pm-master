@@ -2314,6 +2314,34 @@ function saveDoc() {
   closeModal();
 }
 
+// The generator answers with a job id in under a second and writes the document
+// to doc_jobs when it is ready. Waiting on the open request was the bug: a
+// document needs ninety seconds to two and a half minutes, and the connection
+// closes at about two, so a finished document was thrown away by the network.
+async function requestDocument(key, onProgress) {
+  const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
+    method: 'POST', headers: n8nHeaders(),
+    body: JSON.stringify({ key, project, lang: curLang() })
+  });
+  if (handleN8nStatus(resp.status)) throw new Error('access refused');
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const text = await resp.text();
+  let init; try { init = JSON.parse(text); } catch (e) { throw new Error('Bad response: ' + text.slice(0, 120)); }
+  if (!init.jobId) throw new Error('No jobId: ' + text.slice(0, 120));
+
+  const deadline = Date.now() + 300000;   // five minutes is far past any real run
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 2500));
+    const { data, error } = await sb.from('doc_jobs')
+      .select('status,content,error_msg').eq('id', init.jobId).maybeSingle();
+    if (error || !data) continue;         // the row may not be visible on the first poll
+    if (onProgress) onProgress(Math.round((Date.now() - (deadline - 300000)) / 1000));
+    if (data.status === 'done' && data.content) return data.content;
+    if (data.status === 'error') throw new Error(data.error_msg || 'generation failed');
+  }
+  throw new Error('Timed out waiting for the document');
+}
+
 function generateDoc(key) {
   if (_accessBlocked) { showRenewalPopup(); return; }
   const btn = event.target;
@@ -2321,41 +2349,37 @@ function generateDoc(key) {
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
   btn.disabled = true;
   const modalBody = document.getElementById('modal-body');
-  if (modalBody) modalBody.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px;"><div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;"></div><div style="font-size:15px;font-weight:700;color:#1e3a8a;">PM Master is generating the document...</div><div style="font-size:13px;color:#64748b;">A full document usually takes 1–3 minutes</div></div>`;
+  const paint = secs => {
+    if (!modalBody) return;
+    modalBody.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:18px;">'
+      + '<div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;"></div>'
+      + '<div style="font-size:15px;font-weight:700;color:#1e3a8a;">PM Master is writing the document...</div>'
+      + '<div style="font-size:13px;color:#64748b;">A full document usually takes 1\u20133 minutes' + (secs ? ' \u00b7 ' + secs + 's' : '') + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;max-width:330px;text-align:center;line-height:1.5;">Writing continues even if you close this window \u2014 the card will show it when it is ready.</div></div>';
+  };
+  paint(0);
 
-  fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-    method: 'POST',
-    headers: n8nHeaders(),
-    body: JSON.stringify({ key, project, lang: curLang() })
-  })
-  .then(r => {
-    if (handleN8nStatus(r.status)) { btn.innerHTML = orig; btn.disabled = false; return null; }
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text().then(text => {
-      console.log('[PM Master] Generate raw:', text.slice(0, 500));
-      try { return JSON.parse(text); } catch(e) { throw new Error('Invalid JSON: ' + text.slice(0, 200)); }
+  requestDocument(key, paint)
+    .then(content => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      project.docStatus[key] = 'done';
+      project.docContent = project.docContent || {};
+      project.docContent[key] = sanitizeDocHTML(content);
+      updateStats();
+      buildDocsGrid();
+      if (key === 'budget') prefillEVMFromBudget();
+      saveCurrentProject(true);
+      openDoc(key);
+    })
+    .catch(err => {
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      console.error('[PM Master] generate failed:', err);
+      if (err.message !== 'access refused') {
+        pmToast('Could not generate that document: ' + err.message, 'error');
+      }
     });
-  })
-  .then(data => {
-    if (!data) return;
-    btn.innerHTML = orig;
-    btn.disabled = false;
-    if (!data.success) throw new Error('Generation failed');
-    project.docStatus[key] = 'done';
-    project.docContent = project.docContent || {};
-    project.docContent[key] = sanitizeDocHTML(data.content);
-    updateStats();
-    buildDocsGrid();
-    if (key === 'budget') prefillEVMFromBudget();
-    saveCurrentProject(true);
-    openDoc(key);
-  })
-  .catch(err => {
-    btn.innerHTML = orig;
-    btn.disabled = false;
-    console.error('[PM Master] generate failed:', err);
-    pmToast('Could not generate that document. Please try again.', 'error');
-  });
 }
 
 async function generateInitiationDocs() {
@@ -2374,14 +2398,7 @@ async function generateInitiationDocs() {
     const doc = DOCS.find(d => d.key === key);
     banner.innerHTML = `<div class="gen-banner-inner"><div class="gen-spinner"></div><div class="gen-banner-text"><div class="gen-banner-title">${t['genAll.generating'] || tr('gen.busy')}</div><div class="gen-banner-doc">${doc?.icon || '📄'} ${doc?.name || key}</div><div class="gen-banner-count">${done + 1} / ${INIT_KEYS.length}</div></div></div>`;
     try {
-      const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-        method: 'POST', headers: n8nHeaders(),
-        body: JSON.stringify({ key, project, lang: curLang() })
-      });
-      // No point grinding through the rest of the batch once access is refused.
-      if (handleN8nStatus(r.status)) { banner.remove(); return; }
-      const text = await r.text();
-      const data = text ? JSON.parse(text) : {};
+      const data = { success: true, content: await requestDocument(key) };
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
@@ -2431,14 +2448,7 @@ async function generateAllDocs() {
     const doc = DOCS.find(d => d.key === key);
     setBanner(doc?.name || key, doc?.icon || '📄', done + 1, keys.length);
     try {
-      const r = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-generate', {
-        method: 'POST', headers: n8nHeaders(),
-        body: JSON.stringify({ key, project, lang: curLang() })
-      });
-      // No point grinding through the rest of the batch once access is refused.
-      if (handleN8nStatus(r.status)) { banner.remove(); return; }
-      const text = await r.text();
-      const data = text ? JSON.parse(text) : {};
+      const data = { success: true, content: await requestDocument(key) };
       if (data.success && data.content) {
         project.docStatus[key] = 'done';
         project.docContent = project.docContent || {};
