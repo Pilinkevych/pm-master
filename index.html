@@ -3551,16 +3551,28 @@ function scheduleFromFundingTable(html) {
       const cumulative = parseMoney(cells[col].textContent);
       if (!cumulative) continue;
 
-      // "Phase 2 — Platform Config (Nov–Dec 2026)" ends when its last month does.
-      const found = [...label.toLowerCase().matchAll(/([a-z]{3})[a-z]*\.?\s*(\d{4})?/g)]
-        .map(m => ({ month: MONTHS.indexOf(m[1]), year: m[2] ? +m[2] : null }))
-        .filter(m => m.month > -1);
-      if (!found.length) continue;
-      const last = found[found.length - 1];
-      const year = last.year || (found.find(f => f.year) || {}).year;
-      if (!year) continue;
+      // A period ends when its last month does: "Aug 16 - Sep 30, 2026" ends in
+      // September, "Dec 25, 2026 - Jan 15, 2027" in January of the later year.
+      // The year rarely sits against the month name — a day number is usually in
+      // between — so months and years are collected separately and paired by
+      // position. Matching on the month list rather than any three letters also
+      // keeps "Design" from being read as December.
+      const low = label.toLowerCase();
+      const months = [...low.matchAll(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/g)]
+        .map(m => ({ month: MONTHS.indexOf(m[1]), at: m.index }));
+      if (!months.length) continue;
+      const years = [...low.matchAll(/\b(20\d{2})\b/g)].map(m => ({ year: +m[1], at: m.index }));
+      if (!years.length) continue;
+      const last = months[months.length - 1];
+      const after = years.find(y => y.at > last.at);
+      const year = (after || years[years.length - 1]).year;
 
-      out.push({ period: label, end: new Date(Date.UTC(year, last.month + 1, 0)).toISOString().slice(0, 10), cumulative });
+      // "Nov 13" ends on the 13th, not at the end of November. Take the day if
+      // the label gives one; otherwise the month's last day is the honest guess.
+      const dayMatch = low.slice(last.at).match(/^[a-z]+\.?\s+(\d{1,2})\b/);
+      const day = dayMatch ? Math.min(+dayMatch[1], new Date(Date.UTC(year, last.month + 1, 0)).getUTCDate()) : null;
+      const end = day ? new Date(Date.UTC(year, last.month, day)) : new Date(Date.UTC(year, last.month + 1, 0));
+      out.push({ period: label, end: end.toISOString().slice(0, 10), cumulative });
     }
     if (out.length) return out;
   }
