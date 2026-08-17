@@ -2388,14 +2388,29 @@ function auditBudgetDocument(html) {
   const approved = plan.total || parseMoney(project.budget);
   if (!approved || !html) return null;
 
-  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  // Tags are replaced by a space, and markup sits inside numbers more often than
+  // you would think — "$415<strong>,000</strong>" becomes "415 ,000", which reads
+  // as four hundred and fifteen. Close that gap before looking at any figure.
+  const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ').replace(/(\d) +(?=[.,]\d{3}\b)/g, '$1');
   const problems = [];
 
-  const bacRe = new RegExp('(?:Total Project Budget|Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'i');
-  const m = text.match(bacRe);
-  const stated = m ? parseMoney(m[1]) : null;
-  if (stated && Math.abs(stated - approved) > 1) {
-    problems.push('the document states a total of ' + stated.toLocaleString() +
+  // Every place the document names its total, not just the first — the first one
+  // may be the one the markup mangled.
+  const bacRe = new RegExp('(?:Total Project Budget|Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'gi');
+  const totals = [];
+  for (let m = bacRe.exec(text); m; m = bacRe.exec(text)) {
+    const v = parseMoney(m[1]);
+    if (v) totals.push(v);
+  }
+  // 415 where 415,000 was approved is a thousands group that went missing on the
+  // way here, not a cost plan that lost three orders of magnitude. Saying so out
+  // loud would train people to ignore this banner, which is the one outcome that
+  // must not happen.
+  const artefact = v => Math.abs(v * 1000 - approved) <= 1 || Math.abs(v / 1000 - approved) <= 1;
+  const wrong = totals.filter(v => Math.abs(v - approved) > 1 && !artefact(v));
+  if (wrong.length) {
+    problems.push('the document states a total of ' + wrong[0].toLocaleString() +
                   ', the approved budget is ' + approved.toLocaleString());
   }
 
@@ -2865,6 +2880,20 @@ function closeModal() {
   currentDocKey = null;
 }
 
+// The warning belongs to the document, not to the window it was generated in.
+// A cost plan whose figures do not reconcile gets mailed, printed and tabled at
+// a meeting the person who saw the red box is not in.
+function auditNoticeHtml(problems) {
+  if (!problems || !problems.length) return '';
+  return '<div style="border:2px solid #b91c1c;padding:8px 10px;margin:0 0 14px;">' +
+    '<div style="font-weight:bold;color:#b91c1c;">\u26a0 These figures do not match the approved budget</div>' +
+    '<ul style="margin:6px 0 4px 18px;padding:0;color:#7f1d1d;">' +
+      problems.map(p => '<li style="color:#7f1d1d;">' + p + '</li>').join('') +
+    '</ul>' +
+    '<div style="color:#7f1d1d;font-size:9pt;">Checked automatically against the approved budget. ' +
+    'Correct the document before anyone relies on it.</div></div>';
+}
+
 function exportDocPDF(key) {
   const doc = DOCS.find(d => d.key === key);
   const content = project.docContent && project.docContent[key];
@@ -2892,7 +2921,7 @@ function exportDocPDF(key) {
 
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.65;color:#1e293b;';
-  wrapper.innerHTML = cleanContent;
+  wrapper.innerHTML = (key === 'budget' ? auditNoticeHtml(auditBudgetDocument(content)) : '') + cleanContent;
 
   wrapper.querySelectorAll('table').forEach(t => {
     t.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;font-size:11px;';
@@ -3060,7 +3089,9 @@ function exportDocWord(key) {
     'table{border-collapse:collapse;width:100%;font-size:9.5pt;}' +
     'th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top;}' +
     'th{background:#eef2f7;font-weight:bold;}' +
-    '</style></head><body><div class="Section1">' + body + runningHead + '</div></body></html>';
+    '</style></head><body><div class="Section1">' +
+    (key === 'budget' ? auditNoticeHtml(auditBudgetDocument(content)) : '') +
+    body + runningHead + '</div></body></html>';
 
   // The BOM is what tells Word the file is UTF-8; without it every Cyrillic
   // and every dash arrives as mojibake.
@@ -3686,7 +3717,7 @@ function toggleCalc(id) {
 // two-digit fraction — and nothing else. Letting the pattern swallow any run of
 // digits, spaces and punctuation is what once turned "$187,500" followed by the
 // heading "8. Earned Value Management" into 187.5008, and then into a BAC of 188.
-const MONEY_RE = /\d{1,3}(?:[.,  ]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?/;
+const MONEY_RE = /\d{1,3}(?:[.,    ]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?/;
 
 function parseMoney(text) {
   const m = String(text || '').match(MONEY_RE);
