@@ -3025,13 +3025,14 @@ function exportDocWord(key) {
   // The project name is the user's own text, and it goes into a file another
   // program will parse.
   const esc = t => String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // No title here: every generated document opens with its own heading and the
+  // project name under it, and printing them twice reads like a mail merge that
+  // went wrong. This is only the provenance line the PDF carries as a running
+  // header — who made the file and when.
   const head =
-    '<div style="text-align:center;margin-bottom:14pt;">' +
-      '<div style="font-size:16pt;font-weight:bold;">' + esc(doc?.name || key) + '</div>' +
-      '<div style="font-size:12pt;">' + esc(project.name || '') + '</div>' +
-      '<div style="font-size:9pt;color:#555;">PM Master · pm-master.club · PMBOK® 8th Edition · ' +
-        today.toLocaleDateString() + '</div>' +
-    '</div>';
+    '<div style="font-size:8.5pt;color:#666;border-bottom:1px solid #cbd5e1;' +
+    'padding-bottom:4pt;margin-bottom:12pt;">PM Master · pm-master.club · PMBOK® 8th Edition · ' +
+    today.toLocaleDateString() + '</div>';
 
   const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office"' +
     ' xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -3965,6 +3966,9 @@ function calcEVM() {
   const set = (id, val, good) => {
     const el = document.getElementById(id);
     el.textContent = val;
+    // A red dash and a green dash both look like a verdict. There is none until
+    // there is a number.
+    if (val === '—') good = null;
     el.className = 'evm-metric-val ' + (good===true?'evm-green':good===false?'evm-red':'evm-blue');
   };
 
