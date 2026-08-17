@@ -2892,8 +2892,22 @@ function exportDocPDF(key) {
   });
   wrapper.querySelectorAll('tr').forEach(r => { r.style.cssText = 'page-break-inside:avoid;break-inside:avoid;'; });
   wrapper.querySelectorAll('td,th').forEach(c => {
-    c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;';
+    c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;overflow-wrap:break-word;';
   });
+
+  // html2canvas lays the text out itself, and when a line break lands on a
+  // hyphen it draws the tail of the word back over its head: "3 KP-40 Packing
+  // Cells" came out as "3 KP-4Packing Cells" in a real cost plan. A non-breaking
+  // hyphen is the same glyph and cannot be broken at, so the break moves to the
+  // nearest space instead. Text nodes only — the same character inside a style
+  // attribute would turn border-collapse into nonsense.
+  const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT);
+  const nb = t => t.replace(/([\p{L}\p{N}])-([\p{L}\p{N}])/gu, '$1\u2011$2');
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    // Twice, because the pattern consumes the character on each side and
+    // "permit-to-work" would otherwise keep its second hyphen.
+    if (n.nodeValue.indexOf('-') !== -1) n.nodeValue = nb(nb(n.nodeValue));
+  }
   wrapper.querySelectorAll('th').forEach(c => {
     c.style.cssText += 'background:#f1f5f9;font-weight:700;font-size:11px;color:#1e293b;';
   });
