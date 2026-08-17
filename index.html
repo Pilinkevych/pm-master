@@ -439,6 +439,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .doc-btn-gen{background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;}
 .doc-btn-edit{background:var(--gray-100);color:var(--gray-700);}
 .doc-btn-pdf{background:var(--green-50);color:var(--green);border:1px solid var(--green-100);}
+.doc-btn-word{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 .doc-btn:hover{opacity:.85;}
 
 /* Risk Matrix */
@@ -2077,6 +2078,7 @@ function buildDocsGrid() {
           <button class="doc-btn doc-btn-gen" onclick="openDoc('${d.key}')">✨ Generate</button>
           <button class="doc-btn doc-btn-edit" onclick="openDoc('${d.key}','${status==='done'?'edit':'form'}')">✏️ Edit</button>
           ${status==='done' ? `<button class="doc-btn doc-btn-pdf" onclick="exportDocPDF('${d.key}')">📥 PDF</button>` : ''}
+          ${status==='done' ? `<button class="doc-btn doc-btn-word" onclick="exportDocWord('${d.key}')">📝 Word</button>` : ''}
         </div>`;
       grid.appendChild(card);
     });
@@ -2119,6 +2121,7 @@ function openDoc(key, mode) {
         <button onclick="editDocContent('${key}')" style="padding:6px 14px;border:1px solid #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;cursor:pointer;font-size:13px;font-weight:700;">${t['modal.edit'] || '✏️ Edit'}</button>
         <button onclick="copyDocContent('${key}')" style="padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">📋 Copy</button>
         <button onclick="exportDocPDF('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:13px;">📥 Export PDF</button>
+        <button onclick="exportDocWord('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#1d4ed8;cursor:pointer;font-size:13px;font-weight:700;">📝 Export Word</button>
       </div>
       <div class="generated-doc-content" style="font-size:14px;line-height:1.7;color:#1e293b;">${sanitizeDocHTML(project.docContent[key])}</div>`;
     // Audit on every viewing, not only on the run that produced the document.
@@ -2879,9 +2882,13 @@ function exportDocPDF(key) {
   const filename = parts.join('_') + '.pdf';
   const dateStr = today.toLocaleDateString('uk-UA');
 
-  // Pre-process: strip all background/color inline styles before parsing HTML
+  // Pre-process: strip all background/color inline styles before parsing HTML.
+  // The tail of the colour pattern must stop at a quote as well as a semicolon.
+  // With [^;]* it ran past the end of the style attribute and, in a document
+  // whose last declaration was color:white with no trailing semicolon, deleted
+  // everything that followed — the rest of the document, silently.
   const cleanContent = sanitizeDocHTML(content).replace(/\bbackground(-color|-image)?\s*:[^;'"]+;?/gi, '')
-                              .replace(/\bcolor\s*:\s*(white|#fff(?:fff)?|rgba?\(255,\s*255,\s*255[^)]*\))[^;]*;?/gi, '');
+                              .replace(/\bcolor\s*:\s*(white|#fff(?:fff)?|rgba?\(255,\s*255,\s*255[^)]*\))[^;"']*;?/gi, '');
 
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.65;color:#1e293b;';
@@ -2988,6 +2995,66 @@ function exportDocPDF(key) {
     if (btn) { btn.disabled = false; btn.innerHTML = btnLabel; }
     console.error('[PM Master] PDF export failed:', err); pmToast('PDF export failed. Please try again.', 'error');
   });
+}
+
+// Word opens plain HTML when it is handed to it as application/msword with a
+// .doc extension. This is the same trick AI-Metodyst uses for its KTP export, and
+// it is worth being honest about what it is: not a real .docx, so page setup is
+// approximate and some Word builds warn that the format does not match the
+// extension. What it buys is a document whose text is text — editable, with
+// tables a PM can extend, and with no layout engine of ours to draw a word on
+// top of itself. The PDF stays for sending; this is for working.
+function exportDocWord(key) {
+  const doc = DOCS.find(d => d.key === key);
+  const content = project.docContent && project.docContent[key];
+  if (!content) { pmAlert('No content to export yet. Generate the document first.', '📄'); return; }
+
+  const clean = s => String(s || '').replace(/[^a-zA-Z0-9а-яА-ЯїЇіІєЄ\s-]/g, '').trim().replace(/\s+/g, '-');
+  const today = new Date();
+  const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') +
+              '-' + String(today.getDate()).padStart(2, '0');
+  const filename = [clean(project.name), clean(doc?.name || key), iso].filter(Boolean).join('_') + '.doc';
+
+  // The screen palette is built for a dark app shell; on paper it has to be
+  // black on white, and a white-on-white heading is the classic way to hand
+  // somebody an empty-looking page.
+  const body = sanitizeDocHTML(content)
+    .replace(/\bbackground(-color|-image)?\s*:[^;'"]+;?/gi, '')
+    .replace(/\bcolor\s*:\s*(white|#fff(?:fff)?|rgba?\(255,\s*255,\s*255[^)]*\))[^;"']*;?/gi, '');
+
+  // The project name is the user's own text, and it goes into a file another
+  // program will parse.
+  const esc = t => String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const head =
+    '<div style="text-align:center;margin-bottom:14pt;">' +
+      '<div style="font-size:16pt;font-weight:bold;">' + esc(doc?.name || key) + '</div>' +
+      '<div style="font-size:12pt;">' + esc(project.name || '') + '</div>' +
+      '<div style="font-size:9pt;color:#555;">PM Master · pm-master.club · PMBOK® 8th Edition · ' +
+        today.toLocaleDateString() + '</div>' +
+    '</div>';
+
+  const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office"' +
+    ' xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="utf-8"><title>' + esc(doc?.name || key) + '</title>' +
+    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>' +
+    '<w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+    '<style>@page{size:21cm 29.7cm;mso-page-orientation:portrait;margin:2cm 1.8cm;}' +
+    'body{font-family:"Times New Roman",serif;font-size:11pt;color:#000;}' +
+    'h1{font-size:16pt;} h2{font-size:13pt;} h3{font-size:11.5pt;}' +
+    'table{border-collapse:collapse;width:100%;font-size:9.5pt;}' +
+    'th,td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top;}' +
+    'th{background:#eef2f7;font-weight:bold;}' +
+    '</style></head><body>' + head + body + '</body></html>';
+
+  // The BOM is what tells Word the file is UTF-8; without it every Cyrillic
+  // and every dash arrives as mojibake.
+  const blob = new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  pmToast('📝 Word file downloaded');
 }
 
 function exportPDF() { exportDocPDF(currentDocKey); }
