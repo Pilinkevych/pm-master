@@ -3853,13 +3853,24 @@ function restoreEVMInputs() {
 }
 
 function calcEVM() {
-  const pv  = parseFloat(document.getElementById('inp-pv').value)||0;
-  const ev  = parseFloat(document.getElementById('inp-ev').value)||0;
-  const ac  = parseFloat(document.getElementById('inp-ac').value)||0;
-  const bac = parseFloat(document.getElementById('inp-bac').value)||0;
+  // An empty field is unknown, not zero. Treating it as zero is what put a
+  // schedule variance of $2,756 and a variance at completion of $415,000 on a
+  // project that had not yet earned or spent anything: both were arithmetic on a
+  // number nobody had supplied. Every metric below is shown only when each input
+  // it needs was actually entered.
+  const val = id => {
+    const raw = String(document.getElementById(id).value || '').trim();
+    const n = parseFloat(raw);
+    return raw !== '' && isFinite(n) ? n : null;
+  };
+  const pvIn = val('inp-pv'), evIn = val('inp-ev'), acIn = val('inp-ac'), bacIn = val('inp-bac');
+  const hasPV = pvIn !== null, hasEV = evIn !== null, hasAC = acIn !== null, hasBAC = bacIn !== null;
+  const pv = pvIn || 0, ev = evIn || 0, ac = acIn || 0, bac = bacIn || 0;
 
   const fmt = (n, dec=2) => isFinite(n) && n!==0 ? (n>0?'+':'')+n.toFixed(dec) : '—';
-  const fmtM = n => isFinite(n) ? '$'+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:0}) : '—';
+  // Colour alone carried the sign, so an overrun and an underrun both read as
+  // "$2,756". Money that is missing says so out loud.
+  const fmtM = n => isFinite(n) ? (n<0?'−':'')+'$'+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:0}) : '—';
 
   const cv   = ev - ac;
   const sv   = ev - pv;
@@ -3876,19 +3887,24 @@ function calcEVM() {
     el.className = 'evm-metric-val ' + (good===true?'evm-green':good===false?'evm-red':'evm-blue');
   };
 
-  set('evm-cv',  cv?fmtM(cv):'—',   cv>0?true:cv<0?false:null);
-  set('evm-sv',  sv?fmtM(sv):'—',   sv>0?true:sv<0?false:null);
-  set('evm-cpi', cpi?cpi.toFixed(2):'—', cpi>=1?true:cpi<1&&cpi>0?false:null);
-  set('evm-spi', spi?spi.toFixed(2):'—', spi>=1?true:spi<1&&spi>0?false:null);
-  set('evm-eac', eac?'$'+eac.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null);
-  set('evm-etc', etc?'$'+etc.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null);
-  set('evm-vac', vac?fmtM(vac):'—', vac>0?true:vac<0?false:null);
-  set('evm-tcpi',tcpi?tcpi.toFixed(2):'—', null);
+  // A forecast needs performance to forecast from: EAC, ETC and VAC all rest on
+  // CPI, so none of them may appear before EV and AC do.
+  const forecast = hasEV && hasAC && hasBAC && cpi > 0;
+  set('evm-cv',  hasEV&&hasAC ? fmtM(cv) : '—',   cv>0?true:cv<0?false:null);
+  set('evm-sv',  hasEV&&hasPV ? fmtM(sv) : '—',   sv>0?true:sv<0?false:null);
+  set('evm-cpi', hasEV&&hasAC&&cpi ? cpi.toFixed(2) : '—', cpi>=1?true:cpi<1&&cpi>0?false:null);
+  set('evm-spi', hasEV&&hasPV&&spi ? spi.toFixed(2) : '—', spi>=1?true:spi<1&&spi>0?false:null);
+  set('evm-eac', forecast ? '$'+eac.toLocaleString(undefined,{maximumFractionDigits:0}) : '—', null);
+  set('evm-etc', forecast ? '$'+etc.toLocaleString(undefined,{maximumFractionDigits:0}) : '—', null);
+  set('evm-vac', forecast ? fmtM(vac) : '—', vac>0?true:vac<0?false:null);
+  // TCPI answers "how efficiently must the remaining work be done" — a question
+  // with no meaning before any work has been done or paid for.
+  set('evm-tcpi', hasEV&&hasAC&&hasBAC&&(bac-ac) ? tcpi.toFixed(2) : '—', null);
 
   captureEVMInputs();
 
   // Update dashboard CPI
-  if (cpi) document.getElementById('stat-cpi').textContent = cpi.toFixed(2);
+  if (hasEV && hasAC && cpi) document.getElementById('stat-cpi').textContent = cpi.toFixed(2);
 
   // EVM Status Summary
   if (!pv && !ev && !ac && !bac) return;
