@@ -59,11 +59,12 @@ header::before{content:'';position:absolute;top:-50%;right:0;width:350px;height:
 .header-actions{display:flex;align-items:center;gap:10px;position:relative;z-index:1;flex-shrink:0;}
 .lang-select{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;width:auto;max-width:170px;}
 .lang-select option{color:#0f172a;background:white;}
-/* Centred in the header bar, independent of how wide the two side groups get */
-.plan-badge{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.45);color:#c4b5fd;font-size:15px;font-weight:900;letter-spacing:.3px;padding:9px 20px;border-radius:12px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.15);}
-/* The badge is absolutely centred, so it sits on top of the buttons as soon as
-   they grow towards the middle. Hide it well before they meet. */
-@media(max-width:1450px){.plan-badge{display:none !important;}}
+/* Sits in the control row, beside the account button. It used to be absolutely
+   centred in the header, which forced it to be hidden below 1450px before the
+   two side groups grew into it — and 1450px is wider than most laptops, so the
+   one thing a paying customer checks was invisible to nearly everybody. In the
+   flow it costs a little width and is always there. */
+.plan-badge{display:none;background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.45);color:#c4b5fd;font-size:13px;font-weight:900;letter-spacing:.3px;padding:7px 12px;border-radius:10px;white-space:nowrap;}
 
 /* ── Header on smaller screens ──────────────────────────────────────────────
    One unwrapping row of logo + title + five controls only fits a wide desktop.
@@ -85,7 +86,7 @@ header::before{content:'';position:absolute;top:-50%;right:0;width:350px;height:
   .header-title h1{font-size:17px;}
   .header-title p{font-size:11px;}
   .header-actions{justify-content:center;gap:8px;}
-  .header-actions button,.lang-select{font-size:12px;padding:7px 12px;}
+  .header-actions button,.lang-select,.plan-badge{font-size:12px;padding:7px 10px;}
   .lang-select{max-width:130px;}
   .btn-login{max-width:130px;}
 }
@@ -681,7 +682,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     <h1>PM Master</h1>
     <p>AI-powered Project Management · PMBOK® 8th Edition</p>
   </div>
-  <span id="plan-badge" class="plan-badge"></span>
   <div class="header-actions">
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="btn-demo" id="btn-demo" onclick="startTour()">▶ Demo</button>
@@ -706,6 +706,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
         <option value="ko">🇰🇷 한국어</option>
         <option value="hi">🇮🇳 हिन्दी</option>
       </select>
+      <span id="plan-badge" class="plan-badge" title="Your plan"></span>
       <span class="auth-wrap"><button class="btn-login" id="btn-auth" onclick="(currentUser ? openUserMenu : openAuth)()">🔑 Sign In</button></span>
     </div>
   </div>
@@ -6209,6 +6210,14 @@ const TRIAL_DAYS = 7;
 // 'trial' and 'expired' both close the door; they differ only in what we say.
 let _accessBlocked = false;
 let _blockReason = '';
+// The badge has room for a countdown and nothing else. This is the same status
+// written out for the account menu, where a person goes looking for the date.
+let _planNote = '';
+
+function planDate(value) {
+  const d = new Date(value);
+  return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 // Days of trial left, counted from sign-up. Server-side checks recompute this
 // from auth.users.created_at — this copy only decides what the badge says.
@@ -6252,10 +6261,13 @@ async function loadSubscription(userId) {
       // date would make it 1970 and count down to a red "0d".
       if (!active.expires_at) {
         paintBadge(badge, '✦ ' + label + seats + ' · ∞', false);
+        _planNote = label + seats + ' · active, with no expiry date';
         return;
       }
       const daysLeft = Math.max(0, Math.ceil((new Date(active.expires_at) - Date.now()) / 86400000));
       paintBadge(badge, '✦ ' + label + seats + ' · ' + daysLeft + 'd', daysLeft <= 5);
+      _planNote = label + seats + ' · ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') +
+                  ' left, until ' + planDate(active.expires_at);
       return;
     }
 
@@ -6269,20 +6281,30 @@ async function loadSubscription(userId) {
       _accessBlocked = true;
       _blockReason = 'expired';
       paintBadge(badge, '⚠️ Expired', true);
+      _planNote = (expired.plan || 'Your plan') + ' expired' +
+                  (expired.expires_at ? ' on ' + planDate(expired.expires_at) : '') + ' — renew to continue';
       return;
     }
 
     // Never paid: they are on the trial clock.
     const left = trialDaysLeft();
+    const ends = currentUser && currentUser.created_at
+      ? planDate(new Date(new Date(currentUser.created_at).getTime() + TRIAL_DAYS * 86400000)) : '';
     if (left <= 0) {
       _accessBlocked = true;
       _blockReason = 'trial';
       paintBadge(badge, '⚠️ Trial ended', true);
+      _planNote = 'Free trial ended' + (ends ? ' on ' + ends : '') + ' — choose a plan to continue';
     } else {
       paintBadge(badge, '🆓 Trial · ' + left + 'd', left <= 2);
+      _planNote = 'Free trial · ' + left + ' day' + (left === 1 ? '' : 's') + ' left' +
+                  (ends ? ', until ' + ends : '');
     }
   } catch (e) {
+    // Never leave a stale plan on screen after a failed read — saying nothing is
+    // honest, claiming a plan that was not confirmed is not.
     paintBadge(badge, '🆓 Trial', false);
+    _planNote = 'Could not check your plan just now — reload to try again';
   }
 }
 
@@ -6607,6 +6629,7 @@ function openUserMenu() {
   menu.innerHTML = `
     <div class="user-dropdown-header">
       <div class="user-dropdown-email">${currentUser.email}</div>
+      ${_planNote ? `<div style="margin-top:4px;font-size:12px;font-weight:700;color:${_accessBlocked ? '#b91c1c' : '#4b5563'};">${_planNote}</div>` : ''}
     </div>
     <a href="/blog/" class="user-dropdown-item" style="text-decoration:none;color:#374151;">📝 Blog</a>
     <a href="/pricing.html" class="user-dropdown-item" style="text-decoration:none;color:#374151;">💳 Pricing</a>
