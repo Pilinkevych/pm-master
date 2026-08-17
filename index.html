@@ -2120,6 +2120,13 @@ function openDoc(key, mode) {
         <button onclick="exportDocPDF('${key}')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:13px;">📥 Export PDF</button>
       </div>
       <div class="generated-doc-content" style="font-size:14px;line-height:1.7;color:#1e293b;">${sanitizeDocHTML(project.docContent[key])}</div>`;
+    // Audit on every viewing, not only on the run that produced the document.
+    // A plan generated before a check existed is exactly the one nobody looks at
+    // again, and it is still the one somebody takes to the board.
+    if (key === 'budget') {
+      const audit = auditBudgetDocument(project.docContent[key]);
+      if (audit) showBudgetAudit(audit);
+    }
   } else {
     document.getElementById('modal-body').innerHTML = (hasContent ? `<div style="margin-bottom:12px;"><button onclick="openDoc('${key}','generated')" style="padding:6px 14px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#2563eb;cursor:pointer;font-size:13px;">✨ View Generated Document</button></div>` : '') + buildDocForm(key);
   }
@@ -2400,6 +2407,63 @@ function auditBudgetDocument(html) {
                   ' approved cost lines do not appear with their amount (' +
                   missing.slice(0, 3).map(r => r.item).join('; ') + (missing.length > 3 ? '; …' : '') + ')');
   }
+
+  const split = auditCapexOpexSplit(html, text, approved);
+  if (split) problems.push.apply(problems, split);
+
+  return problems.length ? problems : null;
+}
+
+// A cost plan restates itself as a capital / operating split, and that summary is
+// where the arithmetic slips out of sight: one plan classified $20,000 of
+// training as operating in its category table and called the same thing $15,000
+// two pages earlier. Both figures were in the document, so both would be quoted
+// to the board. Nobody reads a document twice to catch that — so add the column
+// up and compare it with what the prose claims.
+function auditCapexOpexSplit(html, text, approved) {
+  const sums = { capex: 0, opex: 0, rows: 0 };
+  String(html).split(/<tr[^>]*>/i).slice(1).forEach(chunk => {
+    const cells = chunk.split(/<t[dh][^>]*>/i).slice(1).map(c =>
+      c.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+       .replace(/\s+/g, ' ').trim());
+    // The total row repeats every line below it; counting it would double the lot.
+    if (!cells.length || /^total\b/i.test(cells[0])) return;
+    // Only a cell that is nothing but the label classifies a line. "CapEx vs OpEx
+    // Split" is a heading, not a classification, and reading it as one would
+    // corrupt the sum and hide the very error this is here to find.
+    const klass = cells.find(c => /^(capex|opex)( reserve)?$/i.test(c));
+    if (!klass) return;
+    // A figure needs a currency mark to be money; a percentage column is not.
+    const money = cells.map(c => (/[$€£₴]/.test(c) ? parseMoney(c) : null)).find(v => v);
+    if (!money) return;
+    sums[/^capex/i.test(klass) ? 'capex' : 'opex'] += money;
+    sums.rows++;
+  });
+  if (sums.rows < 2 || !sums.capex || !sums.opex) return null;
+  // If the two columns do not add up to the approved total then the table is not
+  // what this expects, and a wrong accusation is worse than a missed one.
+  if (Math.abs(sums.capex + sums.opex - approved) > 1) return null;
+
+  const problems = [];
+  [['CapEx', sums.capex], ['OpEx', sums.opex]].forEach(pair => {
+    // Only a figure that follows the label directly is a claim about it. In
+    // "~3% OpEx within the $415,000 approved capital" the money belongs to the
+    // sentence, not to the label.
+    // MONEY_RE is an alternation, so it has to be grouped before the currency
+    // mark is put in front of it — otherwise the mark applies to the first
+    // branch only and a bare "11 staff" reads as money.
+    const re = new RegExp('\\b' + pair[0] + '\\b[ :=–—-]*([$€£₴]\\s?(?:' + MONEY_RE.source + '))', 'gi');
+    let m;
+    while ((m = re.exec(text))) {
+      const stated = parseMoney(m[1]);
+      if (stated && Math.abs(stated - pair[1]) > 1) {
+        problems.push('the document calls ' + pair[0] + ' ' + stated.toLocaleString() +
+                      ', but the lines it classifies as ' + pair[0] +
+                      ' add up to ' + pair[1].toLocaleString());
+        break;
+      }
+    }
+  });
   return problems.length ? problems : null;
 }
 
@@ -2443,8 +2507,8 @@ function generateDoc(key) {
       let audit = null;
       if (key === 'budget') { prefillEVMFromBudget(); audit = auditBudgetDocument(content); }
       saveCurrentProject(true);
-      openDoc(key);
-      if (audit) { showBudgetAudit(audit); pmToast('The cost plan does not reconcile with your approved budget.', 'error'); }
+      openDoc(key);   // openDoc draws the banner itself; this only raises the alarm
+      if (audit) pmToast('The cost plan does not reconcile with your approved budget.', 'error');
     })
     .catch(err => {
       btn.innerHTML = orig;
