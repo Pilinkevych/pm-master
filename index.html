@@ -2235,6 +2235,11 @@ function buildDocForm(key) {
         <div class="field"><label>Period from</label><input type="date" id="f-from" value="${data.from || iso(fortnightAgo)}"></div>
         <div class="field"><label>Period to</label><input type="date" id="f-to" value="${data.to || iso(today)}"></div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 14px;">
+        <button onclick="pullFromTracker()" id="pull-tracker-btn" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;color:#1d4ed8;">🔗 Fill from Jira</button>
+        <input type="text" id="f-trackerkey" value="${data.trackerkey || ''}" placeholder="Jira project key, e.g. FAIR" style="width:190px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+        <span id="pull-tracker-note" style="font-size:12px;color:#64748b;"></span>
+      </div>
       <div class="field"><label>Completed in this period</label>
         <textarea id="f-done" rows="4" placeholder="Cell 1 installed and running in parallel&#10;Hygiene design review passed 11 Sep&#10;Conveyor swapped during the September shutdown">${data.done || ''}</textarea></div>
       <div class="field"><label>Being worked on now</label>
@@ -6909,6 +6914,59 @@ function openSettingsModal() {
   document.getElementById('settings-plan').textContent = badge ? badge.textContent : '🆓 Trial';
   document.getElementById('settings-modal').style.display = 'flex';
   loadConnections();
+}
+
+const JIRA_STATUS_URL = 'https://aikinomaker.app.n8n.cloud/webhook/pm-master-jira-status';
+
+// Jira fills the notes; it does not write the report. What comes back lands in
+// the same four boxes the PM would have typed into, above whatever they already
+// wrote, and they edit it before anyone sees it. That ordering is the whole
+// point: the tracker knows what moved, the PM knows what it meant.
+async function pullFromTracker() {
+  const btn = document.getElementById('pull-tracker-btn');
+  const note = document.getElementById('pull-tracker-note');
+  const key = (document.getElementById('f-trackerkey').value || '').trim();
+  if (!key) { note.textContent = 'Enter the Jira project key first.'; return; }
+
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  btn.disabled = true; btn.textContent = '⏳ Reading Jira...'; note.textContent = '';
+
+  try {
+    const resp = await fetch(JIRA_STATUS_URL, {
+      method: 'POST', headers: n8nHeaders(),
+      body: JSON.stringify({ projectKey: key, from, to })
+    });
+    if (handleN8nStatus(resp.status)) return;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const d = await resp.json();
+
+    // Never overwrite. A PM who typed three lines of context and then pressed
+    // this button must not lose them to a machine that knows less than they do.
+    const merge = (id, text) => {
+      if (!text) return;
+      const el = document.getElementById(id);
+      const had = (el.value || '').trim();
+      el.value = had ? text + '\n' + had : text;
+    };
+    merge('f-done', d.done);
+    merge('f-current', d.current);
+    merge('f-next', d.next);
+    merge('f-issues', d.issues);
+
+    const c = d.counts || {};
+    note.textContent = (c.total || 0) + ' work items read · ' + (c.done || 0) + ' completed, ' +
+                       (c.current || 0) + ' in progress, ' + (c.next || 0) + ' coming up, ' +
+                       (c.risks || 0) + ' flagged';
+    if (!c.total) note.textContent = 'Jira returned nothing for this period. If you have just imported data, its index may still be rebuilding.';
+    collectDocForm('status');
+    saveCurrentProject(true);
+  } catch (e) {
+    console.error('[PM Master] Jira pull failed:', e);
+    note.textContent = 'Could not read Jira. Check the project key, or connect Jira in Settings.';
+  } finally {
+    btn.disabled = false; btn.textContent = '🔗 Fill from Jira';
+  }
 }
 
 // Connecting a delivery tool is the first time PM Master asks for anything that
