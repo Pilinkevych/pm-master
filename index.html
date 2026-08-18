@@ -2040,10 +2040,13 @@ function buildDocsGrid() {
   const grid = document.getElementById('docsGrid');
   grid.innerHTML = '';
 
-  // Group by phase
+  // Group by phase. This list is the gate: a document that exists in DOCS but is
+  // missing a group here is simply never drawn, with nothing in the console to
+  // say why. Adding a document means adding its key here too.
   const phases = [
     { label:'🚀 Initiation', keys:['charter','assumptions','stakeholders'] },
     { label:'📋 Planning', keys:['approach','scope','mvp','schedule','budget','risk','team','comms','quality','sla'] },
+    { label:'📈 Monitoring', keys:['status'] },
     { label:'🏁 Closing', keys:['lessons'] },
   ];
 
@@ -7017,12 +7020,14 @@ async function saveCurrentProject(silent) {
   // currency is gone. Keep the text the user actually wrote next to the project;
   // without it every euro project silently became dollars on the next reload,
   // and every document generated afterwards said so.
-  if ((project.budget && /[^\d\s.,]/.test(project.budget)) || project.budgetPlan) {
+  const hasFormNotes = project.docData && Object.keys(project.docData).length;
+  if ((project.budget && /[^\d\s.,]/.test(project.budget)) || project.budgetPlan || hasFormNotes) {
     await sb.from('project_documents').upsert({
       project_id: project.supabaseId,
       user_id: currentUser.id,
       doc_type: META_DOC_KEY,
-      content: JSON.stringify({ budgetText: project.budget, budgetPlan: project.budgetPlan || null }),
+      content: JSON.stringify({ budgetText: project.budget, budgetPlan: project.budgetPlan || null,
+                                docData: project.docData || null }),
       version: 1
     }, { onConflict: 'project_id,doc_type,version' });
   }
@@ -7128,12 +7133,14 @@ async function openProject(id) {
   project.evm = null;
   project.sourceText = '';
   project.budgetPlan = null;
+  project.docData = {};
   if (docs) docs.forEach(d => {
     if (d.doc_type === SOURCE_DOC_KEY) { project.sourceText = d.content; return; }
     if (d.doc_type === META_DOC_KEY) {
       try { const m = JSON.parse(d.content);
              if (m.budgetText) project.budget = m.budgetText;
-             if (m.budgetPlan) project.budgetPlan = m.budgetPlan; }
+             if (m.budgetPlan) project.budgetPlan = m.budgetPlan;
+             if (m.docData) project.docData = m.docData; }
       catch (e) { console.warn('[PM Master] project meta could not be read'); }
       return;
     }
