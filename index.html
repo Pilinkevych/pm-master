@@ -1433,6 +1433,8 @@ const DOCS = [
   { key:'comms',        icon:'📡', name:'Communication Plan',           phase:'Planning · Communication',   pmbok8:false },
   { key:'quality',      icon:'✅', name:'Quality Management Plan',      phase:'Planning · Delivery',        pmbok8:false },
   { key:'sla',          icon:'📋', name:'Service Level Agreement',      phase:'Planning · Stakeholder',     pmbok8:false },
+  // MONITORING
+  { key:'status',       icon:'📈', name:'Client Status Summary',        phase:'Monitoring · Stakeholder',   pmbok8:false },
   // CLOSING
   { key:'lessons',      icon:'📚', name:'Lessons Learned',              phase:'Closing · Integration',      pmbok8:false },
 ];
@@ -1451,6 +1453,7 @@ const PMBOK_CONTENT = {
   comms:        { section:'2.5 Stakeholders Performance Domain — Communication', ref:'PMBOK® 8 · Performance Domain 2.5', text:'' },
   quality:      { section:'Principle 3.5 — Embed Quality Into Processes and Deliverables', ref:'PMBOK® 8 · Principles · Section 3.5', text:'' },
   sla:          { section:'2.5 Stakeholder Domain — Service Agreements', ref:'PMBOK® 8 · Performance Domain 2.5', text:'' },
+  status:       { section:'2.7 Measurement Performance Domain — Work Performance Reports', ref:'PMBOK® 8 · Performance Domain 2.7', text:'' },
   lessons:      { section:'4.5.5 Closing Focus Area', ref:'PMBOK® 8 · Focus Areas · Closing', text:'' },
 };
 
@@ -2206,6 +2209,34 @@ function buildDocForm(key) {
       <div class="field"><label>Recommendations for Future Projects</label><textarea id="f-recommendations" rows="3" placeholder="1. Use this template as baseline&#10;2. Plan contingency reserve of 15%...">${data.recommendations||''}</textarea></div>`,
   };
 
+  if (key === 'status') {
+    // Default to the fortnight ending today: the period a client status summary
+    // covers nine times out of ten, and one less thing to fill in.
+    const iso = d => d.toISOString().slice(0, 10);
+    const today = new Date();
+    const fortnightAgo = new Date(today.getTime() - 13 * 86400000);
+    return `
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.6;color:#1e3a8a;">
+        <strong>This is the one document PM Master cannot write from your plan.</strong>
+        Nobody but you knows what actually happened in the last two weeks. Write it in note
+        form — half sentences are fine — and it will come back as something you can send to
+        the client without editing. Anything you leave blank is reported as
+        &ldquo;nothing to report&rdquo;, never invented.
+      </div>
+      <div class="form-row-2">
+        <div class="field"><label>Period from</label><input type="date" id="f-from" value="${data.from || iso(fortnightAgo)}"></div>
+        <div class="field"><label>Period to</label><input type="date" id="f-to" value="${data.to || iso(today)}"></div>
+      </div>
+      <div class="field"><label>Completed in this period</label>
+        <textarea id="f-done" rows="4" placeholder="Cell 1 installed and running in parallel&#10;Hygiene design review passed 11 Sep&#10;Conveyor swapped during the September shutdown">${data.done || ''}</textarea></div>
+      <div class="field"><label>Being worked on now</label>
+        <textarea id="f-current" rows="3" placeholder="Vision system calibration at chilled temperature&#10;SCADA integration testing against the plant system">${data.current || ''}</textarea></div>
+      <div class="field"><label>Planned for the next 1–2 weeks</label>
+        <textarea id="f-next" rows="3" placeholder="Cells 2 and 3 delivered 24 Nov&#10;Operator training starts — need 11 people released for a day">${data.next || ''}</textarea></div>
+      <div class="field"><label>Problems and risks affecting the work ahead</label>
+        <textarea id="f-issues" rows="3" placeholder="Gripper still drops trays at 4°C — redesign quoted at $8–12k, decision needed by 30 Sep&#10;Retailer contracts still verbal">${data.issues || ''}</textarea></div>`;
+  }
+
   return forms[key] || `
     <div class="field"><label>Content</label>
     <textarea id="f-generic" rows="12" placeholder="Enter ${DOCS.find(d=>d.key===key)?.name} content here...">${data.content||''}</textarea></div>`;
@@ -2337,8 +2368,22 @@ function addBudgetRow() {
   document.getElementById('budget-body').appendChild(r);
 }
 
+// Every form field is id="f-<name>"; that is the whole convention, and it is
+// enough to keep what the user typed. Nothing read these fields before, so a
+// note written into one and returned to later had simply vanished.
+function collectDocForm(key) {
+  const body = document.getElementById('modal-body');
+  if (!body || !key) return;
+  const fields = body.querySelectorAll('input[id^="f-"], textarea[id^="f-"], select[id^="f-"]');
+  if (!fields.length) return;
+  const data = Object.assign({}, project.docData[key]);
+  fields.forEach(el => { data[el.id.slice(2)] = el.value; });
+  project.docData[key] = data;
+}
+
 function saveDoc() {
   if (!currentDocKey) return;
+  collectDocForm(currentDocKey);
   project.docStatus[currentDocKey] = 'draft';
   const card = document.getElementById(`doc-card-${currentDocKey}`);
   if (card) {
@@ -2504,6 +2549,21 @@ function showBudgetAudit(problems) {
 
 function generateDoc(key) {
   if (_accessBlocked) { showRenewalPopup(); return; }
+  collectDocForm(key);   // whatever is on screen goes with the request
+
+  // The status summary is the only document with nothing to write from but the
+  // notes. Generating it empty would produce a confident report about a project
+  // nobody described — which is precisely the thing a client would forward.
+  if (key === 'status') {
+    const s = project.docData.status || {};
+    if (!(s.done || s.current || s.next || s.issues)) {
+      if (!document.getElementById('f-done')) { openDoc(key, 'form'); }
+      pmToast('Write what happened in the period first — this report is built from your notes, not from the plan.', 'error');
+      return;
+    }
+    saveCurrentProject(true);
+  }
+
   const btn = event.target;
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner-inline" style="border-top-color:var(--blue);border-color:rgba(0,0,0,.2);"></span> Generating...';
@@ -3590,6 +3650,7 @@ const PMBOK_SEARCH = {
   comms:        ['Stakeholders Performance Domain'],
   quality:      ['Embed Quality'],
   sla:          ['Service Level Agreement', 'Stakeholder Domain'],
+  status:       ['Work Performance Report', 'Measurement Performance Domain'],
   lessons:      ['Lessons learned register', 'Closing Focus Area']
 };
 
