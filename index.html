@@ -2395,11 +2395,16 @@ function auditBudgetDocument(html) {
     .replace(/\s+/g, ' ').replace(/(\d) +(?=[.,]\d{3}\b)/g, '$1');
   const problems = [];
 
-  // Every place the document names its total, not just the first — the first one
-  // may be the one the markup mangled.
-  const bacRe = new RegExp('(?:Total Project Budget|Budget at Completion|\\bBAC\\b)[^0-9]{0,40}(' + MONEY_RE.source + ')', 'gi');
+  // Two things decide whether a number found near the letters BAC is a claim
+  // about the budget. It has to carry a currency mark — "within 48 hours" sits
+  // three words after "(−5% of BAC)" and is not money — and the label has to be
+  // one that states a total rather than one that appears inside a formula.
+  // "(BAC − EV) ÷ (BAC − AC)" names no total at all.
+  const money = labels => new RegExp('(?:' + labels + ')[^0-9$€£₴]{0,25}[$€£₴]\\s*(' +
+                                      MONEY_RE.source + ')', 'gi');
+  const stateRe = money('Total Project Budget|Total Approved(?: Project)? Budget|Budget at Completion');
   const totals = [];
-  for (let m = bacRe.exec(text); m; m = bacRe.exec(text)) {
+  for (let m = stateRe.exec(text); m; m = stateRe.exec(text)) {
     const v = parseMoney(m[1]);
     if (v) totals.push(v);
   }
