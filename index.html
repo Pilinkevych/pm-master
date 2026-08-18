@@ -851,6 +851,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
           <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Password</div>
           <button onclick="resetPassword()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;color:#374151;">Send Reset Link</button>
         </div>
+        <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;">
+          <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Connected tools</div>
+          <div id="settings-connections" style="font-size:13px;color:#64748b;">—</div>
+          <button onclick="openConnectJira()" style="margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;color:#1d4ed8;">🔗 Connect Jira</button>
+        </div>
         <div style="padding:14px 16px;">
           <div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Subscription</div>
           <div style="font-size:14px;font-weight:700;color:#1e293b;" id="settings-plan">—</div>
@@ -6416,6 +6421,7 @@ function onSignIn(user) {
 
   loadSubscription(user.id);
   checkPaymentReturn(user);
+  checkConnectReturn();
 }
 
 const EVM_DOC_KEY = '_evm';
@@ -6902,6 +6908,128 @@ function openSettingsModal() {
   const badge = document.querySelector('.sub-badge');
   document.getElementById('settings-plan').textContent = badge ? badge.textContent : '🆓 Trial';
   document.getElementById('settings-modal').style.display = 'flex';
+  loadConnections();
+}
+
+// Connecting a delivery tool is the first time PM Master asks for anything that
+// is not its own. Nobody should have to guess what happens next, so the screen
+// says it in the words a person would use, before they are sent to Atlassian —
+// not in a link to a policy nobody opens.
+const JIRA_CONNECT_URL = 'https://aikinomaker.app.n8n.cloud/webhook/pm-master-connect-jira';
+
+function openConnectJira() {
+  let m = document.getElementById('connect-modal');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'connect-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  m.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:26px;max-width:520px;width:100%;max-height:86vh;overflow:auto;">
+      <div style="font-size:19px;font-weight:900;color:#0f172a;margin-bottom:6px;">🔗 Connect Jira</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px;">So your status reports come from what actually happened, not from memory.</div>
+
+      <div style="border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-weight:800;color:#15803d;font-size:13px;margin-bottom:6px;">What PM Master reads</div>
+        <div style="font-size:13px;color:#334155;line-height:1.6;">
+          Issues from the one Jira project you pick: title, status, dates, assignee and the link back
+          to the issue. It reads them when you ask for a status summary, and uses them to fill in what
+          was completed, what is in progress and what is coming up.
+        </div>
+      </div>
+
+      <div style="border:1px solid #fecaca;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-weight:800;color:#b91c1c;font-size:13px;margin-bottom:6px;">What it never does</div>
+        <div style="font-size:13px;color:#334155;line-height:1.6;">
+          It does not create, edit, move, comment on, assign or delete anything in your Jira. It cannot:
+          PM Master asks Atlassian for read-only permission, so there is no write access to misuse —
+          not by us, not by a mistake in our code.
+        </div>
+      </div>
+
+      <div style="font-size:13px;color:#334155;line-height:1.7;margin-bottom:14px;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:4px;">The details worth knowing</div>
+        · You sign in on Atlassian&rsquo;s own page. PM Master never sees your password.<br>
+        · Atlassian grants read access to what your account can already see. PM Master only ever asks
+          about the project you select — that is our behaviour, not a restriction Atlassian enforces.<br>
+        · The access token is kept on our server, never in your browser, and is used only when a report
+          is generated.<br>
+        · Everything a report says still passes through you. You edit it before the client sees it.<br>
+        · You can disconnect here at any time, or revoke access from your Atlassian account settings.
+          Disconnecting deletes the token.
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="document.getElementById('connect-modal').remove()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;color:#475569;">Cancel</button>
+        <button id="connect-go" onclick="startJiraConnect()" style="background:#2563eb;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:800;cursor:pointer;color:white;">Continue to Atlassian →</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+// The site the user is sent to is decided by the server, not assembled here: the
+// client id and the scopes are part of the promise made above, and a value the
+// browser can edit is not a promise.
+async function startJiraConnect() {
+  const btn = document.getElementById('connect-go');
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing...'; }
+  try {
+    const resp = await fetch(JIRA_CONNECT_URL, { method: 'POST', headers: n8nHeaders(), body: '{}' });
+    if (handleN8nStatus(resp.status)) return;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.url) throw new Error('no authorisation url');
+    window.location.href = data.url;
+  } catch (e) {
+    console.error('[PM Master] Jira connect failed:', e);
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue to Atlassian →'; }
+    pmToast('Jira connection is not available yet. Please try again later.', 'error');
+  }
+}
+
+// Atlassian sends the browser back here through our callback, which appends a
+// marker. Without this the user returns to an unchanged page and cannot tell
+// whether anything happened.
+function checkConnectReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const connected = params.get('connected');
+  const failed = params.get('connect_error');
+  if (!connected && !failed) return;
+  // Take it out of the address bar so a refresh does not repeat the message.
+  params.delete('connected'); params.delete('connect_error');
+  const rest = params.toString();
+  history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''));
+  if (connected) pmToast('✅ ' + (connected === 'jira' ? 'Jira' : connected) + ' connected, read-only');
+  else pmToast('Could not finish connecting: ' + failed, 'error');
+}
+
+async function loadConnections() {
+  const el = document.getElementById('settings-connections');
+  if (!el || !currentUser) return;
+  const { data, error } = await sb.from('tool_connections')
+    .select('id, provider, external_name, status, created_at')
+    .order('created_at', { ascending: false });
+  // A missing table means the feature is not set up yet, which is not an error
+  // the user did anything to cause.
+  if (error) { el.textContent = 'Nothing connected'; return; }
+  if (!data || !data.length) { el.textContent = 'Nothing connected — reports are written from your own notes.'; return; }
+  el.innerHTML = data.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;">
+      <div>
+        <div style="font-weight:700;color:#1e293b;">${c.provider === 'jira' ? 'Jira' : c.provider}${c.external_name ? ' · ' + c.external_name : ''}</div>
+        <div style="font-size:12px;color:${c.status === 'active' ? '#15803d' : '#b91c1c'};">${c.status === 'active' ? 'Connected, read-only' : c.status}</div>
+      </div>
+      <button onclick="disconnectTool('${c.id}')" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:#b91c1c;">Disconnect</button>
+    </div>`).join('');
+}
+
+function disconnectTool(id) {
+  pmConfirm('Disconnect this tool? The stored access token is deleted, and status reports go back to being written from your notes.',
+    async () => {
+      const { error } = await sb.from('tool_connections').delete().eq('id', id);
+      if (error) { pmToast('Could not disconnect. Please try again.', 'error'); return; }
+      pmToast('Disconnected');
+      loadConnections();
+    }, null, '🔗', 'Disconnect', 'Keep');
 }
 
 async function resetPassword() {
