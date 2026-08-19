@@ -194,6 +194,9 @@ header::before{content:'';position:absolute;top:-50%;right:0;width:350px;height:
 .dm-actions{display:flex;gap:8px;}
 .btn-dm-exit{background:none;border:1px solid var(--gray-200);color:var(--gray-500);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
 .btn-dm-next{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;padding:8px 20px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+/* Quieter than Next: going back is a correction, not the path through. */
+.btn-dm-back{background:none;border:1px solid rgba(148,163,184,.5);color:#94a3b8;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-dm-back:hover{color:#e2e8f0;border-color:#94a3b8;}
 .btn-dm-next:hover{filter:brightness(1.1);}
 .dm-narr{background:linear-gradient(135deg,#fff7ed,#fef3c7);border-bottom:1px solid #fde68a;padding:10px 20px;font-size:13px;color:#92400e;line-height:1.5;flex-shrink:0;display:none;}
 .dm-narr strong{color:#78350f;}
@@ -4654,6 +4657,7 @@ function setLang(lang) {
     </div>
     <div class="dm-actions">
       <button class="btn-dm-exit" onclick="endTour()">✕ Exit Demo</button>
+      <button class="btn-dm-back" id="dm-back-btn" onclick="tourBack()">← Back</button>
       <button class="btn-dm-next" id="dm-next-btn" onclick="tourNext()">Next →</button>
     </div>
   </div>
@@ -6420,6 +6424,14 @@ function endTour() {
   document.getElementById('demo-modal').classList.remove('active');
 }
 
+// A tour that only moves forward makes people read faster than they want to, in
+// case they miss something they cannot get back to.
+function tourBack() {
+  if (tourStep === 0) return;
+  tourStep--;
+  renderDemo();
+}
+
 function tourNext() {
   const steps = getDemoSteps();
   if (tourStep >= steps.length - 1) { endTour(); showPage('setup'); return; }
@@ -6442,6 +6454,10 @@ function renderDemo() {
 
   document.getElementById('dm-step-info').textContent = s.stepLabel || `Step ${tourStep+1} of ${total}`;
   document.getElementById('dm-next-btn').textContent = s.nextLabel || 'Next →';
+  // Hidden rather than disabled on the first step: a dead control invites a
+  // click and explains nothing.
+  const back = document.getElementById('dm-back-btn');
+  if (back) back.style.display = tourStep === 0 ? 'none' : '';
 
   // Progress dots
   document.getElementById('dm-progress').innerHTML = steps.map((_,i) =>
