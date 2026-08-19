@@ -2151,6 +2151,55 @@ function openDoc(key, mode) {
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.style.display = showGenerated ? 'none' : '';
   if (mode === 'edit' && hasContent) { editDocContent(key); }
+  if (key === 'status' && !showGenerated) paintTrackerPanel();
+}
+
+// A PM opening this form should see, in one line, whether the report will be
+// built from a tracker or from their own memory — and be one click from fixing
+// that. Buried in Settings, the connection may as well not exist: the first
+// tester went straight for Generate and only later found the button.
+async function paintTrackerPanel() {
+  const body = document.getElementById('tracker-panel-body');
+  if (!body) return;
+  const data = (project.docData && project.docData.status) || {};
+  let connected = [];
+  try {
+    const r = await sb.from('tool_connections').select('id, provider, external_name').eq('status', 'active');
+    connected = r.data || [];
+  } catch (e) { connected = []; }
+
+  if (!connected.length) {
+    body.innerHTML =
+      '<div style="margin-bottom:10px;">Nothing is connected, so this report is written from the notes you type below — ' +
+      'PM Master has no way to know what moved in your project.</div>' +
+      '<button onclick="openConnectJira()" style="background:#2563eb;border:none;border-radius:10px;padding:9px 18px;' +
+      'font-size:13px;font-weight:800;cursor:pointer;color:white;">🔗 Connect Jira — read-only</button>' +
+      '<div style="margin-top:8px;font-size:12px;color:#64748b;">Takes a minute. It only ever reads.</div>';
+    return;
+  }
+  const names = connected.map(c => (c.provider === 'jira' ? 'Jira' : c.provider) + (c.external_name ? ' · ' + c.external_name : '')).join(', ');
+  body.innerHTML =
+    '<div style="margin-bottom:10px;color:#15803d;font-weight:700;">Connected: ' + names + ' — read-only</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+      '<button onclick="pullFromTracker()" id="pull-tracker-btn" style="background:#2563eb;border:none;border-radius:10px;' +
+      'padding:9px 18px;font-size:13px;font-weight:800;cursor:pointer;color:white;">🔗 Fill from Jira for this period</button>' +
+      '<input type="text" id="f-trackerkey" value="' + (data.trackerkey || '') + '" placeholder="Project key, e.g. FAIR" ' +
+      'style="width:180px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">' +
+      '<span id="pull-tracker-note" style="font-size:12px;color:#64748b;"></span>' +
+    '</div>';
+}
+
+// The presets are the periods people actually report on. "This month" means the
+// month to date, not the last thirty days — a PM reporting on August means August.
+function setStatusPeriod(days) {
+  const to = new Date();
+  const from = days ? new Date(to.getTime() - (days - 1) * 86400000)
+                    : new Date(to.getFullYear(), to.getMonth(), 1);
+  const iso = d => d.toISOString().slice(0, 10);
+  const f = document.getElementById('f-from'), t = document.getElementById('f-to');
+  if (f) f.value = iso(from);
+  if (t) t.value = iso(to);
+  collectDocForm('status');
 }
 
 function copyDocContent(key) {
@@ -2231,14 +2280,22 @@ function buildDocForm(key) {
         the client without editing. Anything you leave blank is reported as
         &ldquo;nothing to report&rdquo;, never invented.
       </div>
-      <div class="form-row-2">
-        <div class="field"><label>Period from</label><input type="date" id="f-from" value="${data.from || iso(fortnightAgo)}"></div>
-        <div class="field"><label>Period to</label><input type="date" id="f-to" value="${data.to || iso(today)}"></div>
+      <div style="border:2px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:14px;background:#f8fbff;">
+        <div style="font-size:13px;font-weight:900;color:#1e3a8a;margin-bottom:2px;">Reporting period</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:10px;">You choose it. Everything below is read and written for these dates.</div>
+        <div class="form-row-2">
+          <div class="field" style="margin-bottom:8px;"><label>From</label><input type="date" id="f-from" value="${data.from || iso(fortnightAgo)}"></div>
+          <div class="field" style="margin-bottom:8px;"><label>To</label><input type="date" id="f-to" value="${data.to || iso(today)}"></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${[['Last 7 days',7],['Last 14 days',14],['Last 30 days',30],['This month',0]].map(o =>
+            `<button onclick="setStatusPeriod(${o[1]})" style="background:white;border:1px solid #cbd5e1;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:#334155;">${o[0]}</button>`).join('')}
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 14px;">
-        <button onclick="pullFromTracker()" id="pull-tracker-btn" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;color:#1d4ed8;">🔗 Fill from Jira</button>
-        <input type="text" id="f-trackerkey" value="${data.trackerkey || ''}" placeholder="Jira project key, e.g. FAIR" style="width:190px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
-        <span id="pull-tracker-note" style="font-size:12px;color:#64748b;"></span>
+
+      <div id="tracker-panel" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:900;color:#0f172a;margin-bottom:2px;">Where the facts come from</div>
+        <div id="tracker-panel-body" style="font-size:12px;color:#475569;">Checking…</div>
       </div>
       <div class="field"><label>Completed in this period</label>
         <textarea id="f-done" rows="4" placeholder="Cell 1 installed and running in parallel&#10;Hygiene design review passed 11 Sep&#10;Conveyor swapped during the September shutdown">${data.done || ''}</textarea></div>
@@ -2493,6 +2550,9 @@ function auditBudgetDocument(html) {
   const split = auditCapexOpexSplit(html, text, approved);
   if (split) problems.push.apply(problems, split);
 
+  const baseline = auditBaselineTable(html);
+  if (baseline) problems.push.apply(problems, baseline);
+
   return problems.length ? problems : null;
 }
 
@@ -2545,6 +2605,48 @@ function auditCapexOpexSplit(html, text, approved) {
         break;
       }
     }
+  });
+  return problems.length ? problems : null;
+}
+
+// The cost baseline is written as a sum: a starting figure, lines that add to it,
+// and lines that declare a subtotal. That is arithmetic anyone can check by eye —
+// and one plan still stated 400,000 + 15,000 = 400,000. Read the table the way a
+// reader does, in order, and say so when a declared subtotal is not what the rows
+// above it come to.
+//
+// No labels are matched on purpose. The leading + and = are how the document
+// itself signals what each row does, and they mean the same thing in any language
+// this product generates.
+function auditBaselineTable(html) {
+  const problems = [];
+  String(html).split(/<table/i).slice(1).forEach(tbl => {
+    let running = null, started = false;
+    const checks = [];
+    tbl.split(/<tr[^>]*>/i).slice(1).forEach(row => {
+      const cells = row.split(/<t[dh][^>]*>/i).slice(1).map(c =>
+        c.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+         .replace(/\s+/g, ' ').trim());
+      if (cells.length < 2) return;
+      const label = cells[0];
+      const money = cells.slice(1).map(c => (/[$€£₴]/.test(c) ? parseMoney(c) : null)).find(v => v !== null && v !== undefined);
+      if (money === undefined || money === null) return;
+      const op = (label.match(/^\s*([+=\u2212-])/) || [])[1];
+      if (!started) { running = money; started = true; return; }   // the opening figure
+      if (op === '+') { running += money; return; }
+      if (op === '-' || op === '\u2212') { running -= money; return; }
+      if (op === '=') {
+        if (Math.abs(money - running) > 1) {
+          checks.push({ label: label.replace(/^\s*=\s*/, ''), stated: money, expected: running });
+        }
+        // Carry on from what the document claims, not from what we computed —
+        // otherwise one bad row makes every row below it look wrong too.
+        running = money;
+      }
+    });
+    checks.forEach(c => problems.push(
+      'the baseline table states ' + c.stated.toLocaleString() + ' as ' + c.label +
+      ', but the rows above it add up to ' + c.expected.toLocaleString()));
   });
   return problems.length ? problems : null;
 }
