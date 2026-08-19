@@ -2168,18 +2168,19 @@ async function paintTrackerPanel() {
     connected = r.data || [];
   } catch (e) { connected = []; }
 
-  if (!connected.length) {
-    body.innerHTML =
-      '<div style="margin-bottom:10px;">Nothing is connected, so this report is written from the notes you type below — ' +
-      'PM Master has no way to know what moved in your project.</div>' +
-      '<button onclick="openConnectJira()" style="background:#2563eb;border:none;border-radius:10px;padding:9px 18px;' +
-      'font-size:13px;font-weight:800;cursor:pointer;color:white;">🔗 Connect Jira — read-only</button>' +
-      '<div style="margin-top:8px;font-size:12px;color:#64748b;">Takes a minute. It only ever reads.</div>';
-    return;
-  }
-  const names = connected.map(c => (c.provider === 'jira' ? 'Jira' : c.provider) + (c.external_name ? ' · ' + c.external_name : '')).join(', ');
-  body.innerHTML =
-    '<div style="margin-bottom:10px;color:#15803d;font-weight:700;">Connected: ' + names + ' — read-only</div>' +
+  // Reading works today through the Jira connection held by the workspace. The
+  // per-account flow — every user authorising their own Jira — is not switched on
+  // yet, so this must not offer a button that goes nowhere. Say which of the two
+  // is true rather than dressing one up as the other.
+  const line = connected.length
+    ? '<div style="margin-bottom:10px;color:#15803d;font-weight:700;">Connected: ' +
+        connected.map(c => (c.provider === 'jira' ? 'Jira' : c.provider) + (c.external_name ? ' · ' + c.external_name : '')).join(', ') +
+        ' — read-only</div>'
+    : '<div style="margin-bottom:10px;">Jira is read through the connection held by this workspace, read-only. ' +
+      'Connecting your own Jira account is not switched on yet — until it is, anything the button below cannot ' +
+      'find you can simply type in.</div>';
+
+  body.innerHTML = line +
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
       '<button onclick="pullFromTracker()" id="pull-tracker-btn" style="background:#2563eb;border:none;border-radius:10px;' +
       'padding:9px 18px;font-size:13px;font-weight:800;cursor:pointer;color:white;">🔗 Fill from Jira for this period</button>' +
@@ -7152,7 +7153,7 @@ async function startJiraConnect() {
   } catch (e) {
     console.error('[PM Master] Jira connect failed:', e);
     if (btn) { btn.disabled = false; btn.textContent = 'Continue to Atlassian →'; }
-    pmToast('Jira connection is not available yet. Please try again later.', 'error');
+    pmToast('Connecting your own Jira account is not switched on yet — reading currently runs through the workspace connection.', 'error');
   }
 }
 
