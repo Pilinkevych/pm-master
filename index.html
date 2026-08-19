@@ -1251,10 +1251,17 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
         <p><strong>What to enter.</strong> Four figures; PM Master derives the other eight.</p>
         <table class="evm-sources">
           <tr><th>BAC</th><td>Total approved budget</td><td><span class="src src-auto">automatic</span> from the budget in your MoM — editable by hand</td></tr>
-          <tr><th>PV</th><td>Planned value to date</td><td><span class="src src-auto">automatic</span> from the plan's phased spend curve, as of today</td></tr>
+          <tr><th>PV</th><td>Planned value to date</td><td><span class="src src-auto">automatic</span> from the funding schedule in your cost plan — it changes every day, see below</td></tr>
           <tr><th>EV</th><td>Value of work delivered</td><td><span class="src src-manual">by hand</span> — from your status report, each reporting period</td></tr>
           <tr><th>AC</th><td>Actually spent</td><td><span class="src src-manual">by hand</span> — from your invoices, each reporting period</td></tr>
         </table>
+        <p class="evm-intro-note"><strong>Why PV is different every morning.</strong> Your cost plan phases the money by
+        stage gate — so much by 30 September, so much by 13 November. Between two gates the plan says nothing about
+        individual days, so PM Master spreads that period's spend evenly across it and reports where the plan should be
+        <em>today</em>. One more day therefore adds one more day's share: on day two of a 45-day phase carrying $124,000,
+        PV is $5,511; on day three it is $8,267. Nothing changed in your project — the schedule simply moved on. This is
+        the standard straight-line assumption; if your real spend is lumpy (a deposit on day one, say), type the truer
+        figure over it and PM Master will keep what you typed.</p>
         <p class="evm-intro-note">EV and AC cannot come from any document — no plan knows what a project has really delivered or really spent. Those two you bring, and the eight figures below fill in the moment you do.</p>
       </div>
 
@@ -4056,7 +4063,8 @@ function describePV(schedule, value) {
            (next ? ' By ' + fmt(next.end) + ' it should be ' + money(next.cumulative) + '.' : '');
   }
   return next
-    ? 'Planned spend to today. By ' + fmt(next.end) + ' it should be ' + money(next.cumulative) + '.'
+    ? 'Planned spend to today, spread evenly across the current funding period — which is why it rises a little each day. ' +
+      'By ' + fmt(next.end) + ' it should be ' + money(next.cumulative) + '.'
     : 'Planned spend to today — the last planned period has passed.';
 }
 
