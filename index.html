@@ -3359,6 +3359,26 @@ function changeQuizCount(delta) {
 const QUIZ_BATCH_INIT = 5; // first load
 const QUIZ_BATCH = 5;     // subsequent prefetch batches
 
+// A question is written by a language model, so its answer key arrives in
+// whatever shape the model felt like that minute: ["B"], "B", "B, D", "BD".
+// checkAnswer called .map on it, which a string does not have — the exception
+// killed the click handler, and the Check button simply stopped responding with
+// nothing on screen to say why. Normalise once, on arrival, and never trust the
+// shape again.
+function answerKey(q) {
+  const raw = q && q.correct;
+  const flat = Array.isArray(raw) ? raw.join('') : String(raw == null ? '' : raw);
+  return flat.toUpperCase().split('').filter(c => c >= 'A' && c <= 'Z')
+             .filter((c, i, a) => a.indexOf(c) === i);
+}
+
+function normalizeQuestions(list) {
+  return (Array.isArray(list) ? list : []).map(q => {
+    q.correct = answerKey(q);
+    return q;
+  }).filter(q => q && q.stem && Array.isArray(q.options) && q.options.length && q.correct.length);
+}
+
 async function fetchQuizBatch(count) {
   // 1. POST to n8n — get jobId immediately (async pattern)
   const resp = await fetch('https://aikinomaker.app.n8n.cloud/webhook/pm-master-pmp-quiz', {
@@ -3387,7 +3407,13 @@ async function fetchQuizBatch(count) {
     await new Promise(r => setTimeout(r, 2000));
     const { data, error } = await sb.from('quiz_jobs').select('status,questions,error_msg').eq('id', jobId).single();
     if (error) continue;
-    if (data.status === 'done' && data.questions?.length) return data.questions;
+    if (data.status === 'done' && data.questions?.length) {
+      // A question with no usable answer key cannot be marked, so it is dropped
+      // here rather than handed to the reader as a dead end.
+      const clean = normalizeQuestions(data.questions);
+      if (!clean.length) throw new Error('The generated questions could not be read');
+      return clean;
+    }
     if (data.status === 'error') throw new Error('Generation failed: ' + (data.error_msg || 'unknown'));
   }
   throw new Error('Timeout: questions took too long to generate');
@@ -3519,7 +3545,7 @@ function renderQuestion() {
   document.getElementById('qs-progress-text').textContent = `${idx + 1} / ${total}`;
 
   const domainClass = q.domain === 'People' ? 'qs-domain-people' : q.domain === 'Process' ? 'qs-domain-process' : 'qs-domain-business';
-  const isMulti = q.type === 'multi' || (q.correct && q.correct.length > 1);
+  const isMulti = q.type === 'multi' || answerKey(q).length > 1;
 
   document.getElementById('qs-body').innerHTML = `
     <div class="qs-num">
@@ -3527,7 +3553,7 @@ function renderQuestion() {
       <span class="qs-domain-tag ${domainClass}">${q.domain}</span>
       ${q.area ? `<span style="font-size:11px;color:#94a3b8;margin-left:4px;">${q.area}</span>` : ''}
     </div>
-    ${isMulti ? `<div class="qs-multi-hint">★ Select ${q.correct.length} answers</div>` : ''}
+    ${isMulti ? `<div class="qs-multi-hint">★ Select ${answerKey(q).length} answers</div>` : ''}
     <div class="qs-stem">${q.stem}</div>
     <div class="qs-options" id="qs-options">
       ${q.options.map(o => `
@@ -3553,7 +3579,7 @@ function renderQuestion() {
 function toggleOption(label) {
   if (quizState.answered) return;
   const q = quizState.questions[quizState.current];
-  const isMulti = q.type === 'multi' || (q.correct && q.correct.length > 1);
+  const isMulti = q.type === 'multi' || answerKey(q).length > 1;
   const el = document.getElementById('opt-' + label);
 
   if (isMulti) {
@@ -3576,7 +3602,14 @@ function checkAnswer() {
     return;
   }
   const q = quizState.questions[quizState.current];
-  const correct = q.correct.map(c => c.toUpperCase());
+  const correct = answerKey(q);
+  if (!correct.length) {
+    // Nothing to mark against. Say so and move on rather than leaving a button
+    // that does nothing.
+    pmToast('This question came back without an answer key — skipping it.', 'error');
+    nextQuestion();
+    return;
+  }
   const selected = quizState.selected.map(s => s.toUpperCase());
   const isCorrect = correct.length === selected.length && correct.every(c => selected.includes(c));
 
