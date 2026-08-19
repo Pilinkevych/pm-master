@@ -39,7 +39,14 @@ $$;
 
 -- Only the service role, from inside n8n. A browser that can call this gets a
 -- list of every trial user's email address.
+--
+-- Both lines are needed, in this order. Revoking from public is what closes the
+-- door — but service_role held its own execute right through public and nothing
+-- else, so revoking alone locks out n8n as well: the function exists, the key is
+-- right, and the call comes back 401. Grant it back explicitly to the one role
+-- that should have it.
 revoke all on function public.get_trials_ending(int, int) from public, anon, authenticated;
+grant execute on function public.get_trials_ending(int, int) to service_role;
 
 -- ── VERIFY ───────────────────────────────────────────────────────────────────
 -- 1. It exists and reads auth.users rather than subscriptions:
@@ -48,12 +55,17 @@ revoke all on function public.get_trials_ending(int, int) from public, anon, aut
 -- 2. It finds nobody outside the window and does not error on an empty result:
 --    select * from public.get_trials_ending(1, 3);
 --
--- 3. It is unreachable from the browser. With the anon key this must fail:
+-- 3. The service role can call it. From n8n, or with the service key, this must
+--    return rows rather than 401:
+--    select has_function_privilege('service_role',
+--             'public.get_trials_ending(int, int)', 'execute');   -- expect: t
+--
+-- 4. It is unreachable from the browser. With the anon key this must fail:
 --    curl -s -X POST 'https://ijfawcrcmmvjhilpytsg.supabase.co/rest/v1/rpc/get_trials_ending' \
 --      -H 'apikey: <the anon key from index.html>' -H 'Content-Type: application/json' \
 --      -d '{"days_from":1,"days_to":3}'
 --
--- 4. To see it work without waiting a week, backdate one test account and check
+-- 5. To see it work without waiting a week, backdate one test account and check
 --    it appears, then put it back:
 --    update auth.users set created_at = now() - interval '5 days'
 --     where email = 'your+test@gmail.com';
