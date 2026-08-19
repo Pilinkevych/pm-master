@@ -3109,7 +3109,13 @@ function exportDocPDF(key) {
   });
   wrapper.querySelectorAll('tr').forEach(r => { r.style.cssText = 'page-break-inside:avoid;break-inside:avoid;'; });
   wrapper.querySelectorAll('td,th').forEach(c => {
-    c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;overflow-wrap:break-word;';
+    // No break-word here, deliberately. With the non-breaking hyphens below, a
+    // token like "(FAIR-6 / A5)" can no longer break at its hyphen — and if the
+    // cell is also allowed to break inside a word, the line breaks mid-token
+    // instead and html2canvas draws the halves on top of each other, which is
+    // the same defect wearing a different hat. Let a rare long token overflow
+    // its cell; that is legible, and garbled text is not.
+    c.style.cssText = 'border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top;';
   });
 
   // html2canvas lays the text out itself, and when a line break lands on a
