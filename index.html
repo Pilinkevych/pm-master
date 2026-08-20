@@ -7041,6 +7041,12 @@ async function authSubmit() {
 // product look broken. Translate the ones we can recognise.
 function signupErrorMessage(raw) {
   const m = String(raw || '');
+  // The database refuses scanner and throwaway domains. Say which part of the
+  // address is the problem — someone typing a real address at a company that
+  // happens to be on the list needs to know it is the domain, not them.
+  if (/email_domain_blocked/i.test(m)) {
+    return 'That email domain is not accepted. Please sign up with your work or personal address.';
+  }
   if (/not_invited/i.test(m) || /signups? not allowed/i.test(m)) {
     return 'Registration is closed at the moment. Write to support@pm-master.club and we will help.';
   }
