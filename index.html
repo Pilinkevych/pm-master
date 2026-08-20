@@ -4308,6 +4308,22 @@ function calcEVM() {
   else if (cpi >= 0.85) warnings.push('⚠️ Cost: <b>Slightly over budget</b> (CPI=' + cpi.toFixed(2) + '). Monitor costs closely.');
   else                  issues.push('🔴 Cost: <b>Over budget — action required</b> (CPI=' + cpi.toFixed(2) + '). EAC exceeds BAC by ' + (eac && bac ? '$'+Math.abs(Math.round(eac-bac)).toLocaleString() : '?') + '.');
 
+  // An index is a ratio; a sponsor asks about money. A CPI of 0.87 sat in the
+  // "slightly over, monitor closely" band while the forecast said the project
+  // would finish $33,846 past an approved $220,000 — nobody monitors their way
+  // out of that. So whenever the forecast breaks the budget, say by how much,
+  // and treat a breach worse than 5% of BAC — the same threshold the cost plans
+  // use for cost variance — as something to act on rather than watch.
+  if (costKnown && eac && bac && eac > bac) {
+    const over = Math.round(eac - bac);
+    const pct = over / bac * 100;
+    const line = 'Forecast to finish <b>$' + over.toLocaleString() + '</b> over the approved budget ' +
+                 '($' + Math.round(eac).toLocaleString() + ' against $' + Math.round(bac).toLocaleString() +
+                 ', ' + pct.toFixed(1) + '%).';
+    if (pct > 5) issues.push('🔴 Forecast: ' + line + ' A change request or a scope decision is needed, not closer monitoring.');
+    else         warnings.push('⚠️ Forecast: ' + line);
+  }
+
   // Schedule analysis
   if (!schedKnown)      goods.push('⚪ Schedule: <b>not measured yet</b> — enter EV and PV to see SPI.');
   else if (spi >= 1.1)  goods.push('📅 Schedule: <b>Ahead of plan</b> (SPI=' + spi.toFixed(2) + '). Project is delivering faster than planned.');
@@ -4319,7 +4335,11 @@ function calcEVM() {
   if (tcpi && bac && ac) {
     if (tcpi > 1.2)     issues.push('🔴 TCPI=' + tcpi.toFixed(2) + ': Remaining work must be <b>20%+ more efficient</b> than to date — very challenging to meet BAC.');
     else if (tcpi > 1.1)warnings.push('⚠️ TCPI=' + tcpi.toFixed(2) + ': Remaining work must be more efficient than to date to meet BAC.');
-    else if (tcpi <= 1) goods.push('✅ TCPI=' + tcpi.toFixed(2) + ': Completing within BAC is <b>achievable</b> at current performance.');
+    // Between 1.00 and 1.10 the panel used to say nothing at all: the card
+    // showed 1.07 and the summary skipped it, which reads as "no comment" on
+    // the one number that answers "can we still land this?".
+    else if (tcpi > 1)  warnings.push('⚠️ TCPI=' + tcpi.toFixed(2) + ': The remaining work has to run about ' + Math.round((tcpi - 1) * 100) + '% more efficiently than it has so far to finish within BAC.');
+    else                goods.push('✅ TCPI=' + tcpi.toFixed(2) + ': Completing within BAC is <b>achievable</b> at current performance.');
   }
 
   // Overall verdict
