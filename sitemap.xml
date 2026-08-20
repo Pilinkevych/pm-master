@@ -24,11 +24,17 @@
   </url>
   <url>
     <loc>https://pm-master.club/blog/</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <!-- ARTICLES:START -->
+  <url>
+    <loc>https://pm-master.club/blog/how-pmbok-8-section-4-3-fixes-development-approach-selection</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
   <url>
     <loc>https://pm-master.club/blog/your-junior-pms-are-watching-they-re-not-learning</loc>
     <lastmod>2026-08-17</lastmod>
