@@ -7623,7 +7623,13 @@ function pmToast(text, kind) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'save-toast';
-    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;max-width:340px;';
+    // pointer-events:none is not decoration. The toast is never removed from the
+    // page — it only fades to opacity 0 — so without this it stays as an
+    // invisible rectangle in the bottom-right corner, on top of everything, for
+    // the rest of the session. That corner is where the quiz keeps its Check
+    // button: clicking the middle of the button hit the ghost and did nothing,
+    // while the strip below it, sticking out from under the toast, still worked.
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;max-width:340px;pointer-events:none;';
     document.body.appendChild(toast);
   }
   toast.style.background = kind === 'error' ? '#dc2626' : '#059669';
