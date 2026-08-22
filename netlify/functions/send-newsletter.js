@@ -51,6 +51,10 @@ exports.handler = async (event) => {
     headers: { 'Content-Type': 'application/json', 'api-key': BREVO_KEY },
     body: JSON.stringify({
       sender: { name: 'PM Master', email: 'noreply@pm-master.club' },
+      // Sent from an address nobody reads, but a reply has to land somewhere a
+      // person does. Without this, hitting Reply writes to noreply@ and the
+      // message is lost — the reader assumes they were answered and were not.
+      replyTo: { name: 'PM Master Support', email: 'support@pm-master.club' },
       to: [{ email: to }],
       subject,
       htmlContent
